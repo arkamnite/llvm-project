@@ -1,0 +1,6 @@
+#ifndef LLVM_LIB_TARGET_GAMEBOY_GAMEBOYINSTRINFO_H
+#define LLVM_LIB_TARGET_GAMEBOY_GAMEBOYINSTRINFO_H
+
+#include "GameBoyRegisterInfo"
+
+#endif

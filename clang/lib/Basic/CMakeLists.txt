@@ -78,6 +78,7 @@ add_clang_library(clangBasic
   Targets/CSKY.cpp
   Targets/DirectX.cpp
   Targets/Hexagon.cpp
+  Targets/GameBoy.cpp
   Targets/Lanai.cpp
   Targets/Le64.cpp
   Targets/M68k.cpp

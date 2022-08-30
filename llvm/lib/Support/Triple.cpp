@@ -38,6 +38,7 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   case bpfel:          return "bpfel";
   case csky:           return "csky";
   case dxil:           return "dxil";
+  case gameboy:		     return "gameboy";
   case hexagon:        return "hexagon";
   case hsail64:        return "hsail64";
   case hsail:          return "hsail";
@@ -119,6 +120,8 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
   case mips64el:    return "mips";
 
   case hexagon:     return "hexagon";
+  // GameBoy
+  case gameboy:     return "dmg";
 
   case amdgcn:      return "amdgcn";
   case r600:        return "r600";
@@ -371,6 +374,7 @@ Triple::ArchType Triple::getArchTypeForLLVMName(StringRef Name) {
     .Case("loongarch32", loongarch32)
     .Case("loongarch64", loongarch64)
     .Case("dxil", dxil)
+    .Case("gameboy", gameboy)
     .Default(UnknownArch);
 }
 
@@ -511,6 +515,7 @@ static Triple::ArchType parseArch(StringRef ArchName) {
     .Case("loongarch32", Triple::loongarch32)
     .Case("loongarch64", Triple::loongarch64)
     .Case("dxil", Triple::dxil)
+    .Case("gameboy", Triple::gameboy)
     .Default(Triple::UnknownArch);
 
   // Some architectures require special parsing logic just to compute the
@@ -858,6 +863,10 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
 
   case Triple::dxil:
     return Triple::DXContainer;
+  
+  // Todo: Change this to bin format?
+  case Triple::gameboy:
+    return Triple::ELF;
   }
   llvm_unreachable("unknown architecture");
 }
@@ -1372,6 +1381,10 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   switch (Arch) {
   case llvm::Triple::UnknownArch:
     return 0;
+
+  // Todo: Check that this is not in fact 8-bit.
+  case llvm::Triple::gameboy:
+    return 16;
 
   case llvm::Triple::avr:
   case llvm::Triple::msp430:

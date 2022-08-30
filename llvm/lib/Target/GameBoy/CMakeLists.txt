@@ -1,14 +1,14 @@
 set(LLVM_TARGET_DEFINITIONS GameBoy.td)
 
-# tablegen(LLVM SparcGenAsmMatcher.inc -gen-asm-matcher)
-# tablegen(LLVM SparcGenAsmWriter.inc -gen-asm-writer)
-# tablegen(LLVM SparcGenCallingConv.inc -gen-callingconv)
-# tablegen(LLVM SparcGenDAGISel.inc -gen-dag-isel)
-# tablegen(LLVM SparcGenDisassemblerTables.inc -gen-disassembler)
-# tablegen(LLVM SparcGenInstrInfo.inc -gen-instr-info)
-# tablegen(LLVM SparcGenMCCodeEmitter.inc -gen-emitter)
-# tablegen(LLVM SparcGenRegisterInfo.inc -gen-register-info)
-# tablegen(LLVM SparcGenSubtargetInfo.inc -gen-subtarget)
+# tablegen(LLVM GameBoyAsmMatcher.inc -gen-asm-matcher)
+# tablegen(LLVM GameBoyAsmWriter.inc -gen-asm-writer)
+# tablegen(LLVM GameBoyCallingConv.inc -gen-callingconv)
+# tablegen(LLVM GameBoyDAGISel.inc -gen-dag-isel)
+# tablegen(LLVM GameBoyDisassemblerTables.inc -gen-disassembler)
+tablegen(LLVM GameBoyInstrInfo.inc -gen-instr-info)
+# tablegen(LLVM GameBoyMCCodeEmitter.inc -gen-emitter)
+tablegen(LLVM GameBoyRegisterInfo.inc -gen-register-info)
+# tablegen(LLVM GameBoySubtargetInfo.inc -gen-subtarget)
 
 add_public_tablegen_target(GameBoyCommonTableGen)
 
@@ -28,7 +28,7 @@ LINK_COMPONENTS
   GameBoy
   )
 
-add_subdirectory(AsmParser)
-add_subdirectory(Disassembler)
-add_subdirectory(MCTargetDesc)
+# add_subdirectory(AsmParser)
+# add_subdirectory(Disassembler)
+# add_subdirectory(MCTargetDesc)
 add_subdirectory(TargetInfo)

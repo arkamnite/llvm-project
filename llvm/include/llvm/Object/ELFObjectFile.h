@@ -1213,6 +1213,8 @@ StringRef ELFObjectFile<ELFT>::getFileFormatName() const {
       return "elf32-amdgpu";
     case ELF::EM_LOONGARCH:
       return "elf32-loongarch";
+    case ELF::EM_GAMEBOY:
+      return "elf32-gameboy";
     default:
       return "elf32-unknown";
     }
@@ -1254,6 +1256,8 @@ StringRef ELFObjectFile<ELFT>::getFileFormatName() const {
 template <class ELFT> Triple::ArchType ELFObjectFile<ELFT>::getArch() const {
   bool IsLittleEndian = ELFT::TargetEndianness == support::little;
   switch (EF.getHeader().e_machine) {
+  case ELF::EM_GAMEBOY:
+    return Triple::gameboy;
   case ELF::EM_68K:
     return Triple::m68k;
   case ELF::EM_386:

@@ -320,6 +320,7 @@ enum {
   EM_VE = 251,            // NEC SX-Aurora VE
   EM_CSKY = 252,          // C-SKY 32-bit processor
   EM_LOONGARCH = 258,     // LoongArch
+  EM_GAMEBOY = 999,       // GameBoy, uses an unused value.
 };
 
 // Object file classes.
@@ -923,6 +924,11 @@ enum : unsigned {
 // ELF Relocation types for LoongArch
 enum {
 #include "ELFRelocs/LoongArch.def"
+};
+
+// ELF Relocation types for GameBoy
+enum {
+#include "ELFRelocs/GameBoy.def"
 };
 
 #undef ELF_RELOC

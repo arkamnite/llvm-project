@@ -15,7 +15,7 @@ def GameBoyInstrInfo : InstrInfo;
 
 // DMG Calling Conventions
 
-include "GameBoyCallingConv.td"
+// include "GameBoyCallingConv.td"
 
 // Assembly Printers
 

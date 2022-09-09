@@ -9,9 +9,9 @@ class GBCtrlReg<string n> : Register<n> {
     let Namespace = "GB";
 }
 
-let Namespace = "SP" in {
-def GBSubRegIndex8Low : SubRegIndex<8, 0>;
-def GBSubRegIndex16Low : SubRegIndex<16, 0>;
+let Namespace = "GB" in {
+def GBSubRegIndex16Low : SubRegIndex<0>;
+def GBSubRegIndex16High : SubRegIndex<8>;
 }
 
 class Reg<string n> : Register<n>;
@@ -19,7 +19,7 @@ class Reg<string n> : Register<n>;
 // A pair of registers
 class RegPair<string n, list<Register> subregs> : GBReg<n> {
     let SubRegs = subregs;
-    let SubRegIndices = [GBSubRegIndex8Low, GBSubRegIndex16Low];
+    let SubRegIndices = [GBSubRegIndex16High, GBSubRegIndex16Low];
 }
 
 // Control register.

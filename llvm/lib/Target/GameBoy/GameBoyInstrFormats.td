@@ -34,6 +34,8 @@ class GBInstr16<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinCl
     let AsmString = asmstr;
     let Pattern = pattern;
 
+    let Itinerary = itin;
+
     let DecoderNamespace = "GameBoy";
 }
 
@@ -48,8 +50,8 @@ class GBInstr24<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinCl
     dag InOperandList = ins;
     dag AsmString = asmstr;
     let Pattern = pattern;
-
-    let DecoderNamespace = "GameBoy"
+    let Itinerary = itin;
+    let DecoderNamespace = "GameBoy";
 }
 
 //=== Register codes ===//
@@ -80,10 +82,10 @@ class GBInstr24<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinCl
 // Format 2: Register operand instruction
 // xx - rrr - xxx
 class F2< dag outs, dag ins, string asmstr, list<dag> pattern,
-    InstrItinClass itin = NoItinerary> : GBInstr8<outs, in, asmstr, pattern, itin> 
+    InstrItinClass itin = NoItinerary> : GBInstr8<outs, ins, asmstr, pattern, itin> 
 {
     bits<3>         r;
-    let op =        0;
+    // let op =        0; // Operation values not used by GB.
     let Inst{5-3} = r;
 }
 

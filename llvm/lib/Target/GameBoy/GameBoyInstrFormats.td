@@ -2,7 +2,7 @@
 // Used by the code emitter to determine which form of "fixup"
 // to use; these are kept in sync with GameBoyBaseInfo.h
 
-class GBInstr<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinClass itin = NoItinerary> : Instruction {
+class GBInstr8<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinClass itin = NoItinerary> : Instruction {
     
     // Instructions are 8-bits long.
     field bits<8> Inst;
@@ -22,19 +22,70 @@ class GBInstr<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinClas
     let Itinerary = itin;
 }
 
+class GBInstr16<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinClass itin = NoItinerary> : Instruction {
+    let Namespace = "GB";
+    
+    // Instructions are 16-bits long.
+    field bits<16> Inst;
+    let Size = 16;
+
+    dag OutOperandList = outs;
+    dag InOperandList = ins;
+    let AsmString = asmstr;
+    let Pattern = pattern;
+
+    let DecoderNamespace = "GameBoy";
+}
+
+class GBInstr24<dag outs, dag ins, string asmstr, list<dag> pattern, InstrItinClass itin = NoItinerary> : Instruction {
+    let Namespace = "GB";
+
+    // Instructions are 24-bits long, due to two operands.
+    field bits<24> Inst;
+    let Size = 24;
+
+    dag OutOperandList = outs;
+    dag InOperandList = ins;
+    dag AsmString = asmstr;
+    let Pattern = pattern;
+
+    let DecoderNamespace = "GameBoy"
+}
+
+//=== Register codes ===//
+// A : 111
+// B : 000
+// C : 001
+// D : 101
+// E : 011
+// H : 100
+// L : 101
+
+
 //===---------------------------------------------------------------===//
 // GameBoy instruction formats are derived from the types of operands
 // each instruction takes.
 //===---------------------------------------------------------------===//
 
-// No operand
+// Format 1: No operand
 // xx - xxx - xxx
+// class F1<   dag outs, dag ins, string asmstr, list<dag> pattern, 
+//             InstrItinClass itin = NoItinerary> : GBInstr8<outs, in, asmstr, pattern, itin> {
+    
+// }
 
 // Cycle operand instruction
 // xx - xCC - xxx
 
-// Register operand instruction
+// Format 2: Register operand instruction
 // xx - rrr - xxx
+class F2< dag outs, dag ins, string asmstr, list<dag> pattern,
+    InstrItinClass itin = NoItinerary> : GBInstr8<outs, in, asmstr, pattern, itin> 
+{
+    bits<3>         r;
+    let op =        0;
+    let Inst{5-3} = r;
+}
 
 // Register operand instruction 2 (arithmetic and logic instructions)
 // xx - xxx - rrr

@@ -25,9 +25,23 @@ add_llvm_target(GameBoyCodeGen
   # GameBoyTargetObjectFile.cpp
   # GameBoyISelDAGToDAG.cpp
   GameBoyTargetMachine.cpp
+
+  LINK_COMPONENTS
+  AsmPrinter
+  CodeGen
+  Core
+  MC
+  SelectionDAG
+  GameBoyDesc
+  GameBoyInfo
+  Support
+  Target
+
+  ADD_TO_COMPONENT
+  GameBoy
 )
 
 # add_subdirectory(AsmParser)
 # add_subdirectory(Disassembler)
-# add_subdirectory(MCTargetDesc)
-# add_subdirectory(TargetInfo)
+add_subdirectory(MCTargetDesc)
+add_subdirectory(TargetInfo)

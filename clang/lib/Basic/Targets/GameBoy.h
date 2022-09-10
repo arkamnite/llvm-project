@@ -30,7 +30,7 @@ public:
 
     void getTargetDefines(const LangOptions &Opts, MacroBuilder &Builder) const override;
 
-    ArrayRef<const char *> getGCCRegNames() const override const override;
+    ArrayRef<const char *> getGCCRegNames() const override;
 
     ArrayRef<TargetInfo::GCCRegAlias> getGCCRegAliases() const override;
 

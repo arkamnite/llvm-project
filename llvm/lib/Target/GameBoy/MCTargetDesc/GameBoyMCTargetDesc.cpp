@@ -12,21 +12,21 @@
 using namespace llvm;
 
 #define GET_INSTRINFO_MC_DESC
-#include "GameBoyGenInstrInfo.inc"
+#include "GameBoyInstrInfo.inc"
 
-#define GET_SUBTARGETINFO_MC_DESC
-#include "GameBoyGenSubtargetInfo.inc"
+// #define GET_SUBTARGETINFO_MC_DESC
+// #include "GameBoySubtargetInfo.inc"
 
 #define GET_REGINFO_MC_DESC
-#include "GameBoyGenRegisterInfo.inc"
+#include "GameBoyRegisterInfo.inc"
 
 static MCAsmInfo *createGameBoyMCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TT,
                                        const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new GameBoyELFMCAsmInfo(TT);
-//   unsigned Reg = MRI.getDwarfRegNum(SP::O6, true);
-//   MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 0);
-//   MAI->addInitialFrameState(Inst);
+  unsigned Reg = MRI.getDwarfRegNum(SP::O6, true);
+  MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 0);
+  MAI->addInitialFrameState(Inst);
   return MAI;
 }
 
@@ -34,9 +34,9 @@ static MCAsmInfo *createGameBoyV9MCAsmInfo(const MCRegisterInfo &MRI,
                                          const Triple &TT,
                                          const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new GameBoyELFMCAsmInfo(TT);
-//   unsigned Reg = MRI.getDwarfRegNum(SP::O6, true);
-//   MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
-//   MAI->addInitialFrameState(Inst);
+  unsigned Reg = MRI.getDwarfRegNum(SP::O6, true);
+  MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
+  MAI->addInitialFrameState(Inst);
   return MAI;
 }
 
@@ -48,7 +48,7 @@ static MCInstrInfo *createGameBoyMCInstrInfo() {
 
 static MCRegisterInfo *createGameBoyMCRegisterInfo(const Triple &TT) {
   MCRegisterInfo *X = new MCRegisterInfo();
-//   InitGameBoyMCRegisterInfo(X, SP::O7);
+  InitGameBoyMCRegisterInfo(X, SP::O7);
   return X;
 }
 

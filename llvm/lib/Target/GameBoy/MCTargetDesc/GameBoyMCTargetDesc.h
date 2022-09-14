@@ -29,14 +29,14 @@ std::unique_ptr<MCObjectTargetWriter> createGameBoyELFObjectWriter(bool Is64Bit,
 // register name to register number.
 //
 #define GET_REGINFO_ENUM
-#include "GameBoyGenRegisterInfo.inc"
+#include "GameBoyRegisterInfo.inc"
 
 // Defines symbolic names for the GameBoy instructions.
 //
 #define GET_INSTRINFO_ENUM
-#include "GameBoyGenInstrInfo.inc"
+#include "GameBoyInstrInfo.inc"
 
-#define GET_SUBTARGETINFO_ENUM
-#include "GameBoyGenSubtargetInfo.inc"
+// #define GET_SUBTARGETINFO_ENUM
+// #include "GameBoySubtargetInfo.inc"
 
 #endif

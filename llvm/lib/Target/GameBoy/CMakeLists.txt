@@ -11,7 +11,7 @@ tablegen(LLVM GameBoyRegisterInfo.inc -gen-register-info)
 tablegen(LLVM GameBoyInstrInfo.inc -gen-instr-info)
 tablegen(LLVM GameBoyMCCodeEmitter.inc -gen-emitter)
 tablegen(LLVM GameBoyGenCodeEmitter.inc -gen-emitter)
-tablegen(LLVM GameBoySubtargetInfo.inc -gen-subtarget)
+# tablegen(LLVM GameBoySubtargetInfo.inc -gen-subtarget)
 
 add_public_tablegen_target(GameBoyCommonTableGen)
 
@@ -20,11 +20,13 @@ add_llvm_target(GameBoyCodeGen
   GameBoyFrameLowering.cpp
   GameBoyInstrInfo.cpp
   GameBoyISelLowering.cpp
-  GameBoyRegisterInfo.cpp
-  GameBoySubtarget.cpp
-  GameBoyTargetObjectFile.cpp
   GameBoyISelDAGToDAG.cpp
+  GameBoyMachineFunction.cpp
+  GameBoyMCInstLower.cpp
+  GameBoyRegisterInfo.cpp
+  # GameBoySubtarget.cpp
   GameBoyTargetMachine.cpp
+  GameBoyTargetObjectFile.cpp
 
   LINK_COMPONENTS
   AsmPrinter

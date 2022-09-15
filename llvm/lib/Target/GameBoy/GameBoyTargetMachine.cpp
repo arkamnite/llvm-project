@@ -1,14 +1,13 @@
-#include "GameBoyTargetMachine.h"
 #include "GameBoy.h"
+#include "GameBoyTargetMachine.h"
 #include "TargetInfo/GameBoyTargetInfo.h"
+#include "llvm/MC/TargetRegistry.h"
 
-/* Looks to be for TargetIndependent CodeGen.
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGameBoyTarget() {
+    // Register the target.
     RegisterTargetMachine<GameBoyTargetMachine> X(getTheGameBoyTarget());
-    auto *PR = PassRegistry::getPassRegistry();
-    initializeGlobalISel(*PR);
+    
 }
-*/
 
 namespace llvm {
 // The LLVM-DMG ABI specifies a 16-bit pointer.
@@ -22,16 +21,16 @@ static Reloc::Model getEffectiveRelocModel(Optional<Reloc::Model> RM) {
   return RM.getValueOr(Reloc::Static);
 }
 
-GameBoyTargetMachine(const Target &T, const Triple &TT, 
+GameBoyTargetMachine::GameBoyTargetMachine(const Target &T, const Triple &TT, 
                     StringRef CPU, StringRef FS, 
                     const TargetOptions &Options,
                     Optional<Reloc::Model> RM, 
                     Optional<CodeModel::Model> CM,
                     CodeGenOpt::Level OL, bool JIT) 
     : LLVMTargetMachine(T, GameBoyDataLayout, TT, "gameboy", FS, Options, getEffectiveRelocModel(RM),
-    getEffectiveCodeModel(CM, CodeModel::Small), 0L),
-    SubTarget(TT, "gameboy", std::string(FS), *this)            
+    getEffectiveCodeModel(CM, CodeModel::Small), 0L)            
 {
     this->TLOF = std::make_unique<GameBoyObjectFile>();
     initAsmInfo();
+}
 }

@@ -2,14 +2,14 @@
 
 // any type of register.
 class GBReg<string n> : Register<n> {
-    let Namespace = "GB";
+    let Namespace = "GameBoy";
 }
 
 class GBCtrlReg<string n> : Register<n> {
-    let Namespace = "GB";
+    let Namespace = "GameBoy";
 }
 
-let Namespace = "GB" in {
+let Namespace = "GameBoy" in {
 def GBSubRegIndex16Low : SubRegIndex<0>;
 def GBSubRegIndex16High : SubRegIndex<8>;
 }
@@ -44,5 +44,5 @@ def HL : RegPair<"HL", [H, L]>, DwarfRegNum<[12]>;
 
 // Register classes
 // There is only one type of general use register
-def I8Regs : RegisterClass<"GB", [i8], 8, (add A, B, C, D, E, H, L)>;
-def I8Pair : RegisterClass<"GB", [v2i8], 16, (add BC, DE, HL)>;
+def I8Regs : RegisterClass<"GameBoy", [i8], 8, (add A, B, C, D, E, H, L)>;
+def I8Pair : RegisterClass<"GameBoy", [v2i8], 16, (add BC, DE, HL)>;

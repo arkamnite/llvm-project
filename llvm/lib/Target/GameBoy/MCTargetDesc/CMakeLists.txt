@@ -5,6 +5,7 @@ add_llvm_component_library(LLVMGameBoyDesc
   GameBoyMCAsmInfo.cpp
   GameBoyMCCodeEmitter.cpp
   GameBoyMCTargetDesc.cpp
+  GameBoyTargetStreamer.cpp
 
   LINK_COMPONENTS
   MC

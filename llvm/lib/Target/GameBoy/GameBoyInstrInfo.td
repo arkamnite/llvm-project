@@ -10,7 +10,7 @@ include "GameBoyInstrFormats.td"
 //=== Instructions ===//
 
 def LDRdRr : FRdRr< 0b01, 
-                    (outs I8Regs: $rd),
-                    (ins I8Regs: $rr),
+                    (outs GPR8: $rd),
+                    (ins GPR8: $rr),
                     "ld\t$rd, $rr",
                     [(set i8 : $rd, i8 : $rr)]>;

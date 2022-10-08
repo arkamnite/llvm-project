@@ -6,6 +6,7 @@
 #include <memory>
 
 namespace llvm {
+    
 class MCAsmBackend;
 class MCCodeEmitter;
 class MCContext;
@@ -16,11 +17,18 @@ class MCSubtargetInfo;
 class MCTargetOptions;
 class Target;
 
+MCInstrInfo *createGameBoyMCInstrInfo();
+
+/// Create a machine code emitter for GameBoy.
 MCCodeEmitter *createGameBoyMCCodeEmitter(const MCInstrInfo &MCII,
                                         MCContext &Ctx);
+
+/// Create an assembly backend for GameBoy.
 MCAsmBackend *createGameBoyAsmBackend(const Target &T, const MCSubtargetInfo &STI,
                                     const MCRegisterInfo &MRI,
                                     const MCTargetOptions &Options);
+
+/// Create an ELF object writer for GameBoy.
 std::unique_ptr<MCObjectTargetWriter> createGameBoyELFObjectWriter(bool Is64Bit,
                                                                  uint8_t OSABI);
 } // End llvm namespace

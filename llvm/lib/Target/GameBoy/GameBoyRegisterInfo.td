@@ -1,16 +1,16 @@
-// GameBoyRegisterInfo.td - Game Boy Register definitions
+/// GameBoyRegisterInfo.td - Game Boy Register definitions
 
-class GBCtrlReg<string n> : Register<n> {
-    let Namespace = "GameBoy";
-}
+// class GBCtrlReg<string n> : Register<n> {
+//     let Namespace = "GameBoy";
+// }
 
 let Namespace = "GameBoy" in {
 def sub_low : SubRegIndex<8>;
 def sub_high : SubRegIndex<8, 8>;
 }
 
-
-class Reg<bits<16> number, 
+// 8-bit register definition
+class GBReg<bits<16> number, 
           string name, 
           list<Register> subregs = [],
           list<string> altNames = []> : RegisterWithSubRegs<name, subregs> {
@@ -26,24 +26,24 @@ class Reg<bits<16> number,
 class RegPair<bits<16> number, 
               string n, 
               list<Register> subregs,
-              list<string> altNames = []> : Reg<number, n, subregs, altNames> {
+              list<string> altNames = []> : GBReg<number, n, subregs, altNames> {
     let Namespace = "GameBoy";
     let SubRegs = subregs;
     let SubRegIndices = [sub_high, sub_low];
 }
 
 // Control register.
-def Flags : GBCtrlReg<"Flags">;
+// def Flags : GBCtrlReg<"Flags">;
 
 // Individual 8-bit registers.
-def A : Reg<0, "A">, DwarfRegNum<[0]>;
-def B : Reg<1, "B">, DwarfRegNum<[1]>;
-def C : Reg<2, "C">, DwarfRegNum<[2]>;
-def D : Reg<3, "D">, DwarfRegNum<[3]>;
-def E : Reg<4, "E">, DwarfRegNum<[4]>;
-def H : Reg<5, "H">, DwarfRegNum<[5]>;
-def L : Reg<6, "L">, DwarfRegNum<[6]>;
-def F : Reg<7, "F">, DwarfRegNum<[7]>;
+def A : GBReg<0, "A">, DwarfRegNum<[0]>;
+def B : GBReg<1, "B">, DwarfRegNum<[1]>;
+def C : GBReg<2, "C">, DwarfRegNum<[2]>;
+def D : GBReg<3, "D">, DwarfRegNum<[3]>;
+def E : GBReg<4, "E">, DwarfRegNum<[4]>;
+def H : GBReg<5, "H">, DwarfRegNum<[5]>;
+def L : GBReg<6, "L">, DwarfRegNum<[6]>;
+def F : GBReg<7, "F">, DwarfRegNum<[7]>;
 
 // Todo: Add PC and SP
 
@@ -56,5 +56,5 @@ let SubRegIndices = [sub_low, sub_high], CoveredBySubRegs = 1 in {
 
 // Register classes
 // There is only one type of general use register
-def I8Regs : RegisterClass<"GameBoy", [i8], 8, (add A, B, C, D, E, H, L)>;
-def I8Pair : RegisterClass<"GameBoy", [v2i8], 16, (add BC, DE, HL)>;
+def GPR8 : RegisterClass<"GameBoy", [i8], 8, (add A, B, C, D, E, H, L)>;
+def GPRPair : RegisterClass<"GameBoy", [v2i8], 16, (add BC, DE, HL)>;

@@ -3,13 +3,14 @@
 #include "TargetInfo/GameBoyTargetInfo.h"
 #include "llvm/MC/TargetRegistry.h"
 
+namespace llvm {
+
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGameBoyTarget() {
     // Register the target.
     RegisterTargetMachine<GameBoyTargetMachine> X(getTheGameBoyTarget());
     
 }
 
-namespace llvm {
 // The LLVM-DMG ABI specifies a 16-bit pointer.
 // All data is aligned on an 8-bit boundary, with
 // exception to all 16-bit types.

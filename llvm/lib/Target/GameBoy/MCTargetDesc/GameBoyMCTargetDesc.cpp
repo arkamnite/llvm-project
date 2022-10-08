@@ -9,8 +9,6 @@
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/ErrorHandling.h"
 
-using namespace llvm;
-
 #define GET_INSTRINFO_MC_DESC
 #include "GameBoyInstrInfo.inc"
 
@@ -20,63 +18,20 @@ using namespace llvm;
 #define GET_REGINFO_MC_DESC
 #include "GameBoyRegisterInfo.inc"
 
-static MCAsmInfo *createGameBoyMCAsmInfo(const MCRegisterInfo &MRI,
-                                       const Triple &TT,
-                                       const MCTargetOptions &Options) {
-  MCAsmInfo *MAI = new GameBoyELFMCAsmInfo(TT);
-  unsigned Reg = MRI.getDwarfRegNum(SP::O6, true);
-  MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 0);
-  MAI->addInitialFrameState(Inst);
-  return MAI;
-}
+using namespace llvm;
 
-static MCAsmInfo *createGameBoyV9MCAsmInfo(const MCRegisterInfo &MRI,
-                                         const Triple &TT,
-                                         const MCTargetOptions &Options) {
-  MCAsmInfo *MAI = new GameBoyELFMCAsmInfo(TT);
-  unsigned Reg = MRI.getDwarfRegNum(SP::O6, true);
-  MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
-  MAI->addInitialFrameState(Inst);
-  return MAI;
-}
-
-static MCInstrInfo *createGameBoyMCInstrInfo() {
+MCInstrInfo *llvm::createGameBoyMCInstrInfo() {
   MCInstrInfo *X = new MCInstrInfo();
   InitGameBoyMCInstrInfo(X);
+
   return X;
 }
 
-static MCRegisterInfo *createGameBoyMCRegisterInfo(const Triple &TT) {
+static MCRegisterInfo *createGameBoyMCRegisterINfo(const Triple &TT) {
   MCRegisterInfo *X = new MCRegisterInfo();
-  InitGameBoyMCRegisterInfo(X, SP::O7);
+  InitGameBoyMCRegisterInfo(X, 0);
+
   return X;
-}
-
-static MCSubtargetInfo *
-createGameBoyMCSubtargetInfo(const Triple &TT, StringRef CPU, StringRef FS) {
-  if (CPU.empty())
-    CPU = (TT.getArch() == Triple::sparcv9) ? "v9" : "v8";
-  return createGameBoyMCSubtargetInfoImpl(TT, CPU, /*TuneCPU*/ CPU, FS);
-}
-
-static MCTargetStreamer *
-createObjectTargetStreamer(MCStreamer &S, const MCSubtargetInfo &STI) {
-  return new GameBoyTargetELFStreamer(S);
-}
-
-static MCTargetStreamer *createTargetAsmStreamer(MCStreamer &S,
-                                                 formatted_raw_ostream &OS,
-                                                 MCInstPrinter *InstPrint,
-                                                 bool isVerboseAsm) {
-  return new GameBoyTargetAsmStreamer(S, OS);
-}
-
-static MCInstPrinter *createGameBoyMCInstPrinter(const Triple &T,
-                                               unsigned SyntaxVariant,
-                                               const MCAsmInfo &MAI,
-                                               const MCInstrInfo &MII,
-                                               const MCRegisterInfo &MRI) {
-  return new GameBoyInstPrinter(MAI, MII, MRI);
 }
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGameBoyTargetMC() {

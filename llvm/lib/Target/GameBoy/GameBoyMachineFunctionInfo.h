@@ -55,9 +55,9 @@ public:
         CalleeSavedFrameSize(0), VarArgsFrameIndex(0) {
     unsigned CallConv = MF.getFunction().getCallingConv();
 
-    this->IsInterruptHandler = CallConv == CallingConv::GameBoy_INTR ||
+    this->IsInterruptHandler = CallConv == CallingConv::AVR_INTR ||
                                MF.getFunction().hasFnAttribute("interrupt");
-    this->IsSignalHandler = CallConv == CallingConv::GameBoy_SIGNAL ||
+    this->IsSignalHandler = CallConv == CallingConv::AVR_SIGNAL ||
                             MF.getFunction().hasFnAttribute("signal");
   }
 

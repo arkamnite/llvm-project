@@ -219,10 +219,10 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setLibcallName(RTLIB::UDIVREM_I32, "__udivmodsi4");
 
   // Several of the runtime library functions use a special calling conv
-  setLibcallCallingConv(RTLIB::SDIVREM_I8, CallingConv::GameBoy_BUILTIN);
-  setLibcallCallingConv(RTLIB::SDIVREM_I16, CallingConv::GameBoy_BUILTIN);
-  setLibcallCallingConv(RTLIB::UDIVREM_I8, CallingConv::GameBoy_BUILTIN);
-  setLibcallCallingConv(RTLIB::UDIVREM_I16, CallingConv::GameBoy_BUILTIN);
+  setLibcallCallingConv(RTLIB::SDIVREM_I8, CallingConv::AVR_BUILTIN);
+  setLibcallCallingConv(RTLIB::SDIVREM_I16, CallingConv::AVR_BUILTIN);
+  setLibcallCallingConv(RTLIB::UDIVREM_I8, CallingConv::AVR_BUILTIN);
+  setLibcallCallingConv(RTLIB::UDIVREM_I16, CallingConv::AVR_BUILTIN);
 
   // Trigonometric rtlib functions
   setLibcallName(RTLIB::SIN_F32, "sin");
@@ -1493,7 +1493,7 @@ SDValue GameBoyTargetLowering::LowerCallResult(
                  *DAG.getContext());
 
   // Handle runtime calling convs.
-  if (CallConv == CallingConv::GameBoy_BUILTIN) {
+  if (CallConv == CallingConv::AVR_BUILTIN) {
     CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
   } else {
     analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
@@ -1518,7 +1518,7 @@ SDValue GameBoyTargetLowering::LowerCallResult(
 bool GameBoyTargetLowering::CanLowerReturn(
     CallingConv::ID CallConv, MachineFunction &MF, bool isVarArg,
     const SmallVectorImpl<ISD::OutputArg> &Outs, LLVMContext &Context) const {
-  if (CallConv == CallingConv::GameBoy_BUILTIN) {
+  if (CallConv == CallingConv::AVR_BUILTIN) {
     SmallVector<CCValAssign, 16> RVLocs;
     CCState CCInfo(CallConv, isVarArg, MF, RVLocs, Context);
     return CCInfo.CheckReturn(Outs, RetCC_GameBoy_BUILTIN);
@@ -1544,7 +1544,7 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   MachineFunction &MF = DAG.getMachineFunction();
 
   // Analyze return values.
-  if (CallConv == CallingConv::GameBoy_BUILTIN) {
+  if (CallConv == CallingConv::AVR_BUILTIN) {
     CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
   } else {
     analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());

@@ -32,7 +32,7 @@ public:
 };
 
 GameBoyELFObjectWriter::GameBoyELFObjectWriter(uint8_t OSABI)
-    : MCELFObjectTargetWriter(false, OSABI, ELF::EM_GameBoy, true) {}
+    : MCELFObjectTargetWriter(false, OSABI, ELF::EM_AVR, true) {}
 
 unsigned GameBoyELFObjectWriter::getRelocType(MCContext &Ctx, const MCValue &Target,
                                           const MCFixup &Fixup,
@@ -44,107 +44,107 @@ unsigned GameBoyELFObjectWriter::getRelocType(MCContext &Ctx, const MCValue &Tar
     default:
       llvm_unreachable("Unsupported Modifier");
     case MCSymbolRefExpr::VK_None:
-      return ELF::R_GameBoy_8;
-    case MCSymbolRefExpr::VK_GameBoy_DIFF8:
-      return ELF::R_GameBoy_DIFF8;
-    case MCSymbolRefExpr::VK_GameBoy_LO8:
-      return ELF::R_GameBoy_8_LO8;
-    case MCSymbolRefExpr::VK_GameBoy_HI8:
-      return ELF::R_GameBoy_8_HI8;
-    case MCSymbolRefExpr::VK_GameBoy_HLO8:
-      return ELF::R_GameBoy_8_HLO8;
+      return ELF::R_AVR_8;
+    case MCSymbolRefExpr::VK_AVR_DIFF8:
+      return ELF::R_AVR_DIFF8;
+    case MCSymbolRefExpr::VK_AVR_LO8:
+      return ELF::R_AVR_8_LO8;
+    case MCSymbolRefExpr::VK_AVR_HI8:
+      return ELF::R_AVR_8_HI8;
+    case MCSymbolRefExpr::VK_AVR_HLO8:
+      return ELF::R_AVR_8_HLO8;
     }
   case FK_Data_4:
     switch (Modifier) {
     default:
       llvm_unreachable("Unsupported Modifier");
     case MCSymbolRefExpr::VK_None:
-      return ELF::R_GameBoy_32;
-    case MCSymbolRefExpr::VK_GameBoy_DIFF32:
-      return ELF::R_GameBoy_DIFF32;
+      return ELF::R_AVR_32;
+    case MCSymbolRefExpr::VK_AVR_DIFF32:
+      return ELF::R_AVR_DIFF32;
     }
   case FK_Data_2:
     switch (Modifier) {
     default:
       llvm_unreachable("Unsupported Modifier");
     case MCSymbolRefExpr::VK_None:
-      return ELF::R_GameBoy_16;
-    case MCSymbolRefExpr::VK_GameBoy_NONE:
-    case MCSymbolRefExpr::VK_GameBoy_PM:
-      return ELF::R_GameBoy_16_PM;
-    case MCSymbolRefExpr::VK_GameBoy_DIFF16:
-      return ELF::R_GameBoy_DIFF16;
+      return ELF::R_AVR_16;
+    case MCSymbolRefExpr::VK_AVR_NONE:
+    case MCSymbolRefExpr::VK_AVR_PM:
+      return ELF::R_AVR_16_PM;
+    case MCSymbolRefExpr::VK_AVR_DIFF16:
+      return ELF::R_AVR_DIFF16;
     }
   case GameBoy::fixup_32:
-    return ELF::R_GameBoy_32;
+    return ELF::R_AVR_32;
   case GameBoy::fixup_7_pcrel:
-    return ELF::R_GameBoy_7_PCREL;
+    return ELF::R_AVR_7_PCREL;
   case GameBoy::fixup_13_pcrel:
-    return ELF::R_GameBoy_13_PCREL;
+    return ELF::R_AVR_13_PCREL;
   case GameBoy::fixup_16:
-    return ELF::R_GameBoy_16;
+    return ELF::R_AVR_16;
   case GameBoy::fixup_16_pm:
-    return ELF::R_GameBoy_16_PM;
+    return ELF::R_AVR_16_PM;
   case GameBoy::fixup_lo8_ldi:
-    return ELF::R_GameBoy_LO8_LDI;
+    return ELF::R_AVR_LO8_LDI;
   case GameBoy::fixup_hi8_ldi:
-    return ELF::R_GameBoy_HI8_LDI;
+    return ELF::R_AVR_HI8_LDI;
   case GameBoy::fixup_hh8_ldi:
-    return ELF::R_GameBoy_HH8_LDI;
+    return ELF::R_AVR_HH8_LDI;
   case GameBoy::fixup_lo8_ldi_neg:
-    return ELF::R_GameBoy_LO8_LDI_NEG;
+    return ELF::R_AVR_LO8_LDI_NEG;
   case GameBoy::fixup_hi8_ldi_neg:
-    return ELF::R_GameBoy_HI8_LDI_NEG;
+    return ELF::R_AVR_HI8_LDI_NEG;
   case GameBoy::fixup_hh8_ldi_neg:
-    return ELF::R_GameBoy_HH8_LDI_NEG;
+    return ELF::R_AVR_HH8_LDI_NEG;
   case GameBoy::fixup_lo8_ldi_pm:
-    return ELF::R_GameBoy_LO8_LDI_PM;
+    return ELF::R_AVR_LO8_LDI_PM;
   case GameBoy::fixup_hi8_ldi_pm:
-    return ELF::R_GameBoy_HI8_LDI_PM;
+    return ELF::R_AVR_HI8_LDI_PM;
   case GameBoy::fixup_hh8_ldi_pm:
-    return ELF::R_GameBoy_HH8_LDI_PM;
+    return ELF::R_AVR_HH8_LDI_PM;
   case GameBoy::fixup_lo8_ldi_pm_neg:
-    return ELF::R_GameBoy_LO8_LDI_PM_NEG;
+    return ELF::R_AVR_LO8_LDI_PM_NEG;
   case GameBoy::fixup_hi8_ldi_pm_neg:
-    return ELF::R_GameBoy_HI8_LDI_PM_NEG;
+    return ELF::R_AVR_HI8_LDI_PM_NEG;
   case GameBoy::fixup_hh8_ldi_pm_neg:
-    return ELF::R_GameBoy_HH8_LDI_PM_NEG;
+    return ELF::R_AVR_HH8_LDI_PM_NEG;
   case GameBoy::fixup_call:
-    return ELF::R_GameBoy_CALL;
+    return ELF::R_AVR_CALL;
   case GameBoy::fixup_ldi:
-    return ELF::R_GameBoy_LDI;
+    return ELF::R_AVR_LDI;
   case GameBoy::fixup_6:
-    return ELF::R_GameBoy_6;
+    return ELF::R_AVR_6;
   case GameBoy::fixup_6_adiw:
-    return ELF::R_GameBoy_6_ADIW;
+    return ELF::R_AVR_6_ADIW;
   case GameBoy::fixup_ms8_ldi:
-    return ELF::R_GameBoy_MS8_LDI;
+    return ELF::R_AVR_MS8_LDI;
   case GameBoy::fixup_ms8_ldi_neg:
-    return ELF::R_GameBoy_MS8_LDI_NEG;
+    return ELF::R_AVR_MS8_LDI_NEG;
   case GameBoy::fixup_lo8_ldi_gs:
-    return ELF::R_GameBoy_LO8_LDI_GS;
+    return ELF::R_AVR_LO8_LDI_GS;
   case GameBoy::fixup_hi8_ldi_gs:
-    return ELF::R_GameBoy_HI8_LDI_GS;
+    return ELF::R_AVR_HI8_LDI_GS;
   case GameBoy::fixup_8:
-    return ELF::R_GameBoy_8;
+    return ELF::R_AVR_8;
   case GameBoy::fixup_8_lo8:
-    return ELF::R_GameBoy_8_LO8;
+    return ELF::R_AVR_8_LO8;
   case GameBoy::fixup_8_hi8:
-    return ELF::R_GameBoy_8_HI8;
+    return ELF::R_AVR_8_HI8;
   case GameBoy::fixup_8_hlo8:
-    return ELF::R_GameBoy_8_HLO8;
+    return ELF::R_AVR_8_HLO8;
   case GameBoy::fixup_diff8:
-    return ELF::R_GameBoy_DIFF8;
+    return ELF::R_AVR_DIFF8;
   case GameBoy::fixup_diff16:
-    return ELF::R_GameBoy_DIFF16;
+    return ELF::R_AVR_DIFF16;
   case GameBoy::fixup_diff32:
-    return ELF::R_GameBoy_DIFF32;
+    return ELF::R_AVR_DIFF32;
   case GameBoy::fixup_lds_sts_16:
-    return ELF::R_GameBoy_LDS_STS_16;
+    return ELF::R_AVR_LDS_STS_16;
   case GameBoy::fixup_port6:
-    return ELF::R_GameBoy_PORT6;
+    return ELF::R_AVR_PORT6;
   case GameBoy::fixup_port5:
-    return ELF::R_GameBoy_PORT5;
+    return ELF::R_AVR_PORT5;
   default:
     llvm_unreachable("invalid fixup kind!");
   }

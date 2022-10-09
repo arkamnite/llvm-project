@@ -23,19 +23,19 @@ using namespace llvm;
 void GameBoyMCELFStreamer::emitValueForModiferKind(
     const MCSymbol *Sym, unsigned SizeInBytes, SMLoc Loc,
     GameBoyMCExpr::VariantKind ModifierKind) {
-  MCSymbolRefExpr::VariantKind Kind = MCSymbolRefExpr::VK_GameBoy_NONE;
-  if (ModifierKind == GameBoyMCExpr::VK_GameBoy_None) {
-    Kind = MCSymbolRefExpr::VK_GameBoy_DIFF8;
+  MCSymbolRefExpr::VariantKind Kind = MCSymbolRefExpr::VK_AVR_NONE;
+  if (ModifierKind == GameBoyMCExpr::VK_AVR_None) {
+    Kind = MCSymbolRefExpr::VK_AVR_DIFF8;
     if (SizeInBytes == SIZE_LONG)
-      Kind = MCSymbolRefExpr::VK_GameBoy_DIFF32;
+      Kind = MCSymbolRefExpr::VK_AVR_DIFF32;
     else if (SizeInBytes == SIZE_WORD)
-      Kind = MCSymbolRefExpr::VK_GameBoy_DIFF16;
-  } else if (ModifierKind == GameBoyMCExpr::VK_GameBoy_LO8)
-    Kind = MCSymbolRefExpr::VK_GameBoy_LO8;
-  else if (ModifierKind == GameBoyMCExpr::VK_GameBoy_HI8)
-    Kind = MCSymbolRefExpr::VK_GameBoy_HI8;
-  else if (ModifierKind == GameBoyMCExpr::VK_GameBoy_HH8)
-    Kind = MCSymbolRefExpr::VK_GameBoy_HLO8;
+      Kind = MCSymbolRefExpr::VK_AVR_DIFF16;
+  } else if (ModifierKind == GameBoyMCExpr::VK_AVR_LO8)
+    Kind = MCSymbolRefExpr::VK_AVR_LO8;
+  else if (ModifierKind == GameBoyMCExpr::VK_AVR_HI8)
+    Kind = MCSymbolRefExpr::VK_AVR_HI8;
+  else if (ModifierKind == GameBoyMCExpr::VK_AVR_HH8)
+    Kind = MCSymbolRefExpr::VK_AVR_HLO8;
   MCELFStreamer::emitValue(MCSymbolRefExpr::create(Sym, Kind, getContext()),
                            SizeInBytes, Loc);
 }

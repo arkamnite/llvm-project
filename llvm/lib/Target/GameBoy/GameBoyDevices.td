@@ -129,24 +129,24 @@ class ELFArch<string name>
     : SubtargetFeature<"", "ELFArch", !strconcat("ELF::", name), "">;
 
 // ELF e_flags architecture values
-def ELFArchGameBoy1 : ELFArch<"EF_GameBoy_ARCH_GameBoy1">;
-def ELFArchGameBoy2 : ELFArch<"EF_GameBoy_ARCH_GameBoy2">;
-def ELFArchGameBoy25 : ELFArch<"EF_GameBoy_ARCH_GameBoy25">;
-def ELFArchGameBoy3 : ELFArch<"EF_GameBoy_ARCH_GameBoy3">;
-def ELFArchGameBoy31 : ELFArch<"EF_GameBoy_ARCH_GameBoy31">;
-def ELFArchGameBoy35 : ELFArch<"EF_GameBoy_ARCH_GameBoy35">;
-def ELFArchGameBoy4 : ELFArch<"EF_GameBoy_ARCH_GameBoy4">;
-def ELFArchGameBoy5 : ELFArch<"EF_GameBoy_ARCH_GameBoy5">;
-def ELFArchGameBoy51 : ELFArch<"EF_GameBoy_ARCH_GameBoy51">;
-def ELFArchGameBoy6 : ELFArch<"EF_GameBoy_ARCH_GameBoy6">;
-def ELFArchTiny : ELFArch<"EF_GameBoy_ARCH_GameBoyTINY">;
-def ELFArchXMEGA1 : ELFArch<"EF_GameBoy_ARCH_XMEGA1">;
-def ELFArchXMEGA2 : ELFArch<"EF_GameBoy_ARCH_XMEGA2">;
-def ELFArchXMEGA3 : ELFArch<"EF_GameBoy_ARCH_XMEGA3">;
-def ELFArchXMEGA4 : ELFArch<"EF_GameBoy_ARCH_XMEGA4">;
-def ELFArchXMEGA5 : ELFArch<"EF_GameBoy_ARCH_XMEGA5">;
-def ELFArchXMEGA6 : ELFArch<"EF_GameBoy_ARCH_XMEGA6">;
-def ELFArchXMEGA7 : ELFArch<"EF_GameBoy_ARCH_XMEGA7">;
+def ELFArchGameBoy1 : ELFArch<"EF_AVR_ARCH_AVR1">;
+def ELFArchGameBoy2 : ELFArch<"EF_AVR_ARCH_AVR2">;
+def ELFArchGameBoy25 : ELFArch<"EF_AVR_ARCH_AVR25">;
+def ELFArchGameBoy3 : ELFArch<"EF_AVR_ARCH_AVR3">;
+def ELFArchGameBoy31 : ELFArch<"EF_AVR_ARCH_AVR31">;
+def ELFArchGameBoy35 : ELFArch<"EF_AVR_ARCH_AVR35">;
+def ELFArchGameBoy4 : ELFArch<"EF_AVR_ARCH_AVR4">;
+def ELFArchGameBoy5 : ELFArch<"EF_AVR_ARCH_AVR5">;
+def ELFArchGameBoy51 : ELFArch<"EF_AVR_ARCH_AVR51">;
+def ELFArchGameBoy6 : ELFArch<"EF_AVR_ARCH_AVR6">;
+def ELFArchTiny : ELFArch<"EF_AVR_ARCH_AVRTINY">;
+def ELFArchXMEGA1 : ELFArch<"EF_AVR_ARCH_XMEGA1">;
+def ELFArchXMEGA2 : ELFArch<"EF_AVR_ARCH_XMEGA2">;
+def ELFArchXMEGA3 : ELFArch<"EF_AVR_ARCH_XMEGA3">;
+def ELFArchXMEGA4 : ELFArch<"EF_AVR_ARCH_XMEGA4">;
+def ELFArchXMEGA5 : ELFArch<"EF_AVR_ARCH_XMEGA5">;
+def ELFArchXMEGA6 : ELFArch<"EF_AVR_ARCH_XMEGA6">;
+def ELFArchXMEGA7 : ELFArch<"EF_AVR_ARCH_XMEGA7">;
 
 //===---------------------------------------------------------------------===//
 // GameBoy Families

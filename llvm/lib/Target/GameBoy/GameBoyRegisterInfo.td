@@ -30,6 +30,46 @@ let Namespace = "GameBoy" in {
 let Namespace = "GameBoy" in { def ptr : RegAltNameIndex; }
 
 //===----------------------------------------------------------------------===//
+// 8-bit general-purpose registers A through L
+//===----------------------------------------------------------------------===//
+
+def RA : GameBoyReg<0, "A">, DwarfRegNum<[0]>;
+def RB : GameBoyReg<1, "B">, DwarfRegNum<[1]>;
+def RC : GameBoyReg<2, "C">, DwarfRegNum<[2]>;
+def RD : GameBoyReg<3, "D">, DwarfRegNum<[3]>;
+def RE : GameBoyReg<4, "E">, DwarfRegNum<[4]>;
+def RH : GameBoyReg<5, "H">, DwarfRegNum<[5]>;
+def RL : GameBoyReg<6, "L">, DwarfRegNum<[6]>;
+def RF : GameBoyReg<7, "F">, DwarfRegNum<[7]>;
+
+//===----------------------------------------------------------------------===//
+// 16-bit general-purpose registers
+//===----------------------------------------------------------------------===//
+let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
+  def RBRC : GameBoyReg<1, "BC", [RB, RC]>, DwarfRegNum<[1]>;
+  def RDRE : GameBoyReg<3, "DE", [RC, RD]>, DwarfRegNum<[3]>;
+  def RHRL : GameBoyReg<5, "HL", [RH, RL]>, DwarfRegNum<[5]>;
+}
+
+def SP : GameBoyReg<8, "SP">, DwarfRegNum<[8]>;
+
+//===----------------------------------------------------------------------===//
+// Register Classes
+//===----------------------------------------------------------------------===//
+
+// These are all the general-purpose registers that can be assigned values to.
+def GPR : RegisterClass<"GameBoy", [i8], 8, (add RA, RB, RC, RD, RE, RH, RL)>;
+
+// The GameBoy features register pairs which can be addresses as an individual
+// 16-bit register, whilst also accessing its high and low halves.
+def GPRPair : RegisterClass<"GameBoy", [v2i8], 16, (add RBRC, RDRE, RHRL)>;
+
+// 8-bit status register.
+def CCR : RegisterClass<"GameBoy", [i8], 8, (add RF)> {
+  let CopyCost = -1; // Do not allow copying of the F register.
+}
+
+//===----------------------------------------------------------------------===//
 //  8-bit general purpose registers
 //===----------------------------------------------------------------------===//
 
@@ -70,7 +110,7 @@ def SPH : GameBoyReg<33, "SPH">, DwarfRegNum<[33]>;
 
 let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
   // 16 bit GPR pairs.
-  def SP : GameBoyReg<32, "SP", [SPL, SPH]>, DwarfRegNum<[32]>;
+  // def SP : GameBoyReg<32, "SP", [SPL, SPH]>, DwarfRegNum<[32]>;
 
   // The pointer registers (X,Y,Z) are a special case because they
   // are printed as a `high:low` pair when a DREG is expected,
@@ -220,6 +260,6 @@ def GPRSP : RegisterClass<"GameBoy", [i16], 8, (add SP)>;
 
 // Status register.
 def SREG : GameBoyReg<14, "FLAGS">, DwarfRegNum<[88]>;
-def CCR : RegisterClass<"GameBoy", [i8], 8, (add SREG)> {
-  let CopyCost = -1; // Don't allow copying of status registers
-}
+// def CCR : RegisterClass<"GameBoy", [i8], 8, (add SREG)> {
+//   let CopyCost = -1; // Don't allow copying of status registers
+// }

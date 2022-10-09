@@ -89,7 +89,7 @@ bool GameBoyMCExpr::evaluateAsRelocatableImpl(MCValue &Result,
     if (Modifier != MCSymbolRefExpr::VK_None)
       return false;
     if (Kind == VK_GameBoy_PM) {
-      Modifier = MCSymbolRefExpr::VK_GameBoy_PM;
+      Modifier = MCSymbolRefExpr::VK_AVR_PM;
     }
 
     Sym = MCSymbolRefExpr::create(&Sym->getSymbol(), Modifier, Context);

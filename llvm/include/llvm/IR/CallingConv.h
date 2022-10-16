@@ -252,6 +252,12 @@ namespace CallingConv {
     /// M68k_INTR - Calling convention used for M68k interrupt routines.
     M68k_INTR = 101,
 
+    /// SDCC Version 0 - Calling convention used for the SM83 SDCC target.
+    SDCC_V0 = 102,
+
+    /// SDCC Version 1 - Calling convention used by default for the SM83 SDCC target.
+    SDCC_V1 = 103,
+
     /// The highest possible calling convention ID. Must be some 2^k - 1.
     MaxID = 1023
   };

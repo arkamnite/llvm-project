@@ -19,6 +19,23 @@ def RetCC_GameBoy_BUILTIN : CallingConv<[
   CCIfType<[i16], CCAssignToReg<[R23R22, R25R24]>>
 ]>;
 
+// The SDCC Version 0 calling convention.
+def RetCC_GameBoy_SDCC_V1 : CallingConv<[
+  CCIfType<[i8], CCAssignToReg<[RA]>>,
+  CCIfType<[i16], CCAssignToReg<[RBRC]>>
+]>;
+
+def RetCC_GameBoy_SDCC_V0 : CallingConv<[
+  CCIfType<[i8], CCAssignToReg<[RE]>>,
+  CCIfType<[i16], CCAssignToReg<[RDRE]>>
+]>;
+
+// There are several supported calling conventions which are specified by name.
+def RetCC_GameBoy_Multi : CallingConv<[
+  CCIfCC<"CallingConv::SDCC_V0", CCDelegateTo<RetCC_GameBoy_SDCC_V0>>,
+  CCIfCC<"CallingConv::SDCC_V1", CCDelegateTo<RetCC_GameBoy_SDCC_V1>>
+]>;
+
 //===----------------------------------------------------------------------===//
 // GameBoy Argument Calling Conventions
 //===----------------------------------------------------------------------===//

@@ -35,7 +35,17 @@ GameBoyRegisterInfo::GameBoyRegisterInfo() : GameBoyGenRegisterInfo(0) {}
 
 const uint16_t *
 GameBoyRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
+  
+  // The main distinction we have is that we are either in SDCC V0 or V1.
   const GameBoyMachineFunctionInfo *AFI = MF->getInfo<GameBoyMachineFunctionInfo>();
+  unsigned CallingConv = MF->getFunction().getCallingConv();
+  switch(CallingConv) {
+    case CallingConv::SDCC_V0:
+      return CSR_SDCC_V0_SaveList;
+    case CallingConv::SDCC_V1:
+      return CSR_SDCC_V1_SaveList;
+  }
+
   const GameBoySubtarget &STI = MF->getSubtarget<GameBoySubtarget>();
   if (STI.hasTinyEncoding())
     return AFI->isInterruptOrSignalHandler() ? CSR_InterruptsTiny_SaveList

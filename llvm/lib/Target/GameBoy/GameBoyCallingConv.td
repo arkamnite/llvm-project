@@ -50,6 +50,18 @@ def ArgCC_GameBoy_Vararg : CallingConv<[
   CCAssignToStack<2, 1>
 ]>;
 
+// This should be implemented in code.
+// // Calling convention for variable argument functions.
+// def ArgCC_GameBoy_Variable : CallingConv<[
+//   CCIfCC<"CallingConv::SDCC_V0", CCDelegateTo<ArgCC_GameBoy_Variable_SDCC_V0>>,
+//   CCIfCC<"CallingConv::SDCC_V1", CCDelegateTo<ArgCC_GameBoy_Variable_SDCC_V1>>
+// ]>;
+
+// // SDCC Version 0 Variable Argument calling convention
+// def ArgCC_GameBoy_Variable_SDCC_V1 : CallingConv<[
+
+// ]>
+
 //===----------------------------------------------------------------------===//
 // Callee-saved register lists.
 //===----------------------------------------------------------------------===//

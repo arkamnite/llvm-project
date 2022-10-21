@@ -1999,14 +1999,7 @@ void CodeGenModule::SetLLVMFunctionAttributesForDefinition(const Decl *D,
     if (D->hasAttr<MinSizeAttr>())
       B.addAttribute(llvm::Attribute::MinSize);
   }
- 
-  // // Add SDCC Calling Conventions
-  // if (D->hasAttr<SDCC_V0_CCAttr>())
-  //   B.addAttribute(llvm::Attribute::SDCC_V0_CC);
-
-  // if (D->hasAttr<SDCC_V1_CCAttr>())
-  //   B.addAttribute(llvm::Attribute::SDCC_V1_CC);
-
+  
   F->addFnAttrs(B);
 
   unsigned alignment = D->getMaxAlignment() / Context.getCharWidth();

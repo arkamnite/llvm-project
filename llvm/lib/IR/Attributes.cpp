@@ -473,13 +473,6 @@ std::string Attribute::getAsString(bool InAttrGrp) const {
         .str();
   }
 
-  // Add SDCC calling convention attributes
-  // if (hasAttribute(Attribute::SDCC_V0_CC))
-  //   return "sdcc_v0";
-
-  // if (hasAttribute(Attribute::SDCC_V1_CC))
-  //   return "sdcc_v1";
-
   // Convert target-dependent attributes to strings of the form:
   //
   //   "kind"

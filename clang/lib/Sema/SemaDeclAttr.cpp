@@ -9058,14 +9058,6 @@ static void ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D,
     handleSimpleAttribute<UsingIfExistsAttr>(S, D, AL);
     break;
 
-  // case ParsedAttr::AT_SDCC_V0_CC:
-  //   handleNewAttributeAttr(S,D,AL);
-  //   break;
-  
-  // case ParsedAttr::AT_SDCC_V1_CC:
-  //   handleNewAttributeAttr(S,D,AL);
-  //   break;
-
   }
 }
 

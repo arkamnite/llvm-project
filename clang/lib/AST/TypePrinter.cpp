@@ -995,6 +995,12 @@ void TypePrinter::printFunctionAfter(const FunctionType::ExtInfo &Info,
     case CC_PreserveAll:
       OS << " __attribute__((preserve_all))";
       break;
+    case CC_SDCC_V0:
+      OS << "__attribute__((sdcc_v0))";
+      break;
+    case CC_SDCC_V1:
+      OS << "__attribute__((sdcc_v1))";
+      break;
     }
   }
 
@@ -1743,6 +1749,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
   case attr::VectorCall: OS << "vectorcall"; break;
   case attr::Pascal: OS << "pascal"; break;
   case attr::MSABI: OS << "ms_abi"; break;
+  case attr::SDCC_V0_CC: OS << "sdcc_v0"; break;
+  case attr::SDCC_V1_CC: OS << "sdcc_v1"; break;
   case attr::SysVABI: OS << "sysv_abi"; break;
   case attr::RegCall: OS << "regcall"; break;
   case attr::Pcs: {

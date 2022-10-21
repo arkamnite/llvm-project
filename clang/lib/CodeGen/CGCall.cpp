@@ -251,6 +251,12 @@ static CallingConv getCallingConventionForDecl(const ObjCMethodDecl *D,
   if (D->hasAttr<PreserveAllAttr>())
     return CC_PreserveAll;
 
+  if (D->hasAttr<SDCC_V0_CCAttr>())
+    return CC_SDCC_V0;
+
+  if (D->hasAttr<SDCC_V1_CCAttr>())
+    return CC_SDCC_V1;
+
   return CC_C;
 }
 

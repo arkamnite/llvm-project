@@ -3194,6 +3194,8 @@ StringRef FunctionType::getNameForCallConv(CallingConv CC) {
   case CC_SwiftAsync: return "swiftasynccall";
   case CC_PreserveMost: return "preserve_most";
   case CC_PreserveAll: return "preserve_all";
+  case CC_SDCC_V0: return "sdcc_v0";
+  case CC_SDCC_V1: return "sdcc_v1";
   }
 
   llvm_unreachable("Invalid calling convention.");
@@ -3632,6 +3634,8 @@ bool AttributedType::isCallingConv() const {
   case attr::AMDGPUKernelCall:
   case attr::Pascal:
   case attr::MSABI:
+  case attr::SDCC_V0_CC:
+  case attr::SDCC_V1_CC:
   case attr::SysVABI:
   case attr::IntelOclBicc:
   case attr::PreserveMost:

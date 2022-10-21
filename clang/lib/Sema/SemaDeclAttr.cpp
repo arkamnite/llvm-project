@@ -4944,6 +4944,12 @@ static void handleCallConvAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
   case ParsedAttr::AT_MSABI:
     D->addAttr(::new (S.Context) MSABIAttr(S.Context, AL));
     return;
+  case ParsedAttr::AT_SDCC_V0_CC:
+    D->addAttr(::new (S.Context) SDCC_V0_CCAttr(S.Context, AL));
+    return;
+  case ParsedAttr::AT_SDCC_V1_CC:
+    D->addAttr(::new (S.Context) SDCC_V1_CCAttr(S.Context, AL));
+    return; 
   case ParsedAttr::AT_SysVABI:
     D->addAttr(::new (S.Context) SysVABIAttr(S.Context, AL));
     return;
@@ -5145,6 +5151,12 @@ bool Sema::CheckCallingConvAttr(const ParsedAttr &Attrs, CallingConv &CC,
     CC = Context.getTargetInfo().getTriple().isOSWindows() ? CC_C :
                                                              CC_Win64;
     break;
+  case ParsedAttr::AT_SDCC_V0_CC:
+    CC = CC_SDCC_V0;
+    break;
+  case ParsedAttr::AT_SDCC_V1_CC:
+    CC = CC_SDCC_V1;
+    break; 
   case ParsedAttr::AT_SysVABI:
     CC = Context.getTargetInfo().getTriple().isOSWindows() ? CC_X86_64SysV :
                                                              CC_C;
@@ -8838,6 +8850,8 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
   case ParsedAttr::AT_SwiftAsyncCall:
   case ParsedAttr::AT_VectorCall:
   case ParsedAttr::AT_MSABI:
+  case ParsedAttr::AT_SDCC_V0_CC:
+  case ParsedAttr::AT_SDCC_V1_CC:
   case ParsedAttr::AT_SysVABI:
   case ParsedAttr::AT_Pcs:
   case ParsedAttr::AT_IntelOclBicc:
@@ -9093,6 +9107,15 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
   case ParsedAttr::AT_UsingIfExists:
     handleSimpleAttribute<UsingIfExistsAttr>(S, D, AL);
     break;
+
+  // case ParsedAttr::AT_SDCC_V0_CC:
+  //   handleNewAttributeAttr(S,D,AL);
+  //   break;
+  
+  // case ParsedAttr::AT_SDCC_V1_CC:
+  //   handleNewAttributeAttr(S,D,AL);
+  //   break;
+
   }
 }
 

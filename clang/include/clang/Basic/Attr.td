@@ -1619,6 +1619,16 @@ def MSABI : DeclOrTypeAttr {
   let Documentation = [MSABIDocs];
 }
 
+def SDCC_V0_CC : DeclOrTypeAttr {
+  let Spellings = [GCC<"sdcc_v0">];
+  let Documentation = [Undocumented];
+}
+
+def SDCC_V1_CC : DeclOrTypeAttr {
+  let Spellings = [GCC<"sdcc_v1">];
+  let Documentation = [Undocumented];
+}
+
 def MSP430Interrupt : InheritableAttr, TargetSpecificAttr<TargetMSP430> {
   // NOTE: If you add any additional spellings, ARMInterrupt's, M68kInterrupt's,
   // MipsInterrupt's and AnyX86Interrupt's spellings must match.

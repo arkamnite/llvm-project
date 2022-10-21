@@ -2047,6 +2047,13 @@ void CodeGenModule::SetLLVMFunctionAttributesForDefinition(const Decl *D,
     if (D->hasAttr<MinSizeAttr>())
       B.addAttribute(llvm::Attribute::MinSize);
   }
+ 
+  // // Add SDCC Calling Conventions
+  // if (D->hasAttr<SDCC_V0_CCAttr>())
+  //   B.addAttribute(llvm::Attribute::SDCC_V0_CC);
+
+  // if (D->hasAttr<SDCC_V1_CCAttr>())
+  //   B.addAttribute(llvm::Attribute::SDCC_V1_CC);
 
   F->addFnAttrs(B);
 
@@ -2066,6 +2073,7 @@ void CodeGenModule::SetLLVMFunctionAttributesForDefinition(const Decl *D,
     if (F->getAlignment() < 2 && isa<CXXMethodDecl>(D))
       F->setAlignment(llvm::Align(2));
   }
+
 
   // In the cross-dso CFI mode with canonical jump tables, we want !type
   // attributes on definitions only.

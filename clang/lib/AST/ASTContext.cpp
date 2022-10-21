@@ -11554,6 +11554,11 @@ bool ASTContext::DeclMustBeEmitted(const Decl *D) {
     if (VD->getDescribedVarTemplate() ||
         isa<VarTemplatePartialSpecializationDecl>(VD))
       return false;
+    // Added SDCC Calling Conventions
+    // if (FD->hasAttr<SDCC_V0_CCAttr>())
+    //   return true;
+    // if (FD->hasAttr<SDCC_V1_CCAttr>())
+    //   return true;
   } else if (const auto *FD = dyn_cast<FunctionDecl>(D)) {
     // We never need to emit an uninstantiated function template.
     if (FD->getTemplatedKind() == FunctionDecl::TK_FunctionTemplate)

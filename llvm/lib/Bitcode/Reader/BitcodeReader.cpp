@@ -1725,6 +1725,10 @@ static uint64_t getRawAttributeMask(Attribute::AttrKind Val) {
     return 1ULL << 62;
   case Attribute::NoFree:
     return 1ULL << 63;
+  // case Attribute::SDCC_V0_CC:
+  //   return 1ULL << 64;
+  // case Attribute::SDCC_V1_CC:
+  //   return 1ULL << 65;
   default:
     // Other attributes are not supported in the raw format,
     // as we ran out of space.

@@ -44,8 +44,11 @@ GameBoyRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
       return CSR_SDCC_V0_SaveList;
     case CallingConv::SDCC_V1:
       return CSR_SDCC_V1_SaveList;
+    default:
+      return CSR_SDCC_V1_SaveList;
   }
 
+  /* 
   const GameBoySubtarget &STI = MF->getSubtarget<GameBoySubtarget>();
   if (STI.hasTinyEncoding())
     return AFI->isInterruptOrSignalHandler() ? CSR_InterruptsTiny_SaveList
@@ -53,6 +56,7 @@ GameBoyRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
   else
     return AFI->isInterruptOrSignalHandler() ? CSR_Interrupts_SaveList
                                              : CSR_Normal_SaveList;
+  */
 }
 
 const uint32_t *

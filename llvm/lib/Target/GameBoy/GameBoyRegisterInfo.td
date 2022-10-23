@@ -51,6 +51,13 @@ let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
   def RHRL : GameBoyReg<5, "HL", [RH, RL]>, DwarfRegNum<[5]>;
 }
 
+//===---------------------------------------------------------------------===//
+// 32-bit general-purpose registers. These do not actually exist!
+//===---------------------------------------------------------------------===//
+// let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
+//   def RDRERBRC : GameBoyReg<3, "DEBC", [RD, RE, RB, RC]>, DwarfRegNum<[3]>;
+// }
+
 def SP : GameBoyReg<8, "SP">, DwarfRegNum<[8]>;
 
 //===----------------------------------------------------------------------===//

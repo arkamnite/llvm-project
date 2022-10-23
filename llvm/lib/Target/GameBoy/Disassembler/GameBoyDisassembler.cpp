@@ -64,6 +64,30 @@ static const uint16_t GPRDecoderTable[] = {
     GameBoy::R28, GameBoy::R29, GameBoy::R30, GameBoy::R31,
 };
 
+// Method added for GB 8-bit registers.
+static DecodeStatus DecodeGPRRegisterClass(MCInst &Inst, unsigned RegNo,
+                                            uint64_t Address,
+                                            const MCDisassembler *Decoder) {
+  if (RegNo > 7)
+    return MCDisassembler::Fail;
+
+  unsigned Register = GPRDecoderTable[RegNo];
+  Inst.addOperand(MCOperand::createReg(Register));
+  return MCDisassembler::Success;
+}
+
+// Method added for GB 8-bit registers.
+static DecodeStatus DecodeGPRPairRegisterClass(MCInst &Inst, unsigned RegNo,
+                                            uint64_t Address,
+                                            const MCDisassembler *Decoder) {
+  if (RegNo > 5)
+    return MCDisassembler::Fail;
+
+  unsigned Register = GPRDecoderTable[RegNo + 3];
+  Inst.addOperand(MCOperand::createReg(Register));
+  return MCDisassembler::Success;
+}
+
 static DecodeStatus DecodeGPR8RegisterClass(MCInst &Inst, unsigned RegNo,
                                             uint64_t Address,
                                             const MCDisassembler *Decoder) {

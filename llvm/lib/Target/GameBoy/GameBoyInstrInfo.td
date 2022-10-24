@@ -13,7 +13,7 @@
 include "GameBoyInstrFormats.td"
 
 //===----------------------------------------------------------------------===//
-// GameBoy Type Profiles
+// AVR Type Profiles
 //===----------------------------------------------------------------------===//
 
 def SDT_GameBoyCallSeqStart : SDCallSeqStart<[SDTCisVT<0, i16>, SDTCisVT<1, i16>]>;
@@ -29,7 +29,7 @@ def SDT_GameBoySelectCC
                     [SDTCisSameAs<0, 1>, SDTCisSameAs<1, 2>, SDTCisVT<3, i8>]>;
 
 //===----------------------------------------------------------------------===//
-// GameBoy Specific Node Definitions
+// AVR Specific Node Definitions
 //===----------------------------------------------------------------------===//
 
 def GameBoyretflag : SDNode<"GameBoyISD::RET_FLAG", SDTNone,
@@ -81,7 +81,7 @@ def GameBoyasrLoop : SDNode<"GameBoyISD::ASRLOOP", SDTIntShiftOp>;
 def GameBoySwap : SDNode<"GameBoyISD::SWAP", SDTIntUnaryOp>;
 
 //===----------------------------------------------------------------------===//
-// GameBoy Operands, Complex Patterns and Transformations Definitions.
+// AVR Operands, Complex Patterns and Transformations Definitions.
 //===----------------------------------------------------------------------===//
 
 def imm8_neg_XFORM : SDNodeXForm<imm, [{
@@ -263,7 +263,7 @@ def LDDSTDPtrReg : Operand<i16> {
 }
 
 //===----------------------------------------------------------------------===//
-// GameBoy predicates for subtarget features
+// AVR predicates for subtarget features
 //===----------------------------------------------------------------------===//
 
 def HasSRAM : Predicate<"Subtarget->hasSRAM()">,
@@ -334,6 +334,24 @@ def GameBoy_COND_PL : PatLeaf<(i8 7)>;
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 // GameBoy Instruction list
+//
+// Instructions are being re-written here so that the AVR instructions can
+// eventually be phased out entirely by deleting them from the file.
+//===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+
+let hasSideEffects = 0 in {
+  def LDRdRr : GBFRdRr<0b01,
+                        (outs GPR
+                        : $rd),
+                        (ins GPR
+                        : $rr),
+                        "mov\t$rd, $rr", []>;
+}
+
+//===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+// AVR Instruction list
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 

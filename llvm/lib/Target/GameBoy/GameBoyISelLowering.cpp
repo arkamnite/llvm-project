@@ -1548,6 +1548,10 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   // Analyze return values.
   if (CallConv == CallingConv::AVR_BUILTIN) {
     CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
+  } else if (CallConv == CallingConv::SDCC_V1) {
+    CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_SDCC_V1);
+  } else if (CallConv == CallingConv::SDCC_V0) {
+    CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_SDCC_V0);
   } else {
     analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());
   }

@@ -70,6 +70,8 @@ unsigned CodeGenTypes::ClangCallConvToLLVMCallConv(CallingConv CC) {
   case CC_PreserveAll: return llvm::CallingConv::PreserveAll;
   case CC_Swift: return llvm::CallingConv::Swift;
   case CC_SwiftAsync: return llvm::CallingConv::SwiftTail;
+  case CC_SDCC_V0: return llvm::CallingConv::SDCC_V0;
+  case CC_SDCC_V1: return llvm::CallingConv::SDCC_V1;
   }
 }
 

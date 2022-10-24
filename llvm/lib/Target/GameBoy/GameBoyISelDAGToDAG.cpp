@@ -35,6 +35,7 @@ public:
 
   bool runOnMachineFunction(MachineFunction &MF) override;
 
+  // Will calculate the base and offset of the address for load and store operations.
   bool SelectAddr(SDNode *Op, SDValue N, SDValue &Base, SDValue &Disp);
 
   bool selectIndexedLoad(SDNode *N);

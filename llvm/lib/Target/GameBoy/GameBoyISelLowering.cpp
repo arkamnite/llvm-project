@@ -37,6 +37,8 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
                                      const GameBoySubtarget &STI)
     : TargetLowering(TM), Subtarget(STI) {
   // Set up the register classes.
+  addRegisterClass(MVT::i8, &GameBoy::GPRRegClass);
+  addRegisterClass(MVT::i16, &GameBoy::GPRPairRegClass);
   addRegisterClass(MVT::i8, &GameBoy::GPR8RegClass);
   addRegisterClass(MVT::i16, &GameBoy::DREGSRegClass);
 

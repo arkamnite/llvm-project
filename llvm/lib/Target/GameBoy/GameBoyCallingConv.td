@@ -50,6 +50,13 @@ def ArgCC_GameBoy_Vararg : CallingConv<[
   CCAssignToStack<2, 1>
 ]>;
 
+// Basic calling convention - arguments are passed in registers where possible
+def ArgCC_GameBoy_SDCC_V1: CallingConv<[
+  CCIfType<[i8], CCAssignToReg<[RA, RB, RC]>>,
+  CCIfType<[i16], CCAssignToReg<[RBRC]>>,
+  CCIfType<[i32], CCAssignToStack<4, 4>>
+]>;
+
 // This should be implemented in code.
 // // Calling convention for variable argument functions.
 // def ArgCC_GameBoy_Variable : CallingConv<[
@@ -72,4 +79,5 @@ def CSR_Interrupts : CalleeSavedRegs<(add(sequence "R%u", 31, 2))>;
 def CSR_InterruptsTiny : CalleeSavedRegs<(add(sequence "R%u", 31, 18))>;
 
 def CSR_SDCC_V0 : CalleeSavedRegs<(add RBRC, RHRL)>;
+// In SDCC Version 0, RA, RB, RC are used for parameters and return values.
 def CSR_SDCC_V1 : CalleeSavedRegs<(add RHRL, RDRE)>;

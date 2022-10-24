@@ -50,6 +50,21 @@ public:
     const char *getClobbers() const override {
         return "";
     }
+
+    CallingConvCheckResult checkCallingConvention(CallingConv CC) const override {
+        switch(CC) {
+        case CC_C:
+        case CC_SDCC_V0:
+        case CC_SDCC_V1:
+            return CCCR_OK;
+        default:
+            return CCCR_Warning;
+        }
+    }
+
+    CallingConv getDefaultCallingConv() const override {
+        return CC_SDCC_V0;
+    }
 };
 
 } // namespace targets

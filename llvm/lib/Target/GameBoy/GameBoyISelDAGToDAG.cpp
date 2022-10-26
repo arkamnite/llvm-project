@@ -550,6 +550,7 @@ void GameBoyDAGToDAGISel::Select(SDNode *N) {
   SelectCode(N);
 }
 
+//TODO: Add new unsupported instructions here.
 bool GameBoyDAGToDAGISel::trySelect(SDNode *N) {
   unsigned Opcode = N->getOpcode();
   SDLoc DL(N);

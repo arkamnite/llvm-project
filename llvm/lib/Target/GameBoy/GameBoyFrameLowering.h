@@ -38,6 +38,14 @@ public:
   MachineBasicBlock::iterator
   eliminateCallFramePseudoInstr(MachineFunction &MF, MachineBasicBlock &MBB,
                                 MachineBasicBlock::iterator MI) const override;
+
+  /// @brief Computes the stack size for the incoming function. This is useful to
+  /// determine whether any prologue code needs to be inserted at all; this helps
+  /// increase performance due to mitigating stack accesses.
+  /// @param MF MachineFunction for this stack frame.
+  /// @return The size of the stack.
+  uint64_t computeStackSize(MachineFunction &MF) const;
+
 };
 
 } // end namespace llvm

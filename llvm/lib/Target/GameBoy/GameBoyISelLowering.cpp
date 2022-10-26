@@ -59,6 +59,7 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i8, Expand);
   setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i16, Expand);
 
+  // TODO: What happens when loading types?
   for (MVT VT : MVT::integer_valuetypes()) {
     for (auto N : {ISD::EXTLOAD, ISD::SEXTLOAD, ISD::ZEXTLOAD}) {
       setLoadExtAction(N, VT, MVT::i1, Promote);
@@ -68,6 +69,7 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
 
   setTruncStoreAction(MVT::i16, MVT::i8, Expand);
 
+  // TODO: Does Game Boy support these instructions in the form of SUBC and ADDC? 
   for (MVT VT : MVT::integer_valuetypes()) {
     setOperationAction(ISD::ADDC, VT, Legal);
     setOperationAction(ISD::SUBC, VT, Legal);
@@ -271,6 +273,7 @@ EVT GameBoyTargetLowering::getSetCCResultType(const DataLayout &DL, LLVMContext 
   return MVT::i8;
 }
 
+// TODO: Check that shifts are being done in a Game Boy friendly way.
 SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const {
   unsigned Opc8;
   const SDNode *N = Op.getNode();
@@ -311,6 +314,7 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
   }
 
   uint64_t ShiftAmount = cast<ConstantSDNode>(N->getOperand(1))->getZExtValue();
+  // 
   SDValue Victim = N->getOperand(0);
 
   switch (Op.getOpcode()) {
@@ -337,6 +341,7 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
 
   // Optimize int8/int16 shifts.
   if (VT.getSizeInBits() == 8) {
+
     if (Op.getOpcode() == ISD::SHL && 4 <= ShiftAmount && ShiftAmount < 7) {
       // Optimize LSL when 4 <= ShiftAmount <= 6.
       Victim = DAG.getNode(GameBoyISD::SWAP, dl, VT, Victim);

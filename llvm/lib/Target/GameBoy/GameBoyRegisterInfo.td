@@ -69,7 +69,7 @@ def GPR : RegisterClass<"GameBoy", [i8], 8, (add RA, RB, RC, RD, RE, RH, RL)>;
 
 // The GameBoy features register pairs which can be addresses as an individual
 // 16-bit register, whilst also accessing its high and low halves.
-def GPRPair : RegisterClass<"GameBoy", [v2i8], 16, (add RBRC, RDRE, RHRL)>;
+def GPRPair : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL)>;
 
 // 8-bit status register.
 def CCR : RegisterClass<"GameBoy", [i8], 8, (add RF)> {

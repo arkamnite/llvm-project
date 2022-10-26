@@ -49,6 +49,44 @@ bool GameBoyFrameLowering::hasReservedCallFrame(const MachineFunction &MF) const
   return hasFP(MF) && !MFI.hasVarSizedObjects();
 }
 
+uint64_t GameBoyFrameLowering::computeStackSize(MachineFunction &MF) const {
+  // Frame info for this MF.
+  MachineFrameInfo *MFI = MF.getFrameInfo();
+  uint64_t stackSize = MFI->getStackSize();
+
+  // We appear to be aligning the stack
+  unsigned stackAlignment = getStackAlignment();
+  if (stackAlignment > 0) {
+    // Do stack alignment stuff here.
+  }
+
+  return stackSize;
+}
+
+// This implements the custom calling convention I've come up with. It probably isn't very good.
+// TODO: Implement interrupt routines.
+// MF contains a list of MBBs, whilst an MBB is a list of MIs. 
+void GameBoyFrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &MBB) const {
+  // Collect our info for this specific machine function.
+  GameBoyMachineFunctionInfo *FunctionInfo = MF.getInfo<GameBoyMachineFunctionInfo>();
+  // Create an iterator for our machine instructions.
+  MachineBasicBlock::iterator MBBI = MBB.begin();
+  // Get DebugLoc
+  DebugLoc debugLoc = MBBI != MBB.end() ? MBBI->getDebugLoc() : DebugLoc();
+
+  // Accommodate for the stack.
+  auto stackSize = computeStackSize(MF);
+  if (!stackSize) {
+    // We do not need to push or pop from the stack, great work.
+    return;
+  }
+
+}
+
+// emit epilogue
+// pop all values off the stack before return is issued, so that PC can be found and restored.
+
+/*
 void GameBoyFrameLowering::emitPrologue(MachineFunction &MF,
                                     MachineBasicBlock &MBB) const {
   MachineBasicBlock::iterator MBBI = MBB.begin();
@@ -129,6 +167,7 @@ void GameBoyFrameLowering::emitPrologue(MachineFunction &MF,
       .addReg(GameBoy::R29R28)
       .setMIFlag(MachineInstr::FrameSetup);
 }
+*/
 
 static void restoreStatusRegister(MachineFunction &MF, MachineBasicBlock &MBB) {
   const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
@@ -411,6 +450,7 @@ void GameBoyFrameLowering::determineCalleeSaves(MachineFunction &MF,
 ///
 /// Scans the function for allocas and used arguments
 /// that are passed through the stack.
+/// TODO: Update with new stack frame layout.
 struct GameBoyFrameAnalyzer : public MachineFunctionPass {
   static char ID;
   GameBoyFrameAnalyzer() : MachineFunctionPass(ID) {}

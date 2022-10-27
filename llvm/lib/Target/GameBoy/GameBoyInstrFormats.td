@@ -69,7 +69,7 @@ class Pseudo<dag outs, dag ins, string asmstr, list<dag> pattern>
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
-// Format 0. No operands are used here
+// Format 0. No further operands are used here
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
@@ -93,6 +93,20 @@ class GBFRdRr<bits<2> op, dag outs, dag ins, string asmstr, list<dag> pattern>
   let Inst{7 - 6} = op;
   let Inst{5 - 3} = rd;
   let Inst{2 - 0} = rr;
+}
+
+//===----------------------------------------------------------------------===//
+// PUSH/POP instruction: <| 11 - qq0 - xxx |>
+//===----------------------------------------------------------------------===//
+class GBFPushPop<bits<3> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst8<outs, ins, asmstr, pattern>
+{
+  bits<2> rr;
+
+  let Inst{7 - 6} = 0b11;
+  let Inst{5 - 4} = rr;
+  let Inst{3} = 0b0;
+  let Inst{2 - 0} = op;
 }
 
 //===----------------------------------------------------------------------===//

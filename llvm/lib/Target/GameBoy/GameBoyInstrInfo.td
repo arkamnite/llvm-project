@@ -349,6 +349,24 @@ let hasSideEffects = 0 in {
                         "mov\t$rd, $rr", []>;
 }
 
+// PUSH / POP instructions go here.
+// Stack pop operations.
+  let mayLoad = 1 in {
+    def POPRd : GBFPushPop<0b001,
+                    (outs GPRPair
+                     : $reg),
+                    (ins),
+                    "pop\t$reg",
+                    []>;
+
+    def PUSHRd : GBFPushPop<0b101,
+                    (outs),
+                    (ins GPRPair
+                     : $reg),
+                    "push\t$reg",
+                    []>;
+  }
+
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 // AVR Instruction list
@@ -1796,11 +1814,11 @@ def OUTWARr : Pseudo<(outs),
 let Defs = [SP], Uses = [SP], hasSideEffects = 0 in {
   // Stack push operations.
   let mayStore = 1 in {
-    def PUSHRr : FRd<0b1001, 0b0011111, (outs),
-                     (ins GPR8
-                      : $reg),
-                     "push\t$reg", []>,
-                 Requires<[HasSRAM]>;
+  //   def PUSHRr : FRd<0b1001, 0b0011111, (outs),
+  //                    (ins GPR8
+  //                     : $reg),
+  //                    "push\t$reg", []>,
+  //                Requires<[HasSRAM]>;
 
     def PUSHWRr : Pseudo<(outs),
                          (ins DREGS
@@ -1811,11 +1829,11 @@ let Defs = [SP], Uses = [SP], hasSideEffects = 0 in {
 
   // Stack pop operations.
   let mayLoad = 1 in {
-    def POPRd : FRd<0b1001, 0b0001111,
-                    (outs GPR8
-                     : $reg),
-                    (ins), "pop\t$reg", []>,
-                Requires<[HasSRAM]>;
+  //   def POPRd : FRd<0b1001, 0b0001111,
+  //                   (outs GPR8
+  //                    : $reg),
+  //                   (ins), "pop\t$reg", []>,
+  //               Requires<[HasSRAM]>;
 
     def POPWRd : Pseudo<(outs DREGS
                          : $reg),

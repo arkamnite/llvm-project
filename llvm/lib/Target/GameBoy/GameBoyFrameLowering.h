@@ -44,7 +44,7 @@ public:
   /// increase performance due to mitigating stack accesses.
   /// @param MF MachineFunction for this stack frame.
   /// @return The size of the stack.
-  uint64_t computeStackSize(MachineFunction &MF) const;
+  uint64_t computeStackSize(const MachineFunction &MF) const;
 
 };
 

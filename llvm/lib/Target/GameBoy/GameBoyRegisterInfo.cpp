@@ -33,6 +33,7 @@ namespace llvm {
 
 GameBoyRegisterInfo::GameBoyRegisterInfo() : GameBoyGenRegisterInfo(0) {}
 
+// TODO: Add interrupt save list.
 const uint16_t *
 GameBoyRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
   
@@ -45,7 +46,7 @@ GameBoyRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
     case CallingConv::SDCC_V1:
       return CSR_SDCC_V1_SaveList;
     default:
-      return CSR_SDCC_V1_SaveList;
+      return CSR_SaveList;
   }
 
   /* 

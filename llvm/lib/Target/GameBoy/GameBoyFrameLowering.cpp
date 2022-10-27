@@ -49,10 +49,10 @@ bool GameBoyFrameLowering::hasReservedCallFrame(const MachineFunction &MF) const
   return hasFP(MF) && !MFI.hasVarSizedObjects();
 }
 
-uint64_t GameBoyFrameLowering::computeStackSize(MachineFunction &MF) const {
+uint64_t GameBoyFrameLowering::computeStackSize(const MachineFunction &MF) const {
   // Frame info for this MF.
-  MachineFrameInfo *MFI = MF.getFrameInfo();
-  uint64_t stackSize = MFI->getStackSize();
+  const MachineFrameInfo &MFI = MF.getFrameInfo();
+  uint64_t stackSize = MFI.getStackSize();
 
   // We appear to be aligning the stack
   unsigned stackAlignment = getStackAlignment();
@@ -76,10 +76,12 @@ void GameBoyFrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &
 
   // Accommodate for the stack.
   auto stackSize = computeStackSize(MF);
-  if (!stackSize) {
-    // We do not need to push or pop from the stack, great work.
-    return;
-  }
+  // if (!stackSize) {
+  //   // We do not need to push or pop from the stack, great work.
+  //   return;
+  // }
+
+  // Emit prologue code to save 
 
 }
 

@@ -86,14 +86,21 @@ void GameBoyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   }
 }
 
+/// @brief Get the name of the register as it should appear in assembly.
+/// This implementation differs from the original AVR definition as it prints
+/// the full register pair name, rather than just the lower register as GCC does.
+/// @param RegNum The number of the register we are looking to print.
+/// @param MRI MCRegisterInfo reference.
+/// @return A string representing the printable name.
 const char *GameBoyInstPrinter::getPrettyRegisterName(unsigned RegNum,
                                                   MCRegisterInfo const &MRI) {
   // GCC prints register pairs by just printing the lower register
   // If the register contains a subregister, print it instead
-  if (MRI.getNumSubRegIndices() > 0) {
-    unsigned RegLoNum = MRI.getSubReg(RegNum, GameBoy::sub_lo);
-    RegNum = (RegLoNum != GameBoy::NoRegister) ? RegLoNum : RegNum;
-  }
+  
+  // if (MRI.getNumSubRegIndices() > 0) {
+  //   unsigned RegLoNum = MRI.getSubReg(RegNum, GameBoy::sub_lo);
+  //   RegNum = (RegLoNum != GameBoy::NoRegister) ? RegLoNum : RegNum;
+  // }
 
   return getRegisterName(RegNum);
 }

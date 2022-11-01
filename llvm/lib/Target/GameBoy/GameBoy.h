@@ -58,9 +58,9 @@ enum MemoryBankController {
   MBC5,
 };
 
-MemoryBankController MBC = MBC5
-unsigned int ROMBank;
-unsigned int RAMBank;
+// MemoryBankController MBC;
+// unsigned int ROMBank;
+// unsigned int RAMBank;
 
 /// Checks if a given type is a pointer to program memory.
 template <typename T> bool isProgramMemoryAddress(T *V) {
@@ -78,15 +78,15 @@ template <typename T> bool isROMMemoryAddress(T *V) {
   // Attempt a cast to PointerType
   auto *PT = cast<PointerType>(V->getType());
   assert(PT != nullptr && "unexpected MemSDNode");
-  switch(MBC) {
-    case MBC1:
-    case MBC2:
-    case MBC3:
-    case MBC4:
-    case MBC5:
-    default:
-      return PT->getAddressSpace() >= 0 && PT->getAddressSpace() <= 511;
-  }
+  return PT->getAddressSpace() >= 0 && PT->getAddressSpace() <= 511;
+  // switch(MBC) {
+  //   case MBC1:
+  //   case MBC2:
+  //   case MBC3:
+  //   case MBC4:
+  //   case MBC5:
+  //   default:
+  // }
 }
 
 template <typename T> AddressSpace getAddressSpace(T *V) {
@@ -108,12 +108,9 @@ template <typename T> unsigned int getBankedROMSpace(T *V) {
   unsigned AS = PT->getAddressSpace();
   
   // Check ranges for individual MBCs
-  switch(MBC) {
-    default:
-      if (AS < 511)
-        return static_cast<unsigned int>(AS);
-      return 511;
-  }
+  if (AS < 511)
+    return static_cast<unsigned int>(AS);
+  return 511;
 }
 
 inline bool isProgramMemoryAccess(MemSDNode const *N) {
@@ -149,16 +146,12 @@ inline int getProgramMemoryBank(MemSDNode const *N) {
 inline int getMemoryROMBank(MemSDNode const *N) {
   // Get the value of the memory operand.
   auto *V = N->getMemOperand()->getValue();
-  if (V == nullptr || !isROMMemoryAccess(V))
+  if (V == nullptr || !isROMMemoryAddress(V))
     return -1;
-  unsigned int AS = 
-  switch(MBC) {
-    case MBC5:
-    default:
-      // Check that this is within the range 1~512
-      assert(0 <= V && V <= 511);
-      return static_cast<int>(V);
-  }
+  unsigned int AS = getBankedROMSpace(V);
+  // Check that this is within the range 1~512
+  assert(0 <= AS && AS <= 511);
+  return static_cast<int>(AS);
 }
 
 } // end of namespace GameBoy

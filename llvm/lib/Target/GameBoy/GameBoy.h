@@ -49,6 +49,19 @@ enum AddressSpace {
   NumAddrSpaces,
 };
 
+/// @brief This is defined at compile time and determines the memory layouts.
+enum MemoryBankController {
+  MBC1,
+  MBC2,
+  MBC3,
+  MBC4,
+  MBC5,
+};
+
+MemoryBankController MBC = MBC5
+unsigned int ROMBank;
+unsigned int RAMBank;
+
 /// Checks if a given type is a pointer to program memory.
 template <typename T> bool isProgramMemoryAddress(T *V) {
   auto *PT = cast<PointerType>(V->getType());
@@ -61,6 +74,21 @@ template <typename T> bool isProgramMemoryAddress(T *V) {
          PT->getAddressSpace() == ProgramMemory5;
 }
 
+template <typename T> bool isROMMemoryAddress(T *V) {
+  // Attempt a cast to PointerType
+  auto *PT = cast<PointerType>(V->getType());
+  assert(PT != nullptr && "unexpected MemSDNode");
+  switch(MBC) {
+    case MBC1:
+    case MBC2:
+    case MBC3:
+    case MBC4:
+    case MBC5:
+    default:
+      return PT->getAddressSpace() >= 0 && PT->getAddressSpace() <= 511;
+  }
+}
+
 template <typename T> AddressSpace getAddressSpace(T *V) {
   auto *PT = cast<PointerType>(V->getType());
   assert(PT != nullptr && "unexpected MemSDNode");
@@ -70,9 +98,34 @@ template <typename T> AddressSpace getAddressSpace(T *V) {
   return NumAddrSpaces;
 }
 
+/// @brief Based
+/// @tparam T 
+/// @param V 
+/// @return 
+template <typename T> unsigned int getBankedROMSpace(T *V) {
+  auto *PT = cast<PointerType>(V->getType());
+  assert(PT != nullptr && "unexpected MemSDNode");
+  unsigned AS = PT->getAddressSpace();
+  
+  // Check ranges for individual MBCs
+  switch(MBC) {
+    default:
+      if (AS < 511)
+        return static_cast<unsigned int>(AS);
+      return 511;
+  }
+}
+
 inline bool isProgramMemoryAccess(MemSDNode const *N) {
   auto *V = N->getMemOperand()->getValue();
   if (V != nullptr && isProgramMemoryAddress(V))
+    return true;
+  return false;
+}
+
+inline bool isROMMemoryAccess(MemSDNode const *N) {
+  auto *V = N->getMemOperand()->getValue();
+  if (V != nullptr && isROMMemoryAddress(V))
     return true;
   return false;
 }
@@ -88,6 +141,24 @@ inline int getProgramMemoryBank(MemSDNode const *N) {
   AddressSpace AS = getAddressSpace(V);
   assert(ProgramMemory <= AS && AS <= ProgramMemory5);
   return static_cast<int>(AS - ProgramMemory);
+}
+
+/// @brief Get the index of the MBC ROM bank. Assumes MBC5.
+/// @param N The memory SD node provided.
+/// @return The correct index of the ROM bank available.
+inline int getMemoryROMBank(MemSDNode const *N) {
+  // Get the value of the memory operand.
+  auto *V = N->getMemOperand()->getValue();
+  if (V == nullptr || !isROMMemoryAccess(V))
+    return -1;
+  unsigned int AS = 
+  switch(MBC) {
+    case MBC5:
+    default:
+      // Check that this is within the range 1~512
+      assert(0 <= V && V <= 511);
+      return static_cast<int>(V);
+  }
 }
 
 } // end of namespace GameBoy

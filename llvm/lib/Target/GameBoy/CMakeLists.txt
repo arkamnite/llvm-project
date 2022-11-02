@@ -27,6 +27,7 @@ add_llvm_target(GameBoyCodeGen
   GameBoySubtarget.cpp
   GameBoyTargetMachine.cpp
   GameBoyTargetObjectFile.cpp
+  # GameBoyCallingConv.cpp
 
   DEPENDS
   intrinsics_gen

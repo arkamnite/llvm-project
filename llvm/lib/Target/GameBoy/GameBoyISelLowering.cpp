@@ -1065,10 +1065,60 @@ static const MCPhysReg RegList16Tiny[] = {GameBoy::R26R25, GameBoy::R25R24,
                                           GameBoy::R24R23, GameBoy::R23R22,
                                           GameBoy::R22R21, GameBoy::R21R20};
 
+static const MCPhysReg RegisterList8GameBoy[] = {
+    GameBoy::RD,  GameBoy::RE,  GameBoy::RH,  GameBoy::RL
+};
+
+static const MCPhysReg RegisterPairListGameBoy[] = {
+    GameBoy::RDRE,  GameBoy::RHRL
+};
+
 static_assert(array_lengthof(RegList8GameBoy) == array_lengthof(RegList16GameBoy),
               "8-bit and 16-bit register arrays must be of equal length");
 static_assert(array_lengthof(RegList8Tiny) == array_lengthof(RegList16Tiny),
               "8-bit and 16-bit register arrays must be of equal length");
+
+template <typename ArgT>
+static void analyzeGameBoyArguments(TargetLowering::CallLoweringInfo *CLI,
+                                    const Function *F, const DataLayout *TD,
+                                    const SmallVectorImpl<ArgT> &Args,
+                                    SmallVectorImpl<CCValAssign> &ArgLocs,
+                                    CCState &CCInfo) {
+  // Set up our register list.
+  ArrayRef<MCPhysReg> RegList8 = makeArrayRef(RegisterList8GameBoy);
+  ArrayRef<MCPhysReg> RegList16 = makeArrayRef(RegisterPairListGameBoy);
+
+  unsigned NumArgs = Args.size();
+  // The index of the last used register in the 8-bit register list.
+  // If we use a register pair, then that means that we need to
+  // increment this by 2. Realistically, this could be implemented by
+  // checking which registers have been filled up so far since there are
+  // so few.
+  // -1 indicates no registers have been used yet.
+  int lastUsedRegisterID = -1;
+  // We only use the stack if we have run out of registers, or if we are
+  // using a struct/union or any other aggregate type. If we have run out of
+  // registers, then this is toggled.
+  bool UseStack = false;
+
+  // Iterate through all our arguments.
+  for (unsigned i = 0; i != NumArgs;) {
+    // What is the type of this argument?
+    MVT VT = Args[i].VT;
+    // Counting the number of BYTES for each function argument, to check
+    // whether an aggregate type has been encountered.
+    // The current argument will be found between [i..j).
+    unsigned ArgumentIndex = Args[i].OrigArgIndex;
+    unsigned TotalBytes = VT.getStoreSize();
+    unsigned j = i + i; // At least 1 byte long?
+
+    for (; j != NumArgs; ++j) {
+      if (Args[j].OrigArgIndex != ArgumentIndex)
+        break;
+      TotalBytes += Args[j].VT.getStoreSize();
+    }
+  }
+}
 
 /// Analyze incoming and outgoing function arguments. We need custom C++ code
 /// to handle special constraints in the ABI.
@@ -1212,6 +1262,34 @@ static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
     // Registers sort in increasing order
     RegIdx -= VT.getStoreSize();
   }
+}
+
+SDValue GameBoyTargetLowering::LowerFormalArguments(
+    SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
+    const SmallVectorImpl<ISD::InputArg> &Ins, const SDLoc &dl,
+    SelectionDAG &DAG, SmallVectorImpl<SDValue> &InVals) const {
+  // The function we are lowering the arguments for.
+  MachineFunction &MF = DAG.getMachineFunction();
+  // The current stack frame info.
+  MachineFrameInfo &MFI = MF.getFrameInfo();
+  auto DL = DAG.getDataLayout();
+
+  // Assign locations to all of the incoming arguments
+  // TODO: Optimise size of this vector.
+  SmallVector<CCValAssign, 16> ArgLocs;
+  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs, *DAG.getContext());
+  
+  // Handle variadic functions - these arguments are
+  // all pushed onto the stack
+  if (isVarArg) {
+    CCInfo.AnalyzeFormalArguments(Ins, ArgCC_GameBoy_Vararg);
+  } else {
+    analyzeArguments(nullptr, &MF.getFunction(), &DL, Ins,
+                      ArgLocs, CCInfo, Subtarget.hasTinyEncoding());
+  }
+
+
+
 }
 
 SDValue GameBoyTargetLowering::LowerFormalArguments(

@@ -258,6 +258,9 @@ namespace CallingConv {
     /// SDCC Version 1 - Calling convention used by default for the SM83 SDCC target.
     SDCC_V1 = 103,
 
+    /// Default LLVM-DMG calling convention.
+    DMG = 104,
+
     /// The highest possible calling convention ID. Must be some 2^k - 1.
     MaxID = 1023
   };

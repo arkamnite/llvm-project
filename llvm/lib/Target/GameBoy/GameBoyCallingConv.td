@@ -17,8 +17,8 @@
 def RetCC_GameBoy_BUILTIN : CallingConv<[
   // CCIfType<[i8], CCAssignToReg<[R24, R25]>>,
   // CCIfType<[i16], CCAssignToReg<[R23R22, R25R24]>>
-  CCIfType<[i8], CCAssignToReg<[RA]>>,
-  CCIfType<[i16], CCAssignToReg<[RBRC]>>
+  CCIfType<[i8], CCAssignToReg<[RE]>>,
+  CCIfType<[i16], CCAssignToReg<[RDRE]>>
 ]>;
 
 // The SDCC Version 0 calling convention.
@@ -38,13 +38,16 @@ def RetCC_GameBoy_SDCC_V0 : CallingConv<[
 
 // The calling conventions are implemented in custom C++ code. The Game Boy calling
 // convention for passing arguments is as follows:
+// let Entry = 1 in {
 def ArgCC_GameBoy_Default : CallingConv<[
   // CCIfType<[i8], CCAssignToReg<[RA, RB, RC]>>,
   // CCIfType<[i16], CCAssignToReg<[RBRC]>>,
+  CCIfType<[i8], CCAssignToReg<[RD, RE, RH, RL]>>,
   CCIfType<[i8], CCAssignToStack<1, 1>>,
-  CCIfType<[i16], CCAssignToStack<2, 2>>,
-  // CCAssignToStack<2, 2>
+  CCIfType<[i16], CCAssignToReg<[RDRE, RHRL]>>,
+  CCAssignToStack<2, 2>
 ]>;
+// }
 
 // Calling convention for variadic functions.
 def ArgCC_GameBoy_Vararg : CallingConv<[

@@ -73,14 +73,19 @@ void GameBoyFrameLowering::emitPrologue(MachineFunction &MF, MachineBasicBlock &
   MachineBasicBlock::iterator MBBI = MBB.begin();
   // Get DebugLoc
   DebugLoc debugLoc = MBBI != MBB.end() ? MBBI->getDebugLoc() : DebugLoc();
+  // Get TargetInstructionInfo
+  const GameBoySubtarget &Subtarget = MF.getSubtarget<GameBoySubtarget>();
+  const GameBoyInstrInfo &TII = *Subtarget.getInstrInfo();
 
   // Accommodate for the stack.
   auto stackSize = computeStackSize(MF);
-  // if (!stackSize) {
-  //   // We do not need to push or pop from the stack, great work.
-  //   return;
-  // }
+  if (!stackSize) {
+    // There are no structs/unions or further arguments, therefore we do not need
+    // to push anything else onto the stack.
+    return;
+  }
 
+  // 
   // Emit prologue code to save 
 
 }
@@ -301,7 +306,7 @@ bool GameBoyFrameLowering::spillCalleeSavedRegisters(
     }
 
     // Do not kill the register when it is an input argument.
-    BuildMI(MBB, MI, DL, TII.get(GameBoy::PUSHRr))
+    BuildMI(MBB, MI, DL, TII.get(GameBoy::PUSHRd))
         .addReg(Reg, getKillRegState(IsNotLiveIn))
         .setMIFlag(MachineInstr::FrameSetup);
     ++CalleeFrameSize;

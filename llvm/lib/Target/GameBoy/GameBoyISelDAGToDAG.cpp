@@ -119,6 +119,11 @@ bool GameBoyDAGToDAGISel::SelectAddr(SDNode *Op, SDValue N, SDValue &Base,
   return false;
 }
 
+// TODO: Does Game Boy use indexed loads in this fashion?
+/// @brief Will select which type of indexed load this load instruction
+/// should be lowered to. This needs to accommodate for the various banks too.
+/// @param N 
+/// @return 
 bool GameBoyDAGToDAGISel::selectIndexedLoad(SDNode *N) {
   const LoadSDNode *LD = cast<LoadSDNode>(N);
   ISD::MemIndexedMode AM = LD->getAddressingMode();

@@ -64,6 +64,15 @@ static const uint16_t GPRDecoderTable[] = {
     GameBoy::R28, GameBoy::R29, GameBoy::R30, GameBoy::R31,
 };
 
+static const uint16_t GameBoyGPRDecoderTable[] = {
+    GameBoy::RA,  GameBoy::RF,  GameBoy::RB,  GameBoy::RC,  
+    GameBoy::RD,  GameBoy::RE,  GameBoy::RH,  GameBoy::RL,
+};
+
+static const uint16_t GameBoyGPRPairDecoderTable[] = {
+    GameBoy::RARF,  GameBoy::RBRC,  GameBoy::RDRE,  GameBoy::RHRL,
+};
+
 // Method added for GB 8-bit registers.
 static DecodeStatus DecodeGPRRegisterClass(MCInst &Inst, unsigned RegNo,
                                             uint64_t Address,
@@ -71,21 +80,33 @@ static DecodeStatus DecodeGPRRegisterClass(MCInst &Inst, unsigned RegNo,
   if (RegNo > 7)
     return MCDisassembler::Fail;
 
-  unsigned Register = GPRDecoderTable[RegNo];
+  unsigned Register = GameBoyGPRDecoderTable[RegNo];
   Inst.addOperand(MCOperand::createReg(Register));
   return MCDisassembler::Success;
 }
 
-// Method added for GB 8-bit registers.
+// Method added for GB 16-bit register pair class.
 static DecodeStatus DecodeGPRPairRegisterClass(MCInst &Inst, unsigned RegNo,
                                             uint64_t Address,
                                             const MCDisassembler *Decoder) {
-  if (RegNo > 5)
+  // Do not include the AF register here.
+  if (RegNo > 6 || RegNo < 2)
     return MCDisassembler::Fail;
 
-  unsigned Register = GPRDecoderTable[RegNo + 3];
+  unsigned Register = GameBoyGPRPairDecoderTable[RegNo];
   Inst.addOperand(MCOperand::createReg(Register));
   return MCDisassembler::Success;
+}
+
+static DecodeStatus DecodeStackRegisterClass(MCInst &Inst, unsigned RegNo,
+                                              uint64_t Address,
+                                              const MCDisassembler *Decoder) {
+ if (RegNo > 6)
+    return MCDisassembler::Fail;
+
+  unsigned Register = GameBoyGPRPairDecoderTable[RegNo];
+  Inst.addOperand(MCOperand::createReg(Register));
+  return MCDisassembler::Success; 
 }
 
 static DecodeStatus DecodeGPR8RegisterClass(MCInst &Inst, unsigned RegNo,

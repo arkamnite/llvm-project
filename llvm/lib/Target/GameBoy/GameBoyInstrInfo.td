@@ -353,7 +353,7 @@ let hasSideEffects = 0 in {
 // Stack pop operations.
   let mayLoad = 1 in {
     def POPRd : GBFPushPop<0b001,
-                    (outs GPRPair
+                    (outs StackRegisters
                      : $reg),
                     (ins),
                     "pop\t$reg",
@@ -361,7 +361,7 @@ let hasSideEffects = 0 in {
 
     def PUSHRd : GBFPushPop<0b101,
                     (outs),
-                    (ins GPRPair
+                    (ins StackRegisters
                      : $reg),
                     "push\t$reg",
                     []>;

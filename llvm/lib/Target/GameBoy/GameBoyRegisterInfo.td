@@ -34,21 +34,22 @@ let Namespace = "GameBoy" in { def ptr : RegAltNameIndex; }
 //===----------------------------------------------------------------------===//
 
 def RA : GameBoyReg<0, "A">, DwarfRegNum<[0]>;
-def RB : GameBoyReg<1, "B">, DwarfRegNum<[1]>;
-def RC : GameBoyReg<2, "C">, DwarfRegNum<[2]>;
-def RD : GameBoyReg<3, "D">, DwarfRegNum<[3]>;
-def RE : GameBoyReg<4, "E">, DwarfRegNum<[4]>;
-def RH : GameBoyReg<5, "H">, DwarfRegNum<[5]>;
-def RL : GameBoyReg<6, "L">, DwarfRegNum<[6]>;
-def RF : GameBoyReg<7, "F">, DwarfRegNum<[7]>;
+def RF : GameBoyReg<1, "F">, DwarfRegNum<[1]>;
+def RB : GameBoyReg<2, "B">, DwarfRegNum<[2]>;
+def RC : GameBoyReg<3, "C">, DwarfRegNum<[3]>;
+def RD : GameBoyReg<4, "D">, DwarfRegNum<[4]>;
+def RE : GameBoyReg<5, "E">, DwarfRegNum<[5]>;
+def RH : GameBoyReg<6, "H">, DwarfRegNum<[6]>;
+def RL : GameBoyReg<7, "L">, DwarfRegNum<[7]>;
 
 //===----------------------------------------------------------------------===//
 // 16-bit general-purpose registers
 //===----------------------------------------------------------------------===//
 let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
-  def RBRC : GameBoyReg<1, "BC", [RB, RC]>, DwarfRegNum<[1]>;
-  def RDRE : GameBoyReg<3, "DE", [RC, RD]>, DwarfRegNum<[3]>;
-  def RHRL : GameBoyReg<5, "HL", [RH, RL]>, DwarfRegNum<[5]>;
+  def RARF : GameBoyReg<0, "AF", [RA, RF]>, DwarfRegNum<[0]>;
+  def RBRC : GameBoyReg<2, "BC", [RB, RC]>, DwarfRegNum<[2]>;
+  def RDRE : GameBoyReg<4, "DE", [RC, RD]>, DwarfRegNum<[4]>;
+  def RHRL : GameBoyReg<6, "HL", [RH, RL]>, DwarfRegNum<[6]>;
 }
 
 //===---------------------------------------------------------------------===//
@@ -70,6 +71,9 @@ def GPR : RegisterClass<"GameBoy", [i8], 8, (add RA, RB, RC, RD, RE, RH, RL)>;
 // The GameBoy features register pairs which can be addresses as an individual
 // 16-bit register, whilst also accessing its high and low halves.
 def GPRPair : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL)>;
+
+// The Game Boy PUSH/POP instructions can only push or pop these registers to the stack.
+def StackRegisters : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL, RARF)>;
 
 // 8-bit status register.
 def CCR : RegisterClass<"GameBoy", [i8], 8, (add RF)> {

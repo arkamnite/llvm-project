@@ -175,7 +175,6 @@ void GameBoyFrameLowering::emitPrologue(MachineFunction &MF,
       .setMIFlag(MachineInstr::FrameSetup);
 }
 */
-
 static void restoreStatusRegister(MachineFunction &MF, MachineBasicBlock &MBB) {
   const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
 
@@ -196,6 +195,25 @@ static void restoreStatusRegister(MachineFunction &MF, MachineBasicBlock &MBB) {
   }
 }
 
+/// @brief Emit the function epilogue code. Due to the lack of a frame
+/// pointer, we only really need to focus on whether this was an interrupt
+/// handler/signal where some special codegen is required.
+/// @param MF 
+/// @param MBB 
+void GameBoyFrameLowering::emitEpilogue(MachineFunction &MF,
+                                        MachineBasicBlock &MBB) const {
+  const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
+
+  // We can early exit if there are no arguments we need to pop off the stack.
+  /*
+  DebugLoc DL = MBBI->getDebugLoc();
+  const MachineFrameInfo &MFI = MF.getFrameInfo();
+  unsigned FrameSize = MFI.getStackSize() - AFI->getCalleeSavedFrameSize();
+  const GameBoySubtarget &STI = MF.getSubtarget<GameBoySubtarget>();
+  const GameBoyInstrInfo &TII = *STI.getInstrInfo();
+  */
+}
+/*
 void GameBoyFrameLowering::emitEpilogue(MachineFunction &MF,
                                     MachineBasicBlock &MBB) const {
   const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
@@ -259,6 +277,7 @@ void GameBoyFrameLowering::emitEpilogue(MachineFunction &MF,
 
   restoreStatusRegister(MF, MBB);
 }
+*/
 
 // Return true if the specified function should have a dedicated frame
 // pointer register. This is true if the function meets any of the following

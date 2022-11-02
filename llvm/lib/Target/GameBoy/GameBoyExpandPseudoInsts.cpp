@@ -669,7 +669,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDWRdPtr>(Block &MBB, BlockIt MBBI) {
 
   // Push low byte onto stack if necessary.
   if (TmpReg)
-    buildMI(MBB, MBBI, GameBoy::PUSHRr).addReg(TmpReg);
+    buildMI(MBB, MBBI, GameBoy::PUSHRd).addReg(TmpReg);
 
   // Load high byte.
   auto MIBHI = buildMI(MBB, MBBI, OpHi)
@@ -790,7 +790,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDDWRdPtrQ>(Block &MBB, BlockIt MBBI) 
 
   // Push low byte onto stack if necessary.
   if (TmpReg)
-    buildMI(MBB, MBBI, GameBoy::PUSHRr).addReg(TmpReg);
+    buildMI(MBB, MBBI, GameBoy::PUSHRd).addReg(TmpReg);
 
   // Load high byte.
   auto MIBHI = buildMI(MBB, MBBI, OpHi)
@@ -846,7 +846,7 @@ bool GameBoyExpandPseudo::expandLPMWELPMW(Block &MBB, BlockIt MBBI, bool IsExt) 
 
   // Push low byte onto stack if necessary.
   if (TmpReg)
-    buildMI(MBB, MBBI, GameBoy::PUSHRr).addReg(TmpReg);
+    buildMI(MBB, MBBI, GameBoy::PUSHRd).addReg(TmpReg);
 
   // Load high byte.
   auto MIBHI = buildMI(MBB, MBBI, OpHi)
@@ -1316,8 +1316,8 @@ bool GameBoyExpandPseudo::expand<GameBoy::PUSHWRr>(Block &MBB, BlockIt MBBI) {
   Register SrcReg = MI.getOperand(0).getReg();
   bool SrcIsKill = MI.getOperand(0).isKill();
   unsigned Flags = MI.getFlags();
-  unsigned OpLo = GameBoy::PUSHRr;
-  unsigned OpHi = GameBoy::PUSHRr;
+  unsigned OpLo = GameBoy::PUSHRd;
+  unsigned OpHi = GameBoy::PUSHRd;
   TRI->splitReg(SrcReg, SrcLoReg, SrcHiReg);
 
   // Low part

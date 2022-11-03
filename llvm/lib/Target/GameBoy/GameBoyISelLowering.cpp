@@ -1148,6 +1148,7 @@ static void analyzeGameBoyArguments(TargetLowering::CallLoweringInfo *CLI,
     freeRHRL = freeRH && freeRL;
     //
     useStack16 = (!freeRDRE) || (!freeRHRL);
+    bool useStack = useStack16 || useStack8;
 
     if (lastUsedRegisterID > RegList8.size()) {
     }
@@ -1155,11 +1156,17 @@ static void analyzeGameBoyArguments(TargetLowering::CallLoweringInfo *CLI,
     for (; i != j; ++i) {
       MVT VT = Args[i].VT;
       // Check based on type
-      if (VT == MVT::i8 && !useStack8) {
-        // There is still a free 8-bit register slot
-
-      } else if (VT == MVT::i16 && !useStack16) {
-        // There is a free 16-bit register pair
+      if (!useStack) {
+        unsigned Reg;
+        if (VT == MVT::i8 && !useStack8) {
+          // There is still a free 8-bit register slot
+          if (freeRDRE) {
+            Reg = CCInfo.AllocateReg(GameBoy::RE); 
+          } // Finish adding for other register options.
+        } else if (VT == MVT::i16 && !useStack16) {
+          // There is a free 16-bit register pair
+          Reg = CCInfo.AllocateReg(RegList16[RegIDx]);
+        }
       } else {
         // There are either no free registers, or we are dealing with an aggregate type
         auto evt = EVT(VT).getTypeForEVT(CCInfo.getContext());
@@ -1186,13 +1193,20 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
   // Choose the proper register list for argument passing according to the ABI.
   ArrayRef<MCPhysReg> RegList8;
   ArrayRef<MCPhysReg> RegList16;
+  // ArrayRef<MCPhysReg> RegisterList8GameBoy;
+  // ArrayRef<MCPhysReg> RegisterPairListGameBoy;
+  RegList8 = makeArrayRef(RegisterList8GameBoy, array_lengthof(RegisterList8GameBoy));
+  RegList16 = makeArrayRef(RegisterPairListGameBoy, array_lengthof(RegisterPairListGameBoy));
+
+  /*
   if (Tiny) {
     RegList8 = makeArrayRef(RegList8Tiny, array_lengthof(RegList8Tiny));
     RegList16 = makeArrayRef(RegList16Tiny, array_lengthof(RegList16Tiny));
   } else {
-    RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
-    RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
+    // RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
+    // RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
   }
+  */
 
   unsigned NumArgs = Args.size();
   // This is the index of the last used register, in RegList*.
@@ -1317,6 +1331,7 @@ static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
   }
 }
 
+/*
 SDValue GameBoyTargetLowering::LowerFormalArguments(
     SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
     const SmallVectorImpl<ISD::InputArg> &Ins, const SDLoc &dl,
@@ -1415,8 +1430,8 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
 
   return Chain;
 }
+*/
 
-/*
 SDValue GameBoyTargetLowering::LowerFormalArguments(
     SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
     const SmallVectorImpl<ISD::InputArg> &Ins, const SDLoc &dl,
@@ -1512,7 +1527,7 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
 
   return Chain;
 }
-*/
+
 
 //===----------------------------------------------------------------------===//
 //                  Call Calling Convention Implementation

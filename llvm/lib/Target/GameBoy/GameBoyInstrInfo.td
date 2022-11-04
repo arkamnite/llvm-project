@@ -396,51 +396,169 @@ let hasSideEffects = 0 in {
 // 16-bit transfer instructions
 //===----------------------------------------------------------------------===//
 
+// LD dd, Imm16
+
+// LD SP, HL
+
+let mayLoad = 1 in {
+// POPRd / POP qq
+  def POPRd : GBFPushPop<0b001,
+                  (outs StackRegisters
+                    : $reg),
+                  (ins),
+                  "pop\t$reg",
+                  []>;
+
+// PUSHRd / PUSH qq
+  def PUSHRd : GBFPushPop<0b101,
+                  (outs),
+                  (ins StackRegisters
+                    : $reg),
+                  "push\t$reg",
+                  []>;
+}
+
+// LDHL SP, s8
+
+// LD (Imm16), SP
+
 //===----------------------------------------------------------------------===//
-// 8-bit arithmetic instructions (addition)
+// 8-bit arithmetic instructions
 //===----------------------------------------------------------------------===//
+
+// ADD A, r
+// ADD A, Imm8
+// ADD A, (HL)
+
+// ADC A, r
+// ADC A, Imm8
+// ADC A, (HL)
+
+// SUB A, r
+// SUB A, Imm8
+// SUB A, (HL)
+
+// SBC A, r
+// SBC A, Imm8
+// SBC A, (HL)
 
 //===----------------------------------------------------------------------===//
 // 8-bit logic instructions
 //===----------------------------------------------------------------------===//
 
+// AND A, r
+// AND A, Imm8
+// AND A, (HL)
+
+// OR A, r
+// OR A, Imm8
+// OR A, (HL)
+
+// XOR A, r
+// XOR A, Imm8
+// XOR A, (HL)
+
+// CP A, r
+// CP A, Imm8
+// CP A, (HL)
+
+// INC r
+// INC (HL)
+
+// DEC r
+// DEC (HL)
+
 //===----------------------------------------------------------------------===//
 // 16-bit arithmetic instructions
 //===----------------------------------------------------------------------===//
 
+// ADD HL, RPd
+// ADD SP, s8
+// INC RPd
+// DEC RPd
+
 //===----------------------------------------------------------------------===//
 // Rotate shift instructions
+// Check which of these use RA
 //===----------------------------------------------------------------------===//
+
+// RLCA
+// RRCA
+
+// RLA
+// RRA
+
+// RLC r
+// RLC (HL)
+// RRC r
+// RRC (HL)
+
+// RL r
+// RL (HL)
+// RR r
+// RR (HL)
+
+// SLA r
+// SLA (HL)
+
+// SRA r
+// SRA (HL)
+// SRL r
+// SRL (HL)
+
+// SWAP r
+// SWAP (HL)
 
 //===----------------------------------------------------------------------===//
 // Bit operations
 //===----------------------------------------------------------------------===//
 
+// BIT b, r
+// BIT b, (HL)
+
+// SET b, r
+// SET b, (HL)
+
+// RES b, r
+// RES b, (HL)
+
+//===----------------------------------------------------------------------===//
+// Jump Instructions
+//===----------------------------------------------------------------------===//
+
+// JP Imm16
+// JP cc, Imm16
+// JP (HL)
+
+// JR s8 (-2)
+// JR cc, s8 (-2)
+
 //===----------------------------------------------------------------------===//
 // Call and return instructions
 //===----------------------------------------------------------------------===//
+
+// CALL Imm16
+// CALL cc, Imm16
+
+// RET
+// RETI
+// RET cc
+
+// RST t
 
 //===----------------------------------------------------------------------===//
 // General purpose arithmetic operations and CPU control instructions
 //===----------------------------------------------------------------------===//
 
-// PUSH / POP instructions go here.
-// Stack pop operations.
-  let mayLoad = 1 in {
-    def POPRd : GBFPushPop<0b001,
-                    (outs StackRegisters
-                     : $reg),
-                    (ins),
-                    "pop\t$reg",
-                    []>;
-
-    def PUSHRd : GBFPushPop<0b101,
-                    (outs),
-                    (ins StackRegisters
-                     : $reg),
-                    "push\t$reg",
-                    []>;
-  }
+// DAA A
+// CPL A
+// NOP
+// CCF
+// SCF
+// DI
+// EI
+// HALT
+// STOP
 
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//

@@ -1194,8 +1194,8 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
   ArrayRef<MCPhysReg> RegList8;
   ArrayRef<MCPhysReg> RegList16;
   
-  RegList8 = makeArrayRef(RegisterList8GameBoy, array_lengthof(RegisterList8GameBoy));
-  RegList16 = makeArrayRef(RegisterPairListGameBoy, array_lengthof(RegisterPairListGameBoy));
+  // RegList8 = makeArrayRef(RegisterList8GameBoy, array_lengthof(RegisterList8GameBoy));
+  // RegList16 = makeArrayRef(RegisterPairListGameBoy, array_lengthof(RegisterPairListGameBoy));
 
   // /*
   if (Tiny) {
@@ -1359,11 +1359,11 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
       EVT RegVT = VA.getLocVT();
       const TargetRegisterClass *RC;
       if (RegVT == MVT::i8) {
-        // RC = &GameBoy::GPR8RegClass;
-        RC = &GameBoy::GPRRegClass;
+        RC = &GameBoy::GPR8RegClass;
+        // RC = &GameBoy::GPRRegClass;
       } else if (RegVT == MVT::i16) {
-        // RC = &GameBoy::DREGSRegClass;
-        RC = &GameBoy::GPRPairRegClass;
+        RC = &GameBoy::DREGSRegClass;
+        // RC = &GameBoy::GPRPairRegClass;
       } else {
         llvm_unreachable("Unknown argument type!");
       }

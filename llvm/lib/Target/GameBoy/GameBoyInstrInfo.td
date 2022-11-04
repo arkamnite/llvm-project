@@ -331,6 +331,20 @@ def GameBoy_COND_LO : PatLeaf<(i8 5)>;
 def GameBoy_COND_MI : PatLeaf<(i8 6)>;
 def GameBoy_COND_PL : PatLeaf<(i8 7)>;
 
+// Game Boy condition codes
+// Zero / Not Zero
+def GameBoy_Condition_Z : PatLeaf<(i8 0)>;
+def GameBoy_Condition_NZ : PatLeaf<(i8 0)>;
+// Subtraction / Not Subtraction
+def GameBoy_Condition_N : PatLeaf<(i8 0)>;
+def GameBoy_Condition_NN : PatLeaf<(i8 0)>;
+// Half Carry / No Half Carry
+def GameBoy_Condition_H : PatLeaf<(i8 0)>;
+def GameBoy_Condition_NH : PatLeaf<(i8 0)>;
+// Carry / Not Carry
+def GameBoy_Condition_C : PatLeaf<(i8 0)>;
+def GameBoy_Condition_C : PatLeaf<(i8 0)>;
+
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 // GameBoy Instruction list
@@ -340,6 +354,9 @@ def GameBoy_COND_PL : PatLeaf<(i8 7)>;
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 
+//===----------------------------------------------------------------------===//
+// 8-bit transfer and input/output instructions
+//===----------------------------------------------------------------------===//
 let hasSideEffects = 0 in {
   def LDRdRr : GBFRdRr<0b01,
                         (outs GPR
@@ -348,6 +365,64 @@ let hasSideEffects = 0 in {
                         : $rr),
                         "mov\t$rd, $rr", []>;
 }
+
+// [(Imm8) rule says that (Imm8) = in range FF00 - FFFF]
+
+// LD Rd, Imm8
+// LD Rd, (HL)
+
+// LD (HL), Rr
+// LD (HL), Imm8
+
+// LD A, (BC)
+// LD A, (DE)
+// LD A, (C)
+// LD A, (Imm8) [ rules apply for (Imm8)]
+// LD A, (Imm16)
+
+// LD (C), A
+// LD (Imm8), A [ rules apply for (Imm8)]
+// LD (Imm16), A
+
+// LD A, (HL+)
+// LD A, (HL-)
+
+// LD (BC), A
+// LD (DE), A
+// LD (HL+), A [(HL) <- A; HL <- HL+1]
+// LD (HL-), A
+
+//===----------------------------------------------------------------------===//
+// 16-bit transfer instructions
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// 8-bit arithmetic instructions (addition)
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// 8-bit logic instructions
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// 16-bit arithmetic instructions
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// Rotate shift instructions
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// Bit operations
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// Call and return instructions
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// General purpose arithmetic operations and CPU control instructions
+//===----------------------------------------------------------------------===//
 
 // PUSH / POP instructions go here.
 // Stack pop operations.

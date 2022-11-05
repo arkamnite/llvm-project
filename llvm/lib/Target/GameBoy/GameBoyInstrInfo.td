@@ -81,6 +81,14 @@ def GameBoyasrLoop : SDNode<"GameBoyISD::ASRLOOP", SDTIntShiftOp>;
 def GameBoySwap : SDNode<"GameBoyISD::SWAP", SDTIntUnaryOp>;
 
 //===----------------------------------------------------------------------===//
+// Game Boy Operands, Complex Patterns and Transformations Definitions
+//===----------------------------------------------------------------------===//
+
+def imm8_ld : Operand<i8> {
+  
+}
+
+//===----------------------------------------------------------------------===//
 // AVR Operands, Complex Patterns and Transformations Definitions.
 //===----------------------------------------------------------------------===//
 
@@ -343,7 +351,7 @@ def GameBoy_Condition_H : PatLeaf<(i8 0)>;
 def GameBoy_Condition_NH : PatLeaf<(i8 0)>;
 // Carry / Not Carry
 def GameBoy_Condition_C : PatLeaf<(i8 0)>;
-def GameBoy_Condition_C : PatLeaf<(i8 0)>;
+def GameBoy_Condition_NC : PatLeaf<(i8 0)>;
 
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
@@ -358,17 +366,23 @@ def GameBoy_Condition_C : PatLeaf<(i8 0)>;
 // 8-bit transfer and input/output instructions
 //===----------------------------------------------------------------------===//
 let hasSideEffects = 0 in {
-  def LDRdRr : GBFRdRr<0b01,
-                        (outs GPR
-                        : $rd),
-                        (ins GPR
-                        : $rr),
-                        "mov\t$rd, $rr", []>;
-}
+def LDRdRr : GBFRdRr<0b01,
+                      (outs GPR
+                      : $rd),
+                      (ins GPR
+                      : $rr),
+                      "mov\t$rd, $rr", []>;
 
 // [(Imm8) rule says that (Imm8) = in range FF00 - FFFF]
 
 // LD Rd, Imm8
+def LDRdImm8 : GBFRd< 0b00, 0b110,
+                      (outs GPR : $rd),
+                      (ins imm8_ld : $imm8),
+                      "LD\t$rd, $imm8",
+                      []>;
+
+}
 // LD Rd, (HL)
 
 // LD (HL), Rr

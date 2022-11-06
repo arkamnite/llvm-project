@@ -372,17 +372,20 @@ def LDRdRr : GBFRdRr<0b01,
                       (ins GPR
                       : $rr),
                       "mov\t$rd, $rr", []>;
+}
 
 // [(Imm8) rule says that (Imm8) = in range FF00 - FFFF]
+let isReMaterializable = 1 in {
 
 // LD Rd, Imm8
 def LDRdImm8 : GBFRd< 0b00, 0b110,
                       (outs GPR : $rd),
                       (ins imm8_ld : $imm8),
                       "LD\t$rd, $imm8",
-                      []>;
-
+                      [(set i8 : $rd, imm : $imm8)]>;
+                      // []>;
 }
+
 // LD Rd, (HL)
 
 // LD (HL), Rr
@@ -420,7 +423,7 @@ let mayLoad = 1 in {
                   (outs StackRegisters
                     : $reg),
                   (ins),
-                  "pop\t$reg",
+                  "POP\t$reg",
                   []>;
 
 // PUSHRd / PUSH qq
@@ -428,7 +431,7 @@ let mayLoad = 1 in {
                   (outs),
                   (ins StackRegisters
                     : $reg),
-                  "push\t$reg",
+                  "PUSH\t$reg",
                   []>;
 }
 
@@ -1502,9 +1505,10 @@ let isReMaterializable = 1 in {
                      : $rd),
                     (ins imm_ldi8
                      : $k),
-                    "ldi\t$rd, $k", [(set i8
-                                      : $rd, imm
-                                      : $k)]>;
+                    "ldi\t$rd, $k", []>;
+                    // "ldi\t$rd, $k", [(set i8
+                    //                   : $rd, imm
+                    //                   : $k)]>;
 
   // LDIW Rd+1:Rd, K+1:K
   //

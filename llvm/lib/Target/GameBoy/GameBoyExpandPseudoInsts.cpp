@@ -552,8 +552,10 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDIWRdK>(Block &MBB, BlockIt MBBI) {
   Register DstLoReg, DstHiReg;
   Register DstReg = MI.getOperand(0).getReg();
   bool DstIsDead = MI.getOperand(0).isDead();
-  unsigned OpLo = GameBoy::LDIRdK;
-  unsigned OpHi = GameBoy::LDIRdK;
+  unsigned OpLo = GameBoy::LDRdImm8;
+  unsigned OpHi = GameBoy::LDRdImm8;
+  // unsigned OpLo = GameBoy::LDIRdK;
+  // unsigned OpHi = GameBoy::LDIRdK;
   TRI->splitReg(DstReg, DstLoReg, DstHiReg);
 
   auto MIBLO =

@@ -391,7 +391,8 @@ template <> bool GameBoyDAGToDAGISel::select<ISD::LOAD>(SDNode *N) {
       // Do not combine the LDI instruction into the ELPM pseudo instruction,
       // since it may be reused by other ELPM pseudo instructions.
       SDValue NC = CurDAG->getTargetConstant(ProgMemBank, DL, MVT::i8);
-      auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
+      auto *NP = CurDAG->getMachineNode(GameBoy::LDRdImm8, DL, MVT::i8, NC);
+      // auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
       ResNode = CurDAG->getMachineNode(LPMOpc, DL, VT, MVT::i16, MVT::Other,
                                        Ptr, SDValue(NP, 0));
     }
@@ -406,7 +407,8 @@ template <> bool GameBoyDAGToDAGISel::select<ISD::LOAD>(SDNode *N) {
         // Do not combine the LDI instruction into the ELPM pseudo instruction,
         // since it may be reused by other ELPM pseudo instructions.
         SDValue NC = CurDAG->getTargetConstant(ProgMemBank, DL, MVT::i8);
-        auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
+        // auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
+        auto *NP = CurDAG->getMachineNode(GameBoy::LDRdImm8, DL, MVT::i8, NC);
         ResNode = CurDAG->getMachineNode(GameBoy::ELPMBRdZ, DL, MVT::i8, MVT::Other,
                                          Ptr, SDValue(NP, 0));
       }
@@ -419,7 +421,8 @@ template <> bool GameBoyDAGToDAGISel::select<ISD::LOAD>(SDNode *N) {
         // Do not combine the LDI instruction into the ELPM pseudo instruction,
         // since LDI requires the destination register in range R16~R31.
         SDValue NC = CurDAG->getTargetConstant(ProgMemBank, DL, MVT::i8);
-        auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
+        // auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
+        auto *NP = CurDAG->getMachineNode(GameBoy::LDRdImm8, DL, MVT::i8, NC);
         ResNode = CurDAG->getMachineNode(GameBoy::ELPMWRdZ, DL, MVT::i16,
                                          MVT::Other, Ptr, SDValue(NP, 0));
       }

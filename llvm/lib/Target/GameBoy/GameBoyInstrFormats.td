@@ -71,6 +71,11 @@ class Pseudo<dag outs, dag ins, string asmstr, list<dag> pattern>
 //===----------------------------------------------------------------------===//
 // Format 0. No further operands are used here
 //===----------------------------------------------------------------------===//
+class GBF0<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst8<outs, ins, asmstr, pattern>
+{
+  let Inst{7 - 0} = op;
+}
 
 //===----------------------------------------------------------------------===//
 // Register operand instruction: <| xx - rrr - xxx |>

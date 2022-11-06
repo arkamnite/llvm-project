@@ -72,8 +72,15 @@ def GPR : RegisterClass<"GameBoy", [i8], 8, (add RA, RB, RC, RD, RE, RH, RL)>;
 // 16-bit register, whilst also accessing its high and low halves.
 def GPRPair : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL)>;
 
+// The Game Boy can load a pointer from these registers.
+def GPRPairPointerHL : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
+
 // The Game Boy PUSH/POP instructions can only push or pop these registers to the stack.
 def StackRegisters : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL, RARF)>;
+
+// It is only possible to load LD SP, HL when it comes to the SP.
+def SPLoadRd : RegisterClass<"GameBoy", [i16], 16, (add SP)>;
+def SPLoadRr : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
 
 // 8-bit status register.
 def CCR : RegisterClass<"GameBoy", [i8], 8, (add RF)> {

@@ -38,6 +38,55 @@ namespace llvm {
 GameBoyInstrInfo::GameBoyInstrInfo()
     : GameBoyGenInstrInfo(GameBoy::ADJCALLSTACKDOWN, GameBoy::ADJCALLSTACKUP), RI() {}
 
+// A smaller and leaner version of the original AVR copyPhysReg.
+// The Game Boy can only directly copy to and from an 8-bit register.
+void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
+                               MachineBasicBlock::iterator MI,
+                               const DebugLoc &DL, MCRegister DestReg,
+                               MCRegister SrcReg, bool KillSrc) const {
+  const GameBoySubtarget &STI = MBB.getParent()->getSubtarget<GameBoySubtarget>();
+  const GameBoyRegisterInfo &TRI = *STI.getRegisterInfo();
+  unsigned Opc;
+
+  // Check that we are copying from 8-bit to 8-bit registers.
+  if (GameBoy::GPRRegClass.contains(DestReg, SrcReg)) {
+    Opc = GameBoy::LDRdRr;
+
+    BuildMI(MBB, MI, DL, get(Opc), DestReg).
+      addReg(SrcReg, getKillRegState(KillSrc));
+  } else if (GameBoy::GPRPairRegClass.contains(DestReg, SrcReg)) {
+    // Split up the register pairs.
+    Register DestLo, DestHi, SrcLo, SrcHi;
+    TRI.splitReg(DestReg, DestLo, DestHi);
+    TRI.splitReg(SrcReg, SrcLo, SrcHi);
+
+    // Copy registers individually
+    BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo).
+      addReg(SrcLo, getKillRegState(KillSrc));
+    BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestHi).
+      addReg(SrcHi, getKillRegState(KillSrc));
+
+  } else {
+    // Check if we are copying to or from the stack pointer
+    if (DestReg == GameBoy::SP) {
+      // LD SP, HL
+      if (SrcReg == GameBoy::RHRL) {
+        Opc = GameBoy::LDSPHL;
+        BuildMI(MBB, MI, DL, get(GameBoy::LDSPHL), SrcReg).
+          addReg(DestReg, getKillRegState(KillSrc));
+      } else {
+        // Not possible to copy another register to SP
+        llvm_unreachable("Impossible copy from reg to SP");
+      }
+    } else if (SrcReg == GameBoy::SP) {
+        llvm_unreachable("Impossible to copy from SP to reg");
+    } else {
+        llvm_unreachable("Cannot copy from differing widths of registers");
+    }
+  }
+}
+
+/*
 void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                MachineBasicBlock::iterator MI,
                                const DebugLoc &DL, MCRegister DestReg,
@@ -58,14 +107,17 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
       TRI.splitReg(SrcReg, SrcLo, SrcHi);
 
       // Copy each individual register with the `MOV` instruction.
-      BuildMI(MBB, MI, DL, get(GameBoy::MOVRdRr), DestLo)
+      // BuildMI(MBB, MI, DL, get(GameBoy::MOVRdRr), DestLo)
+      BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo)
           .addReg(SrcLo, getKillRegState(KillSrc));
-      BuildMI(MBB, MI, DL, get(GameBoy::MOVRdRr), DestHi)
+      // BuildMI(MBB, MI, DL, get(GameBoy::MOVRdRr), DestHi)
+      BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestHi)
           .addReg(SrcHi, getKillRegState(KillSrc));
     }
   } else {
     if (GameBoy::GPR8RegClass.contains(DestReg, SrcReg)) {
-      Opc = GameBoy::MOVRdRr;
+      // Opc = GameBoy::MOVRdRr;
+      Opc = GameBoy::LDRdRr;
     } else if (SrcReg == GameBoy::SP && GameBoy::DREGSRegClass.contains(DestReg)) {
       Opc = GameBoy::SPREAD;
     } else if (DestReg == GameBoy::SP && GameBoy::DREGSRegClass.contains(SrcReg)) {
@@ -78,6 +130,7 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
         .addReg(SrcReg, getKillRegState(KillSrc));
   }
 }
+*/
 
 unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
                                            int &FrameIndex) const {

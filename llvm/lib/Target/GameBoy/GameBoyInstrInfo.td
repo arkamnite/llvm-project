@@ -371,7 +371,9 @@ def LDRdRr : GBFRdRr<0b01,
                       : $rd),
                       (ins GPR
                       : $rr),
-                      "mov\t$rd, $rr", []>;
+                      "mov\t$rd, $rr",
+                      // [(set GPR : $rd, GPR : $rr)]>;
+                      []>; // This is handled by copyPhysReg.
 }
 
 // [(Imm8) rule says that (Imm8) = in range FF00 - FFFF]
@@ -386,7 +388,14 @@ def LDRdImm8 : GBFRd< 0b00, 0b110,
                       // []>;
 }
 
+let canFoldAsLoad = 1, isReMaterializable = 1 in {
 // LD Rd, (HL)
+def LDRdHLAddr : GBFRd< 0b01, 0b110,
+                        (outs GPR : $rd),
+                        (ins GPRPairPointerHL : $ptrreg),
+                        "LD\t$rd, (HL)",
+                        [(set GPR : $rd, (load i16 : $ptrreg))]>;
+}
 
 // LD (HL), Rr
 // LD (HL), Imm8
@@ -416,6 +425,13 @@ def LDRdImm8 : GBFRd< 0b00, 0b110,
 // LD dd, Imm16
 
 // LD SP, HL
+let hasSideEffects = 0 in {
+  def LDSPHL : GBF0<0b11111001,
+                    (outs SPLoadRd : $sp),
+                    (ins SPLoadRr : $hl),
+                    "LD\tSP, HL",
+                    []>;
+}
 
 let mayLoad = 1 in {
 // POPRd / POP qq

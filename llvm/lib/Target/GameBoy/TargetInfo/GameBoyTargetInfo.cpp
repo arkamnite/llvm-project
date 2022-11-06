@@ -16,6 +16,6 @@ Target &getTheGameBoyTarget() {
 } // namespace llvm
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGameBoyTargetInfo() {
-  llvm::RegisterTarget<llvm::Triple::gameboy> X(llvm::getTheGameBoyTarget(), "GameBoy",
-                                            "Atmel GameBoy Microcontroller", "GameBoy");
+  llvm::RegisterTarget<llvm::Triple::gameboy> X(llvm::getTheGameBoyTarget(), "Game Boy",
+                                            "Nintendo Game Boy", "Game Boy");
 }

@@ -121,7 +121,7 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
 
   case hexagon:     return "hexagon";
   // GameBoy
-  case gameboy:     return "dmg";
+  case gameboy:     return "gameboy";
 
   case amdgcn:      return "amdgcn";
   case r600:        return "r600";
@@ -1382,7 +1382,7 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::UnknownArch:
     return 0;
 
-  // Todo: Check that this is not in fact 8-bit.
+  // TODO: Check that this is not in fact 8-bit.
   case llvm::Triple::gameboy:
     return 16;
 
@@ -1469,6 +1469,7 @@ bool Triple::isArch16Bit() const {
 Triple Triple::get32BitArchVariant() const {
   Triple T(*this);
   switch (getArch()) {
+  case Triple::gameboy:
   case Triple::UnknownArch:
   case Triple::amdgcn:
   case Triple::avr:
@@ -1548,6 +1549,7 @@ Triple Triple::get32BitArchVariant() const {
 Triple Triple::get64BitArchVariant() const {
   Triple T(*this);
   switch (getArch()) {
+  case Triple::gameboy:
   case Triple::UnknownArch:
   case Triple::arc:
   case Triple::avr:

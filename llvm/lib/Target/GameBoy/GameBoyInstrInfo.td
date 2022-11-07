@@ -88,6 +88,8 @@ def imm8_ld : Operand<i8> {
   
 }
 
+// def regpair_addr : Operand<>
+
 //===----------------------------------------------------------------------===//
 // AVR Operands, Complex Patterns and Transformations Definitions.
 //===----------------------------------------------------------------------===//
@@ -398,6 +400,11 @@ def LDRdHLAddr : GBFRd< 0b01, 0b110,
 }
 
 // LD (HL), Rr
+def LDHLAddrRr : GBFRd2<0b01, 0b110,
+                        (outs),
+                        (ins GPRPairPointerHL : $ptrreg, GPR : $rr),
+                        "LD\t( $ptrreg ), $rr",
+                        [(store i8 : $rr, GPRPairPointerHL : $ptrreg)]>;
 // LD (HL), Imm8
 
 // LD A, (BC)

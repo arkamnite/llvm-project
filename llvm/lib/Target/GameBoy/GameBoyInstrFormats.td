@@ -94,6 +94,15 @@ class GBFRd<bits<2> op1, bits<3> op2, dag outs, dag ins, string asmstr, list<dag
 // Register operand instruction 2: <| xx - xxx - rrr |>
 // Used for arithmetic and logic instructions.
 //===----------------------------------------------------------------------===//
+class GBFRd2<bits<2> op1, bits<3> op2, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst8<outs, ins, asmstr, pattern>
+{
+  bits<3> rd;
+
+  let Inst{7 - 6} = op1;
+  let Inst{5 - 3} = op2;
+  let Inst{2 - 0} = rd;
+}
 
 //===----------------------------------------------------------------------===//
 // Register-register operand instruction: <| xx - rrr - rrr |>

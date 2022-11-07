@@ -86,52 +86,6 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
   }
 }
 
-/*
-void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
-                               MachineBasicBlock::iterator MI,
-                               const DebugLoc &DL, MCRegister DestReg,
-                               MCRegister SrcReg, bool KillSrc) const {
-  const GameBoySubtarget &STI = MBB.getParent()->getSubtarget<GameBoySubtarget>();
-  const GameBoyRegisterInfo &TRI = *STI.getRegisterInfo();
-  unsigned Opc;
-
-  // Not all GameBoy devices support the 16-bit `MOVW` instruction.
-  if (GameBoy::DREGSRegClass.contains(DestReg, SrcReg)) {
-    if (STI.hasMOVW() && GameBoy::DREGSMOVWRegClass.contains(DestReg, SrcReg)) {
-      BuildMI(MBB, MI, DL, get(GameBoy::MOVWRdRr), DestReg)
-          .addReg(SrcReg, getKillRegState(KillSrc));
-    } else {
-      Register DestLo, DestHi, SrcLo, SrcHi;
-
-      TRI.splitReg(DestReg, DestLo, DestHi);
-      TRI.splitReg(SrcReg, SrcLo, SrcHi);
-
-      // Copy each individual register with the `MOV` instruction.
-      // BuildMI(MBB, MI, DL, get(GameBoy::MOVRdRr), DestLo)
-      BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo)
-          .addReg(SrcLo, getKillRegState(KillSrc));
-      // BuildMI(MBB, MI, DL, get(GameBoy::MOVRdRr), DestHi)
-      BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestHi)
-          .addReg(SrcHi, getKillRegState(KillSrc));
-    }
-  } else {
-    if (GameBoy::GPR8RegClass.contains(DestReg, SrcReg)) {
-      // Opc = GameBoy::MOVRdRr;
-      Opc = GameBoy::LDRdRr;
-    } else if (SrcReg == GameBoy::SP && GameBoy::DREGSRegClass.contains(DestReg)) {
-      Opc = GameBoy::SPREAD;
-    } else if (DestReg == GameBoy::SP && GameBoy::DREGSRegClass.contains(SrcReg)) {
-      Opc = GameBoy::SPWRITE;
-    } else {
-      llvm_unreachable("Impossible reg-to-reg copy");
-    }
-
-    BuildMI(MBB, MI, DL, get(Opc), DestReg)
-        .addReg(SrcReg, getKillRegState(KillSrc));
-  }
-}
-*/
-
 unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
                                            int &FrameIndex) const {
   switch (MI.getOpcode()) {

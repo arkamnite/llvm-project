@@ -135,6 +135,13 @@ class GBFPushPop<bits<3> op, dag outs, dag ins, string asmstr, list<dag> pattern
 //===----------------------------------------------------------------------===//
 // Immediate 8-bit data instruction: <| xx - xxx - xxx |> <n8>
 //===----------------------------------------------------------------------===//
+class GBF0Imm8<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst16<outs, ins, asmstr, pattern>
+{
+  bits<8> imm8;
+  let Inst{15 - 8} = op;
+  let Inst{7 - 0} = imm8;
+}
 
 //===----------------------------------------------------------------------===//
 // Immediate 8-bit data, with register: <| xx - rrr - xxx |> <n8>

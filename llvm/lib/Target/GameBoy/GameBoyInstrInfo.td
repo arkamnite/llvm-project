@@ -405,7 +405,13 @@ def LDHLAddrRr : GBFRd2<0b01, 0b110,
                         (ins GPRPairPointerHL : $ptrreg, GPR : $rr),
                         "LD\t( $ptrreg ), $rr",
                         [(store i8 : $rr, GPRPairPointerHL : $ptrreg)]>;
+
 // LD (HL), Imm8
+def LDHLAddrImm8 : GBF0Imm8<0b00110110,
+                            (outs),
+                            (ins GPRPairPointerHL : $ptrreg, imm8_ld : $n),
+                            "LD\t(HL), $n",
+                            [(store i8 : $n, GPRPairPointerHL : $ptrreg)]>;
 
 // LD A, (BC)
 // LD A, (DE)

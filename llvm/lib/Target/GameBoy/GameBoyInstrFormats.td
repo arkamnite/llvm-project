@@ -39,6 +39,13 @@ class GameBoyInst16<dag outs, dag ins, string asmstr, list<dag> pattern>
   let Size = 2;
 }
 
+class GameBoyInst24<dag outs, dag ins, string asmstr, list<dag> pattern>
+    : GameBoyInst<outs, ins, asmstr, pattern> {
+  field bits<24> Inst;
+
+  let Size = 2;
+}
+
 /// a 32-bit GameBoy instruction.
 class GameBoyInst32<dag outs, dag ins, string asmstr, list<dag> pattern>
     : GameBoyInst<outs, ins, asmstr, pattern> {
@@ -141,6 +148,19 @@ class GBF0Imm8<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
   bits<8> imm8;
   let Inst{15 - 8} = op;
   let Inst{7 - 0} = imm8;
+}
+
+//===----------------------------------------------------------------------===//
+// Immediate 16-bit data instruction: <| xx - xxx - xxx |> <n8> <n8>
+//===----------------------------------------------------------------------===//
+class GBF0Imm16<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst24<outs, ins, asmstr, pattern>
+{
+  bits<8> lo;
+  bits<8> hi;
+  let Inst{23 - 16} = op;
+  let Inst{15 - 8} = lo;
+  let Inst{7 - 0} = hi;
 }
 
 //===----------------------------------------------------------------------===//

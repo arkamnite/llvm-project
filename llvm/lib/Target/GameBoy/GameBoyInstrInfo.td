@@ -414,10 +414,28 @@ def LDHLAddrImm8 : GBF0Imm8<0b00110110,
                             [(store i8 : $n, GPRPairPointerHL : $ptrreg)]>;
 
 // LD A, (BC)
+def LDABCAddr : GBF0< 0b00001010,
+                      (outs GPRLoadDestination : $rd),
+                      (ins GPRPairPointerBC : $ptrreg),
+                      "LD\tA, (BC)",
+                      [(set GPRLoadDestination : 
+                        $rd, (load i16 : $ptrreg))]>;
 // LD A, (DE)
+def LDADEAddr : GBF0< 0b00011010,
+                      (outs GPRLoadDestination : $rd),
+                      (ins GPRPairPointerDE : $ptrreg),
+                      "LD\tA, (DE)",
+                      [(set GPRLoadDestination : 
+                        $rd, (load i16 : $ptrreg))]>;
 // LD A, (C)
 // LD A, (Imm8) [ rules apply for (Imm8)]
 // LD A, (Imm16)
+def LDAImm16Addr : GBF0Imm16< 0b11111010,
+                              (outs GPRLoadDestination : $rd),
+                              (ins imm16 : $addr),
+                              "LD\tA, $addr",
+                              [(set GPRLoadDestination :
+                                $rd, (load i16 : $addr))]>;
 
 // LD (C), A
 // LD (Imm8), A [ rules apply for (Imm8)]

@@ -152,6 +152,7 @@ class GBF0Imm8<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
 
 //===----------------------------------------------------------------------===//
 // Immediate 16-bit data instruction: <| xx - xxx - xxx |> <n8> <n8>
+// UNUSED !!
 //===----------------------------------------------------------------------===//
 class GBF0Imm16<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
 : GameBoyInst24<outs, ins, asmstr, pattern>

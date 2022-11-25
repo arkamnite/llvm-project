@@ -76,10 +76,14 @@ def GPRPair : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL)>;
 def GPRPairPointerHL : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
 def GPRPairPointerBC : RegisterClass<"GameBoy", [i16], 16, (add RBRC)>;
 def GPRPairPointerDE : RegisterClass<"GameBoy", [i16], 16, (add RDRE)>;
+def GPRPointerC : RegisterClass<"GameBoy", [i8], 8, (add RC)>;
 
 // The Game Boy only supports RA as a destination for non-register
 // loads into an 8-bit register.
 def GPRLoadDestination : RegisterClass<"GameBoy", [i8], 8, (add RA)>;
+
+// LD (C), A will load into address stored in C from A.
+def GPRLoadSourceA : RegisterClass<"GameBoy", [i8], 8, (add RA)>;
 
 // The Game Boy PUSH/POP instructions can only push or pop these registers to the stack.
 def StackRegisters : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL, RARF)>;

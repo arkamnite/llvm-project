@@ -84,8 +84,12 @@ def GameBoySwap : SDNode<"GameBoyISD::SWAP", SDTIntUnaryOp>;
 // Game Boy Operands, Complex Patterns and Transformations Definitions
 //===----------------------------------------------------------------------===//
 
-def imm8_ld : Operand<i8> {
-  
+// For 8-bit immediate pointers, the range must be 0xFF00 - 0xFFFF, with the
+// 8-bit operand taking up the lower 16-bits of the range.
+// E.g. LD A, (FF34) ; loads data at 0xFF34 into A.
+// LD A, (34) ; incorrect usage, and will load data from 0x0034 into A.
+def iaddr8 : Operand<i8> {
+
 }
 
 // def regpair_addr : Operand<>
@@ -384,70 +388,93 @@ let isReMaterializable = 1 in {
 // LD Rd, Imm8
 def LDRdImm8 : GBFRd< 0b00, 0b110,
                       (outs GPR : $rd),
-                      (ins imm8_ld : $imm8),
-                      "LD\t$rd, $imm8",
+                      (ins i8imm : $imm8),
+                      "ld\t$rd, $imm8",
                       [(set i8 : $rd, imm : $imm8)]>;
                       // []>;
 }
 
-let canFoldAsLoad = 1, isReMaterializable = 1 in {
+let mayLoad = 1 in {
 // LD Rd, (HL)
 def LDRdHLAddr : GBFRd< 0b01, 0b110,
                         (outs GPR : $rd),
                         (ins GPRPairPointerHL : $ptrreg),
-                        "LD\t$rd, (HL)",
+                        "ld\t$rd, [hl]",
                         [(set GPR : $rd, (load i16 : $ptrreg))]>;
-}
-
-// LD (HL), Rr
-def LDHLAddrRr : GBFRd2<0b01, 0b110,
-                        (outs),
-                        (ins GPRPairPointerHL : $ptrreg, GPR : $rr),
-                        "LD\t( $ptrreg ), $rr",
-                        [(store i8 : $rr, GPRPairPointerHL : $ptrreg)]>;
-
-// LD (HL), Imm8
-def LDHLAddrImm8 : GBF0Imm8<0b00110110,
-                            (outs),
-                            (ins GPRPairPointerHL : $ptrreg, imm8_ld : $n),
-                            "LD\t(HL), $n",
-                            [(store i8 : $n, GPRPairPointerHL : $ptrreg)]>;
-
 // LD A, (BC)
 def LDABCAddr : GBF0< 0b00001010,
                       (outs GPRLoadDestination : $rd),
                       (ins GPRPairPointerBC : $ptrreg),
-                      "LD\tA, (BC)",
+                      "ld\ta, [bc]",
                       [(set GPRLoadDestination : 
                         $rd, (load i16 : $ptrreg))]>;
 // LD A, (DE)
 def LDADEAddr : GBF0< 0b00011010,
                       (outs GPRLoadDestination : $rd),
                       (ins GPRPairPointerDE : $ptrreg),
-                      "LD\tA, (DE)",
+                      "ld\ta, [de]",
                       [(set GPRLoadDestination : 
                         $rd, (load i16 : $ptrreg))]>;
 // LD A, (C)
 // LD A, (Imm8) [ rules apply for (Imm8)]
+def LDAImm8Addr : GBF0< 0b11110000,
+                        (outs GPRLoadDestination : $rd),
+                        (ins i8imm : $addr),
+                        "ld\ta, $addr",
+                        [(set GPRLoadDestination : $rd, (load i8 : $addr))]>;
 // LD A, (Imm16)
-def LDAImm16Addr : GBF0Imm16< 0b11111010,
+def LDAImm16Addr : GBF0< 0b11111010,
                               (outs GPRLoadDestination : $rd),
-                              (ins imm16 : $addr),
-                              "LD\tA, $addr",
+                              (ins i16imm : $addr),
+                              "ld\ta, $addr",
                               [(set GPRLoadDestination :
                                 $rd, (load i16 : $addr))]>;
+}
+
+let mayStore = 1 in {
+// LD (HL), Rr
+def LDHLAddrRr : GBFRd2<0b01, 0b110,
+                        (outs),
+                        (ins GPRPairPointerHL : $ptrreg, GPR : $rr),
+                        "ld\t( $ptrreg ), $rr",
+                        [(store i8 : $rr, GPRPairPointerHL : $ptrreg)]>;
+
+// LD (HL), Imm8
+def LDHLAddrImm8 : GBF0Imm8<0b00110110,
+                            (outs),
+                            (ins GPRPairPointerHL : $ptrreg, i8imm : $n),
+                            "ld\t[hl], $n",
+                            [(store i8 : $n, GPRPairPointerHL : $ptrreg)]>;
 
 // LD (C), A
+def LDCAddrA : GBF0<0b11100010,
+                    (outs),
+                    (ins GPRPointerC : $rcaddr, GPRLoadSourceA : $ra),
+                    "ld\t[c], a",
+                    [(store GPRLoadSourceA : $ra, GPRPointerC : $rcaddr)]>;
+
+}
+
+let mayStore = 1 in {
 // LD (Imm8), A [ rules apply for (Imm8)]
 // LD (Imm16), A
 
+}
+
+let mayLoad = 1, hasSideEffects = 1 in {
 // LD A, (HL+)
 // LD A, (HL-)
+
+}
+
+
+let mayStore = 1 in {
 
 // LD (BC), A
 // LD (DE), A
 // LD (HL+), A [(HL) <- A; HL <- HL+1]
 // LD (HL-), A
+}
 
 //===----------------------------------------------------------------------===//
 // 16-bit transfer instructions

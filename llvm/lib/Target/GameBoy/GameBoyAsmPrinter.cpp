@@ -78,7 +78,16 @@ void GameBoyAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,
     O << GameBoyInstPrinter::getPrettyRegisterName(MO.getReg(), MRI);
     break;
   case MachineOperand::MO_Immediate:
-    O << MO.getImm();
+    // If it is marked as a load or a store, then an operand is
+    // likely to be a pointer.
+    // There is only one operand in these instructions.
+    if (MI->mayLoad()) {
+      O << "[" << MO.getImm() << "]";
+    } else if (MI->mayStore()) {
+      O << "[" << MO.getImm() << "]";
+    } else {
+      O << MO.getImm();
+    }
     break;
   case MachineOperand::MO_GlobalAddress:
     O << getSymbol(MO.getGlobal());

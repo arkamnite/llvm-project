@@ -377,7 +377,7 @@ def LDRdRr : GBFRdRr<0b01,
                       : $rd),
                       (ins GPR
                       : $rr),
-                      "mov\t$rd, $rr",
+                      "ld\t$rd, $rr",
                       // [(set GPR : $rd, GPR : $rr)]>;
                       []>; // This is handled by copyPhysReg.
 }
@@ -457,8 +457,30 @@ def LDCAddrA : GBF0<0b11100010,
 
 let mayStore = 1 in {
 // LD (Imm8), A [ rules apply for (Imm8)]
+def LDImm8AddrA : GBF0< 0b11100000,
+                        (outs),
+                        (ins GPRLoadSourceA : $ra, i8imm : $n),
+                        "ld\t$n [addr], a",
+                        [(store GPRLoadSourceA : $ra, i8 : $n)]>;
 // LD (Imm16), A
+def LDImm16AddrA : GBF0< 0b11101010,
+                        (outs),
+                        (ins GPRLoadSourceA : $ra, i16imm : $n),
+                        "ld\t$n [addr], a",
+                        [(store GPRLoadSourceA : $ra, i16 : $n)]>;
 
+// LD (BC), A
+def LDBCAddrA : GBF0< 0b00000010,
+                      (outs),
+                      (ins GPRPairPointerBC : $ptrreg, GPRLoadSourceA : $ra),
+                      "ld\t[bc], a",
+                      [(store GPRLoadSourceA : $ra, GPRPairPointerBC : $ptrreg)]>;
+// LD (DE), A
+def LDDEAddrA : GBF0< 0b00010010,
+                      (outs),
+                      (ins GPRPairPointerDE : $ptrreg, GPRLoadSourceA : $ra),
+                      "ld\t[de], a",
+                      [(store GPRLoadSourceA : $ra, GPRPairPointerDE : $ptrreg)]>;
 }
 
 let mayLoad = 1, hasSideEffects = 1 in {
@@ -470,8 +492,6 @@ let mayLoad = 1, hasSideEffects = 1 in {
 
 let mayStore = 1 in {
 
-// LD (BC), A
-// LD (DE), A
 // LD (HL+), A [(HL) <- A; HL <- HL+1]
 // LD (HL-), A
 }

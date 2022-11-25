@@ -48,6 +48,8 @@ public:
 
   void printOperand(const MachineInstr *MI, unsigned OpNo, raw_ostream &O);
 
+  void printMemOperand(const MachineInstr *MI, unsigned OpNo, raw_ostream &O);
+
   bool PrintAsmOperand(const MachineInstr *MI, unsigned OpNum,
                        const char *ExtraCode, raw_ostream &O) override;
 
@@ -69,6 +71,18 @@ private:
   bool EmittedStructorSymbolAttrs = false;
 };
 
+void GameBoyAsmPrinter::printMemOperand(const MachineInstr *MI, unsigned OpNo, raw_ostream &O) {
+  // These are used to print the square brackets required around the operands.
+  switch (MI->getOpcode()) {
+    default:
+      break;
+  }
+
+  O << "[";
+  printOperand(MI, OpNo, O);
+  O << "]";
+}
+
 void GameBoyAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,
                                  raw_ostream &O) {
   const MachineOperand &MO = MI->getOperand(OpNo);
@@ -81,13 +95,14 @@ void GameBoyAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,
     // If it is marked as a load or a store, then an operand is
     // likely to be a pointer.
     // There is only one operand in these instructions.
-    if (MI->mayLoad()) {
-      O << "[" << MO.getImm() << "]";
-    } else if (MI->mayStore()) {
-      O << "[" << MO.getImm() << "]";
-    } else {
+    // if (MI->mayLoad()) {
+    //   O << "[" << MO.getImm() << "]";
+    // } else if (MI->mayStore()) {
+    //   O << "[" << MO.getImm() << "]";
+    // } else {
+    //   O << MO.getImm();
+    // }
       O << MO.getImm();
-    }
     break;
   case MachineOperand::MO_GlobalAddress:
     O << getSymbol(MO.getGlobal());

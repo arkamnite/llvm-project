@@ -515,6 +515,11 @@ let mayStore = 1 in {
 //===----------------------------------------------------------------------===//
 
 // LD dd, Imm16
+def LDRdImm16 : GBFLD16<0b00, 0b0001,
+                        (outs GPRPair : $rd),
+                        (ins i16imm : $src),
+                        "ld\t$rd, $src",
+                        [(set i16 : $rd, imm : $src)]>;
 
 // LD SP, HL
 let hasSideEffects = 0 in {
@@ -1631,11 +1636,12 @@ let isReMaterializable = 1 in {
                     //                   : $k)]>;
 
   // LDIW Rd+1:Rd, K+1:K
-  //
+  // 
+  // This will load into a 16-bit register pair.
   // Expands to:
   // ldi Rd,   K
   // ldi Rd+1, K+1
-  def LDIWRdK : Pseudo<(outs DLDREGS
+  def LDIWRdK : Pseudo<(outs DREGS
                         : $dst),
                        (ins i16imm
                         : $src),
@@ -2842,6 +2848,7 @@ def : Pat<(sext_inreg i16
                    : $src, sub_lo)))>;
 
 // GlobalAddress
+// def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDIWRdK tglobaladdr : $dst)>;
 def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDIWRdK tglobaladdr : $dst)>;
 def : Pat<(add i16
            : $src, (GameBoyWrapper tglobaladdr

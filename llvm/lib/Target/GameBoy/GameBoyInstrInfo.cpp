@@ -67,23 +67,26 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
       addReg(SrcHi, getKillRegState(KillSrc));
 
   } else {
-    // Check if we are copying to or from the stack pointer
-    if (DestReg == GameBoy::SP) {
-      // LD SP, HL
-      if (SrcReg == GameBoy::RHRL) {
-        Opc = GameBoy::LDSPHL;
-        BuildMI(MBB, MI, DL, get(GameBoy::LDSPHL), SrcReg).
-          addReg(DestReg, getKillRegState(KillSrc));
-      } else {
-        // Not possible to copy another register to SP
-        llvm_unreachable("Impossible copy from reg to SP");
-      }
-    } else if (SrcReg == GameBoy::SP) {
-        llvm_unreachable("Impossible to copy from SP to reg");
-    } else {
-        llvm_unreachable("Cannot copy from differing widths of registers");
-    }
   }
+
+  // Check if we are copying to or from the stack pointer
+  if (DestReg == GameBoy::SP) {
+    // LD SP, HL
+    if (SrcReg == GameBoy::RHRL) {
+      Opc = GameBoy::LDSPHL;
+      BuildMI(MBB, MI, DL, get(GameBoy::LDSPHL), SrcReg).
+        addReg(DestReg, getKillRegState(KillSrc));
+    } else {
+      // Not possible to copy another register to SP
+      llvm_unreachable("Impossible copy from reg to SP");
+    }
+  } else if (SrcReg == GameBoy::SP) {
+      llvm_unreachable("Impossible to copy from SP to reg");
+  }
+
+  // Consider the case:
+  // LD A, Imm8
+
 }
 
 unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,

@@ -186,6 +186,14 @@ class GBF0Imm16<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
 //===----------------------------------------------------------------------===//
 // Immediate 16-bit data, with register pair: <| xx - ddx - xxx|> <n8> <n8>
 //===----------------------------------------------------------------------===//
+class GBFLD16<bits<2> op1, bits<4> op2, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst8<outs, ins, asmstr, pattern>
+{
+  bits<2> rd;
+  let Inst{7 - 6} = op1;
+  let Inst{5 - 4} = rd;
+  let Inst{3 - 0} = op2;
+}
 
 //===----------------------------------------------------------------------===//
 // Immediate 16-bit instruction, with cycle: <| xx - xcc - xxx|> <n8> <n8>

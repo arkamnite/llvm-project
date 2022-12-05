@@ -546,6 +546,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::CPCWRdRr>(Block &MBB, BlockIt MBBI) {
   return true;
 }
 
+
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::LDIWRdK>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
@@ -2445,7 +2446,7 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::NEGWRd);
     EXPAND(GameBoy::CPWRdRr);
     EXPAND(GameBoy::CPCWRdRr);
-    EXPAND(GameBoy::LDIWRdK);
+    // EXPAND(GameBoy::LDIWRdK);
     EXPAND(GameBoy::LDSWRdK);
     EXPAND(GameBoy::LDWRdPtr);
     EXPAND(GameBoy::LDWRdPtrPi);

@@ -98,6 +98,19 @@ static DecodeStatus DecodeGPRPairRegisterClass(MCInst &Inst, unsigned RegNo,
   return MCDisassembler::Success;
 }
 
+// Method added for GB LoadSourceA register class.
+static DecodeStatus DecodeGPRLoadSourceARegisterClass(MCInst &Inst, unsigned RegNo,
+                                                      uint64_t Address,
+                                                      const MCDisassembler *Decoder) {
+  // Only return the A register here!
+  if (RegNo != 0)
+    return MCDisassembler::Fail;
+
+  unsigned Register = GameBoyGPRDecoderTable[RegNo];
+  Inst.addOperand(MCOperand::createReg(Register));
+  return MCDisassembler::Success;
+}
+
 static DecodeStatus DecodeStackRegisterClass(MCInst &Inst, unsigned RegNo,
                                               uint64_t Address,
                                               const MCDisassembler *Decoder) {

@@ -31,12 +31,28 @@ class GameBoyInst8<dag outs, dag ins, string asmstr, list<dag> pattern>
   let Size = 1;
 }
 
+class PseudoInst8<dag outs, dag ins, string asmstr, list<dag> pattern>
+    : GameBoyInst8<outs, ins, asmstr, pattern> {
+  let Pattern = pattern;
+
+  let isPseudo = 1;
+  let isCodeGenOnly = 1;
+}
+
 /// A 16-bit GameBoy instruction.
 class GameBoyInst16<dag outs, dag ins, string asmstr, list<dag> pattern>
     : GameBoyInst<outs, ins, asmstr, pattern> {
   field bits<16> Inst;
 
   let Size = 2;
+}
+
+class PseudoInst16<dag outs, dag ins, string asmstr, list<dag> pattern>
+    : GameBoyInst16<outs, ins, asmstr, pattern> {
+  let Pattern = pattern;
+
+  let isPseudo = 1;
+  let isCodeGenOnly = 1;
 }
 
 class GameBoyInst24<dag outs, dag ins, string asmstr, list<dag> pattern>
@@ -101,13 +117,12 @@ class GBFRd<bits<2> op1, bits<3> op2, dag outs, dag ins, string asmstr, list<dag
 // Register operand instruction 2: <| xx - xxx - rrr |>
 // Used for arithmetic and logic instructions.
 //===----------------------------------------------------------------------===//
-class GBFRd2<bits<2> op1, bits<3> op2, dag outs, dag ins, string asmstr, list<dag> pattern>
+class GBFRd2<bits<5> op, dag outs, dag ins, string asmstr, list<dag> pattern>
 : GameBoyInst8<outs, ins, asmstr, pattern>
 {
   bits<3> rd;
 
-  let Inst{7 - 6} = op1;
-  let Inst{5 - 3} = op2;
+  let Inst{7 - 3} = op;
   let Inst{2 - 0} = rd;
 }
 

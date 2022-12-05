@@ -433,7 +433,7 @@ def LDAImm16Addr : GBF0< 0b11111010,
 
 let mayStore = 1 in {
 // LD (HL), Rr
-def LDHLAddrRr : GBFRd2<0b01, 0b110,
+def LDHLAddrRr : GBFRd2<0b01110,
                         (outs),
                         (ins GPRPairPointerHL : $ptrreg, GPR : $rr),
                         "ld\t( $ptrreg ), $rr",
@@ -484,15 +484,29 @@ def LDDEAddrA : GBF0< 0b00010010,
 }
 
 let mayLoad = 1, hasSideEffects = 1 in {
-// LD A, (HL+)
-// LD A, (HL-)
+// These instructions are to be implemented last, they are equivalent to 
+// LD A, (HL)
+// HL <- HL ± 1
 
+// LD A, (HL+)
+/*
+def LDAHLInc : GBF0<0b00101010, 
+                    (outs GPRLoadDestination : $rd),
+                    (ins GPRPairHLLoadInc : $rr),
+                    "ld\ta, [hl+]",
+                    [(store GPRLoadDestination : $rd, )]>;
+*/
+// LD A, (HL-)
 }
 
 
 let mayStore = 1 in {
 
-// LD (HL+), A [(HL) <- A; HL <- HL+1]
+// Equivalent to:
+// (HL) <- A
+// HL <- HL ± 1
+
+// LD (HL+), A 
 // LD (HL-), A
 }
 
@@ -537,7 +551,19 @@ let mayLoad = 1 in {
 // 8-bit arithmetic instructions
 //===----------------------------------------------------------------------===//
 
+// Force us to store the results in the same register we use as a source.
+// In other words, A is used as a source as well as the destination, whilst $rr
+// is any other 8-bit register.
+let Constraints = "$src = $rd" in {
 // ADD A, r
+def AddARr : GBFRd2<0b10000,
+                    (outs GPRLoadSourceA : $rd),
+                    (ins GPR : $src, GPR : $rr),
+                    "add\ta, $rr",
+                    [(set i8 : $rd,
+                        (add i8 : $src, i8 : $rr))]>;
+}
+
 // ADD A, Imm8
 // ADD A, (HL)
 

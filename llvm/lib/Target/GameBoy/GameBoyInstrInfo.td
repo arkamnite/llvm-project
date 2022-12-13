@@ -461,13 +461,14 @@ def LDImm8AddrA : GBF0< 0b11100000,
                         (outs),
                         (ins GPRLoadSourceA : $ra, i8imm : $n),
                         "ld\t$n [addr], a",
-                        [(store GPRLoadSourceA : $ra, i8 : $n)]>;
+                        [(store i8 : $ra, imm : $n)]>;
 // LD (Imm16), A
 def LDImm16AddrA : GBF0< 0b11101010,
                         (outs),
                         (ins GPRLoadSourceA : $ra, i16imm : $n),
                         "ld\t$n [addr], a",
-                        [(store GPRLoadSourceA : $ra, i16 : $n)]>;
+                        [(store i8 : $ra, imm : $n)]>;
+                        // []>;
 
 // LD (BC), A
 def LDBCAddrA : GBF0< 0b00000010,
@@ -514,12 +515,15 @@ let mayStore = 1 in {
 // 16-bit transfer instructions
 //===----------------------------------------------------------------------===//
 
+let isReMaterializable = 1 in  {
+
 // LD dd, Imm16
 def LDRdImm16 : GBFLD16<0b00, 0b0001,
                         (outs GPRPair : $rd),
                         (ins i16imm : $src),
                         "ld\t$rd, $src",
                         [(set i16 : $rd, imm : $src)]>;
+}
 
 // LD SP, HL
 let hasSideEffects = 0 in {
@@ -549,6 +553,12 @@ let mayLoad = 1 in {
 }
 
 // LDHL SP, s8
+
+// TODO: So the error is being caused by the fact that it is not possible to
+// add a value to the node. This only happens when there is a load it seems?
+// I need to find out which register it is trying to load the argument from, and
+// then work out why the backend is refusing to add this as a value. I'm guessing
+// there is a store instruction somewhere which is not loading values in correctly.
 
 // LD (Imm16), SP
 
@@ -682,9 +692,15 @@ def AddARr : GBFRd2<0b10000,
 // CALL Imm16
 // CALL cc, Imm16
 
+let isTerminator = 1, isReturn = 1, isBarrier = 1 in {
 // RET
+  def RET : GBF0< 0b11001001,
+                  (outs), (ins), "ret",
+                  [(GameBoyretflag)]>;
 // RETI
 // RET cc
+// GameBoyISD::RETCC_FLAG has been added.
+}
 
 // RST t
 
@@ -1374,7 +1390,7 @@ let isCall = 1 in {
 // Return instructions.
 //===----------------------------------------------------------------------===//
 let isTerminator = 1, isReturn = 1, isBarrier = 1 in {
-  def RET : F16<0b1001010100001000, (outs), (ins), "ret", [(GameBoyretflag)]>;
+  // def RET : F16<0b1001010100001000, (outs), (ins), "ret", [(GameBoyretflag)]>;
 
   def RETI : F16<0b1001010100011000, (outs), (ins), "reti", [(GameBoyretiflag)]>;
 }
@@ -1866,10 +1882,11 @@ def STSKRr : F32DM<0b1, (outs),
                    (ins imm16
                     : $k, GPR8
                     : $rd),
-                   "sts\t$k, $rd", [(store i8
-                                     : $rd, imm
-                                     : $k)]>,
+                   "sts\t$k, $rd", []>,
              Requires<[HasSRAM]>;
+                  //  "sts\t$k, $rd", [(store i8
+                  //                    : $rd, imm
+                  //                    : $k)]>,
 
 // STSW K+1:K, Rr+1:Rr
 //
@@ -1880,10 +1897,11 @@ def STSWKRr : Pseudo<(outs),
                      (ins i16imm
                       : $dst, DREGS
                       : $src),
-                     "stsw\t$dst, $src", [(store i16
-                                           : $src, imm
-                                           : $dst)]>,
+                     "stsw\t$dst, $src", []>,
               Requires<[HasSRAM]>;
+                    //  "stsw\t$dst, $src", [(store i16
+                    //                        : $src, imm
+                    //                        : $dst)]>,
 
 // Indirect stores.
 // ST P, Rr
@@ -1892,10 +1910,11 @@ def STPtrRr : FSTLD<1, 0b00, (outs),
                     (ins LDSTPtrReg
                      : $ptrreg, GPR8
                      : $reg),
-                    "st\t$ptrreg, $reg", [(store GPR8
-                                           : $reg, i16
-                                           : $ptrreg)]>,
+                    "st\t$ptrreg, $reg", []>,
               Requires<[HasSRAM]>;
+                    // "st\t$ptrreg, $reg", [(store GPR8
+                    //                        : $reg, i16
+                    //                        : $ptrreg)]>,
 
 // STW P, Rr+1:Rr
 // Stores the value of Rr into the location addressed by pointer P.

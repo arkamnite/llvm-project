@@ -202,7 +202,7 @@ static void restoreStatusRegister(MachineFunction &MF, MachineBasicBlock &MBB) {
 /// @param MBB 
 void GameBoyFrameLowering::emitEpilogue(MachineFunction &MF,
                                         MachineBasicBlock &MBB) const {
-  const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
+  // const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
 
   // We can early exit if there are no arguments we need to pop off the stack.
   /*
@@ -310,11 +310,14 @@ bool GameBoyFrameLowering::spillCalleeSavedRegisters(
   const TargetInstrInfo &TII = *STI.getInstrInfo();
   GameBoyMachineFunctionInfo *GameBoyFI = MF.getInfo<GameBoyMachineFunctionInfo>();
 
+  // These are iterated in reverse for some reason.
   for (const CalleeSavedInfo &I : llvm::reverse(CSI)) {
     Register Reg = I.getReg();
     bool IsNotLiveIn = !MBB.isLiveIn(Reg);
 
-    assert(TRI->getRegSizeInBits(*TRI->getMinimalPhysRegClass(Reg)) == 8 &&
+    // We are only allowing 8-bit registers here? We can actually only push
+    // 16-bit registers onto the stack so perhaps we should adjust this.
+    assert(TRI->getRegSizeInBits(*TRI->getMinimalPhysRegClass(Reg)) == 16 &&
            "Invalid register size");
 
     // Add the callee-saved register as live-in only if it is not already a
@@ -351,7 +354,8 @@ bool GameBoyFrameLowering::restoreCalleeSavedRegisters(
   for (const CalleeSavedInfo &CCSI : CSI) {
     Register Reg = CCSI.getReg();
 
-    assert(TRI->getRegSizeInBits(*TRI->getMinimalPhysRegClass(Reg)) == 8 &&
+    // We can only pop 16-bit registers from the stack.
+    assert(TRI->getRegSizeInBits(*TRI->getMinimalPhysRegClass(Reg)) == 16 &&
            "Invalid register size");
 
     BuildMI(MBB, MI, DL, TII.get(GameBoy::POPRd), Reg);

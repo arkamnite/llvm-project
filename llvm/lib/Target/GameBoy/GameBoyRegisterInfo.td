@@ -33,23 +33,23 @@ let Namespace = "GameBoy" in { def ptr : RegAltNameIndex; }
 // 8-bit general-purpose registers A through L
 //===----------------------------------------------------------------------===//
 
-def RA : GameBoyReg<0, "A">, DwarfRegNum<[0]>;
+def RA : GameBoyReg<0, "a">, DwarfRegNum<[0]>;
 def RF : GameBoyReg<1, "F">, DwarfRegNum<[1]>;
-def RB : GameBoyReg<2, "B">, DwarfRegNum<[2]>;
-def RC : GameBoyReg<3, "C">, DwarfRegNum<[3]>;
-def RD : GameBoyReg<4, "D">, DwarfRegNum<[4]>;
-def RE : GameBoyReg<5, "E">, DwarfRegNum<[5]>;
-def RH : GameBoyReg<6, "H">, DwarfRegNum<[6]>;
-def RL : GameBoyReg<7, "L">, DwarfRegNum<[7]>;
+def RB : GameBoyReg<2, "b">, DwarfRegNum<[2]>;
+def RC : GameBoyReg<3, "c">, DwarfRegNum<[3]>;
+def RD : GameBoyReg<4, "d">, DwarfRegNum<[4]>;
+def RE : GameBoyReg<5, "e">, DwarfRegNum<[5]>;
+def RH : GameBoyReg<6, "h">, DwarfRegNum<[6]>;
+def RL : GameBoyReg<7, "l">, DwarfRegNum<[7]>;
 
 //===----------------------------------------------------------------------===//
 // 16-bit general-purpose registers
 //===----------------------------------------------------------------------===//
 let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
-  def RARF : GameBoyReg<0, "AF", [RA, RF]>, DwarfRegNum<[0]>;
-  def RBRC : GameBoyReg<2, "BC", [RB, RC]>, DwarfRegNum<[2]>;
-  def RDRE : GameBoyReg<4, "DE", [RC, RD]>, DwarfRegNum<[4]>;
-  def RHRL : GameBoyReg<6, "HL", [RH, RL]>, DwarfRegNum<[6]>;
+  def RARF : GameBoyReg<0, "af", [RA, RF]>, DwarfRegNum<[0]>;
+  def RBRC : GameBoyReg<2, "bc", [RB, RC]>, DwarfRegNum<[2]>;
+  def RDRE : GameBoyReg<4, "de", [RC, RD]>, DwarfRegNum<[4]>;
+  def RHRL : GameBoyReg<6, "hl", [RH, RL]>, DwarfRegNum<[6]>;
 }
 
 //===---------------------------------------------------------------------===//

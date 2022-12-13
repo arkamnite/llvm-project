@@ -73,6 +73,7 @@ def CSR_NormalTiny : CalleeSavedRegs<(add R29, R28, R19, R18)>;
 def CSR_Interrupts : CalleeSavedRegs<(add(sequence "R%u", 31, 2))>;
 def CSR_InterruptsTiny : CalleeSavedRegs<(add(sequence "R%u", 31, 18))>;
 
+// These are the call-saved registers.
 def CSR : CalleeSavedRegs<(add RBRC, RARF)>;
 
 // In SDCC Version 0, RA, RB, RC are used for parameters and return values.

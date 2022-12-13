@@ -29,6 +29,8 @@ enum NodeType {
   RET_FLAG,
   /// Return from ISR.
   RETI_FLAG,
+  /// Return if the condition CC is true.
+  RETCC_FLAG,
   /// Represents an abstract call instruction,
   /// which includes a bunch of information.
   CALL,

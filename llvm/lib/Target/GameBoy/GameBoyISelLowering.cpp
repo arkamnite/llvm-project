@@ -1680,73 +1680,46 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
 
   SDValue Flag;
+  SDValue Glue;
   SmallVector<SDValue, 4> RetOps(1, Chain);
   // Copy the result values into the output registers.
   // This will be either 'RE' or 'RDRE'
-  // This original code is included in AVR as it is possible to require many
-  // registers. This does not apply here as we only use one register pair for
-  // possible returns.
-  /*
-  for (unsigned i = 0, e = RVLocs.size(); i != e; ++i) {
+  for (unsigned i = 0, e = RVLocs.size(); i < e; ++i) {
+    SDValue Val = OutVals[i];
     CCValAssign &VA = RVLocs[i];
-    assert(VA.isRegLoc() && "Can only return in registers!");
+    assert(VA.isRegLoc() && "Can only return values in registers!");
 
-    Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), OutVals[i], Flag);
+    // assert(VA.getLocVT() != MVT::i8 && "Can only return 8-bit integers currently.");
 
-    // Guarantee that all emitted copies are stuck together with flags.
-    Flag = Chain.getValue(1);
-    RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-  }
-  */
-
-  // Check if we only have one or two values to return.
-  if (OutVals.size() == 1) {
-    // Return in either RE or RDRE accordingly.
-    auto ov = OutVals[0];
-    switch (ov.getValueSizeInBits()) {
-      case 8:
-        // Store in RE
-        return DAG.getCopyToReg(Chain, dl, RegisterList8GameBoy[1], ov, Flag);
-        // Chain = DAG.getCopyToReg(Chain, dl, RegisterList8GameBoy[1], ov, Flag);
-        // break;
-      case 16:
-        // Store in RDRE
-        return DAG.getCopyToReg(Chain, dl, RegisterPairListGameBoy[0], ov, Flag);
-        // Chain = DAG.getCopyToReg(Chain, dl, RegisterPairListGameBoy[0], ov, Flag);
-        // break;
-      default:
-        assert("Return types other than 8-bit or 16-bit currently unsupported!");
-        break;
+    // Handle 8-bit values being returned
+    if (VA.getLocVT() == MVT::i8) {
+      Register RE = VA.getLocReg();
+      // assert(RE != GameBoy::RE)
+      // Copy the value to the register
+      Chain = DAG.getCopyToReg(Chain, dl, RE, Val, Glue);
+      // Guarantee that all emitted copies are stuck together.
+      Glue = Chain.getValue(1);
+      RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+    } else if (VA.getLocVT() == MVT::i16) {
+      // Split this value across RD and RE, placing HIGH in RD and LO in RE
+      // Must copy each value individually into D and E, as it is possible that
+      // 
     }
-    // Stick all emitted copies together with flags.
-    // Flag = Chain.getValue(1);
-    // RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-  } else if (OutVals.size() > 1) {
-    // Push values onto the stack, and place the pointer to this in
-    // RDRE.
-    assert("Currently only supports returning one value!");
   }
 
-  // Don't emit the ret/reti instruction when the naked attribute is present in
-  // the function being compiled. This is because the programmer has to handle
-  // the prologue and epilogue, including the final ret instruction.
-  if (MF.getFunction().getAttributes().hasFnAttr(Attribute::Naked)) {
-    return Chain;
+  // Update the chain
+  RetOps[0] = Chain;
+  // Add the glue node if we still have it
+  if (Glue.getNode()) {
+    RetOps.push_back(Glue);
   }
 
-  const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
+  // This is where we set the ret flag that is used in instruction selection.
+  unsigned RetOpc = GameBoyISD::RET_FLAG;
+  // TODO: Add interrupt here
+  // if (Func.hasFnAttribute("interrupt"))
+  // See RISCVIselLowering.cpp line 11036
 
-  // Get the correct opcode for this return type.
-  unsigned RetOpc =
-      AFI->isInterruptOrSignalHandler() ? GameBoyISD::RETI_FLAG : GameBoyISD::RET_FLAG;
-
-  RetOps[0] = Chain; // Update chain.
-
-  if (Flag.getNode()) {
-    RetOps.push_back(Flag);
-  }
-
-  // Create the return value.
   return DAG.getNode(RetOpc, dl, MVT::Other, RetOps);
 }
 

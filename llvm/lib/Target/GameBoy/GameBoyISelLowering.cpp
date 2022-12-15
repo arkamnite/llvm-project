@@ -1706,12 +1706,14 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
     switch (ov.getValueSizeInBits()) {
       case 8:
         // Store in RE
-        Chain = DAG.getCopyToReg(Chain, dl, RegisterList8GameBoy[1], ov, Flag);
-        break;
+        return DAG.getCopyToReg(Chain, dl, RegisterList8GameBoy[1], ov, Flag);
+        // Chain = DAG.getCopyToReg(Chain, dl, RegisterList8GameBoy[1], ov, Flag);
+        // break;
       case 16:
         // Store in RDRE
-        Chain = DAG.getCopyToReg(Chain, dl, RegisterPairListGameBoy[0], ov, Flag);
-        break;
+        return DAG.getCopyToReg(Chain, dl, RegisterPairListGameBoy[0], ov, Flag);
+        // Chain = DAG.getCopyToReg(Chain, dl, RegisterPairListGameBoy[0], ov, Flag);
+        // break;
       default:
         assert("Return types other than 8-bit or 16-bit currently unsupported!");
         break;

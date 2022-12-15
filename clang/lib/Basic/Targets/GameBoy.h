@@ -26,6 +26,8 @@ public:
         IntPtrType = SignedInt;
         PtrDiffType = SignedInt;
         SizeType = UnsignedInt;
+        IntWidth = 16;
+        IntAlign = 16;
     }
 
     void getTargetDefines(const LangOptions &Opts, MacroBuilder &Builder) const override;

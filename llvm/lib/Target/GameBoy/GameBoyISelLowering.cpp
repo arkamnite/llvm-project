@@ -1065,12 +1065,24 @@ static const MCPhysReg RegList16Tiny[] = {GameBoy::R26R25, GameBoy::R25R24,
                                           GameBoy::R24R23, GameBoy::R23R22,
                                           GameBoy::R22R21, GameBoy::R21R20};
 
-static const MCPhysReg RegisterList8GameBoy[] = {
-    GameBoy::RD,  GameBoy::RE,  GameBoy::RH,  GameBoy::RL
+static const MCPhysReg Argument8RegisterListGameBoy[] = {
+    // GameBoy::RD,  GameBoy::RE,  GameBoy::RH,  GameBoy::RL
+    GameBoy::RA,  GameBoy::RE
 };
 
-static const MCPhysReg RegisterPairListGameBoy[] = {
-    GameBoy::RDRE, GameBoy::RDRE,  GameBoy::RHRL, GameBoy::RHRL
+static const MCPhysReg Return8RegisterListGameBoy[] = {
+    // GameBoy::RD,  GameBoy::RE,  GameBoy::RH,  GameBoy::RL
+    GameBoy::RA,  GameBoy::RE
+};
+
+static const MCPhysReg Argument16RegisterListGameBoy[] = {
+    // GameBoy::RDRE, GameBoy::RDRE,  GameBoy::RHRL, GameBoy::RHRL
+    GameBoy::RDRE, GameBoy::RDRE, GameBoy::RBRC, GameBoy::RBRC
+};
+
+static const MCPhysReg Return16RegisterListGameBoy[] = {
+    // GameBoy::RDRE, GameBoy::RDRE,  GameBoy::RHRL, GameBoy::RHRL
+    GameBoy::RBRC, GameBoy::RBRC
 };
 
 static_assert(array_lengthof(RegList8GameBoy) == array_lengthof(RegList16GameBoy),
@@ -1085,8 +1097,8 @@ static void analyzeGameBoyArguments(TargetLowering::CallLoweringInfo *CLI,
                                     SmallVectorImpl<CCValAssign> &ArgLocs,
                                     CCState &CCInfo) {
   // Set up our register list.
-  ArrayRef<MCPhysReg> RegList8 = makeArrayRef(RegisterList8GameBoy);
-  ArrayRef<MCPhysReg> RegList16 = makeArrayRef(RegisterPairListGameBoy);
+  ArrayRef<MCPhysReg> RegList8 = makeArrayRef(Argument8RegisterListGameBoy);
+  ArrayRef<MCPhysReg> RegList16 = makeArrayRef(Argument16RegisterListGameBoy);
 
   unsigned NumArgs = Args.size();
   // The index of the last used register in the 8-bit register list.
@@ -1194,10 +1206,10 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
   ArrayRef<MCPhysReg> RegList8;
   ArrayRef<MCPhysReg> RegList16;
   
-  // RegList8 = makeArrayRef(RegisterList8GameBoy, array_lengthof(RegisterList8GameBoy));
-  // RegList16 = makeArrayRef(RegisterPairListGameBoy, array_lengthof(RegisterPairListGameBoy));
+  RegList8 = makeArrayRef(Argument8RegisterListGameBoy, array_lengthof(Argument8RegisterListGameBoy));
+  RegList16 = makeArrayRef(Argument16RegisterListGameBoy, array_lengthof(Argument16RegisterListGameBoy));
 
-  // /*
+  /*
   if (Tiny) {
     RegList8 = makeArrayRef(RegList8Tiny, array_lengthof(RegList8Tiny));
     RegList16 = makeArrayRef(RegList16Tiny, array_lengthof(RegList16Tiny));
@@ -1205,9 +1217,26 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
     RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
     RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
   }
-  // */
+  */
 
   unsigned NumArgs = Args.size();
+
+  for (unsigned i = 0; i != NumArgs; ++i) {
+    MVT ArgVT = Args[i].VT;
+    ISD::ArgFlagsTy ArgFlags = Args[i].Flags;
+
+    Type *ArgTy = nullptr;
+    // if (Args[i].isOrigArg())
+    //   ArgTy = FType->getParamType(Ins[i].getOrigArgIndex());
+    // You need to actually assign stuff to CCInfo i.e. via allocating registers.
+    if (ArgVT == MVT::i8) {
+      CCInfo.AllocateReg(GameBoy::RA);
+    } else if (ArgVT == MVT::i16) {
+      CCInfo.AllocateReg(GameBoy::RDRE);
+    }
+  }
+
+  /*
   // This is the index of the last used register, in RegList*.
   // -1 means R26 (R26 is never actually used in CC).
   int RegLastIdx = -1;
@@ -1266,6 +1295,7 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
       }
     }
   }
+  */
 }
 
 /// Count the total number of bytes needed to pass or return these arguments.
@@ -1295,13 +1325,8 @@ static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
   // Choose the proper register list for argument passing according to the ABI.
   ArrayRef<MCPhysReg> RegList8;
   ArrayRef<MCPhysReg> RegList16;
-  if (Tiny) {
-    RegList8 = makeArrayRef(RegList8Tiny, array_lengthof(RegList8Tiny));
-    RegList16 = makeArrayRef(RegList16Tiny, array_lengthof(RegList16Tiny));
-  } else {
-    RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
-    RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
-  }
+  RegList8 = makeArrayRef(Return8RegisterListGameBoy, array_lengthof(Return8RegisterListGameBoy));
+  RegList16 = makeArrayRef(Return16RegisterListGameBoy, array_lengthof(Return16RegisterListGameBoy));
 
   // GCC-ABI says that the size is rounded up to the next even number,
   // but actually once it is more than 4 it will always round up to 8.
@@ -1334,6 +1359,10 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
     SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
     const SmallVectorImpl<ISD::InputArg> &Ins, const SDLoc &dl,
     SelectionDAG &DAG, SmallVectorImpl<SDValue> &InVals) const {
+
+  // Used with vargs to accumulate store chains.
+  std::vector<SDValue> OutChains;
+
   MachineFunction &MF = DAG.getMachineFunction();
   MachineFrameInfo &MFI = MF.getFrameInfo();
   auto DL = DAG.getDataLayout();
@@ -1351,6 +1380,37 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
                      Subtarget.hasTinyEncoding());
   }
 
+  for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
+    CCValAssign &VA = ArgLocs[i];
+    SDValue ArgValue;
+
+    if (VA.isRegLoc()) {
+      EVT RegVT = VA.getLocVT();
+      const TargetRegisterClass *RC;
+      if (RegVT == MVT::i8) {
+        RC = &GameBoy::GPRRegClass;
+      } else if (RegVT == MVT::i16) {
+        RC = &GameBoy::GPRPairRegClass;
+      } else {
+        llvm_unreachable("Unknown argument type!");
+      }
+        Register Reg = MF.addLiveIn(VA.getLocReg(), RC);
+        ArgValue = DAG.getCopyFromReg(Chain, dl, Reg, RegVT);
+    } else {
+      llvm_unreachable("Stack not supported yet for arguments.");
+
+    }
+
+    InVals.push_back(ArgValue);
+  }
+
+  if (!OutChains.empty()) {
+    OutChains.push_back(Chain);
+    Chain = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, OutChains);
+  }
+
+  return Chain;
+  /*
   SDValue ArgValue;
   for (CCValAssign &VA : ArgLocs) {
 
@@ -1426,6 +1486,7 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
   }
 
   return Chain;
+  */
 }
 
 
@@ -1683,28 +1744,36 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   SDValue Glue;
   SmallVector<SDValue, 4> RetOps(1, Chain);
   // Copy the result values into the output registers.
-  // This will be either 'RE' or 'RDRE'
+  // for (unsigned i = 0, e = RVLocs.size(); i < e; ++i) {
+  //   SDValue Val = OutVals[i];
+  //   CCValAssign &VA = RVLocs[i];
+  //   assert(VA.isRegLoc() && "Can only return values in registers!");
+
+  //   // assert(VA.getLocVT() != MVT::i8 && "Can only return 8-bit integers currently.");
+
+  //   // Handle 8-bit values being returned
+  //   if (VA.getLocVT() == MVT::i8) {
+  //     Register Reg = VA.getLocReg();
+  //     // Copy the value to the register
+  //     Chain = DAG.getCopyToReg(Chain, dl, Reg, Val, Glue);
+  //     // Guarantee that all emitted copies are stuck together.
+  //     Glue = Chain.getValue(1);
+  //     RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+  //   } else if (VA.getLocVT() == MVT::i16) {
+  //     // Split this value across registers.
+  //   }
+  // }
+
   for (unsigned i = 0, e = RVLocs.size(); i < e; ++i) {
-    SDValue Val = OutVals[i];
     CCValAssign &VA = RVLocs[i];
-    assert(VA.isRegLoc() && "Can only return values in registers!");
+    assert(VA.isRegLoc() && "Can only return in registers!");
 
-    // assert(VA.getLocVT() != MVT::i8 && "Can only return 8-bit integers currently.");
+    Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), OutVals[i], Flag);
 
-    // Handle 8-bit values being returned
-    if (VA.getLocVT() == MVT::i8) {
-      Register RE = VA.getLocReg();
-      // assert(RE != GameBoy::RE)
-      // Copy the value to the register
-      Chain = DAG.getCopyToReg(Chain, dl, RE, Val, Glue);
-      // Guarantee that all emitted copies are stuck together.
-      Glue = Chain.getValue(1);
-      RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-    } else if (VA.getLocVT() == MVT::i16) {
-      // Split this value across RD and RE, placing HIGH in RD and LO in RE
-      // Must copy each value individually into D and E, as it is possible that
-      // 
-    }
+    // Guarantee that all emitted copies are stuck together with flags.
+    Flag = Chain.getValue(1);
+    RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+
   }
 
   // Update the chain

@@ -24,6 +24,7 @@
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/ErrorHandling.h"
+#include <iostream>
 
 #include "GameBoy.h"
 #include "GameBoyMachineFunctionInfo.h"
@@ -881,16 +882,16 @@ void GameBoyTargetLowering::ReplaceNodeResults(SDNode *N,
   SDLoc DL(N);
 
   switch (N->getOpcode()) {
-  case ISD::ADD: {
-    // Convert add (x, imm) into sub (x, -imm).
-    if (const ConstantSDNode *C = dyn_cast<ConstantSDNode>(N->getOperand(1))) {
-      SDValue Sub = DAG.getNode(
-          ISD::SUB, DL, N->getValueType(0), N->getOperand(0),
-          DAG.getConstant(-C->getAPIntValue(), DL, C->getValueType(0)));
-      Results.push_back(Sub);
-    }
-    break;
-  }
+  // case ISD::ADD: {
+  //   // Convert add (x, imm) into sub (x, -imm).
+  //   if (const ConstantSDNode *C = dyn_cast<ConstantSDNode>(N->getOperand(1))) {
+  //     SDValue Sub = DAG.getNode(
+  //         ISD::SUB, DL, N->getValueType(0), N->getOperand(0),
+  //         DAG.getConstant(-C->getAPIntValue(), DL, C->getValueType(0)));
+  //     Results.push_back(Sub);
+  //   }
+  //   break;
+  // }
   default: {
     SDValue Res = LowerOperation(SDValue(N, 0), DAG);
 
@@ -1060,7 +1061,7 @@ static const MCPhysReg Return8RegList[] = {
 
 static const MCPhysReg Argument16RegList[] = {
     // GameBoy::RDRE, GameBoy::RDRE,  GameBoy::RHRL, GameBoy::RHRL
-    GameBoy::RDRE, GameBoy::RDRE, GameBoy::RBRC, GameBoy::RBRC
+    GameBoy::RDRE, GameBoy::RBRC
 };
 
 static const MCPhysReg Return16RegList[] = {
@@ -1091,7 +1092,7 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
   for (unsigned i = 0; i != NumArgs;) {
     MVT VT = Args[i].VT;
 
-    ISD::ArgFlagsTy ArgFlags = Args[i].Flags;
+    // ISD::ArgFlagsTy ArgFlags = Args[i].Flags;
     unsigned rid = 0;
     unsigned j = i + 1;
     unsigned Reg;
@@ -1121,48 +1122,36 @@ getTotalArgumentsSizeInBytes(const SmallVectorImpl<ArgT> &Args) {
 }
 
 /// Analyze incoming and outgoing value of returning from a function.
-/// The algorithm is similar to analyzeArguments, but there can only be
-/// one value, possibly an aggregate, and it is limited to 8 bytes.
+/// This is similar to analyzeArguments except this time, we know there
+/// only one returning value of either 8-bits or 16-bits.
 template <typename ArgT>
 static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
                                 CCState &CCInfo, bool Tiny) {
   unsigned NumArgs = Args.size();
   unsigned TotalBytes = getTotalArgumentsSizeInBytes(Args);
   // CanLowerReturn() guarantees this assertion.
-  assert(TotalBytes <= 8 &&
-         "return values greater than 8 bytes cannot be lowered");
+  assert(TotalBytes <= 2 &&
+         "return values greater than 2 bytes cannot be lowered");
 
   // Choose the proper register list for argument passing according to the ABI.
-  ArrayRef<MCPhysReg> RegList8;
-  ArrayRef<MCPhysReg> RegList16;
-  RegList8 = makeArrayRef(Return8RegList, array_lengthof(Return8RegList));
-  RegList16 = makeArrayRef(Return16RegList, array_lengthof(Return16RegList));
+  ArrayRef<MCPhysReg> RegList8 = makeArrayRef(Return8RegList, array_lengthof(Return8RegList));
+  ArrayRef<MCPhysReg> RegList16 = makeArrayRef(Return16RegList, array_lengthof(Return16RegList));
 
-  // GCC-ABI says that the size is rounded up to the next even number,
-  // but actually once it is more than 4 it will always round up to 8.
-  if (TotalBytes > 4) {
-    TotalBytes = 8;
+  // We only have one argument, so find out what type it is
+  MVT VT = Args[0].VT;
+  unsigned rid = 0;
+  unsigned Reg;
+  if (VT == MVT::i8) {
+    std::cout << "Found an i8" << std::endl;
+    Reg = CCInfo.AllocateReg(RegList8[rid]);
+  } else if (VT == MVT::i16) {
+    std::cout << "Found an i16" << std::endl;
+    Reg = CCInfo.AllocateReg(RegList16[rid]);
   } else {
-    TotalBytes = alignTo(TotalBytes, 2);
+    llvm_unreachable("calling convention can only manage i8 and i16 types");
   }
-
-  // The index of the first register to use.
-  int RegIdx = TotalBytes - 1;
-  for (unsigned i = 0; i != NumArgs; ++i) {
-    MVT VT = Args[i].VT;
-    unsigned Reg;
-    if (VT == MVT::i8) {
-      Reg = CCInfo.AllocateReg(RegList8[RegIdx]);
-    } else if (VT == MVT::i16) {
-      Reg = CCInfo.AllocateReg(RegList16[RegIdx]);
-    } else {
-      llvm_unreachable("calling convention can only manage i8 and i16 types");
-    }
-    assert(Reg && "register not available in calling convention");
-    CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
-    // Registers sort in increasing order
-    RegIdx -= VT.getStoreSize();
-  }
+  assert(Reg && "register not available in calling convention");
+  CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Full));
 }
 
 SDValue GameBoyTargetLowering::LowerFormalArguments(
@@ -1245,12 +1234,7 @@ SDValue GameBoyTargetLowering::LowerCallResult(
   CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), RVLocs,
                  *DAG.getContext());
 
-  // Handle runtime calling convs.
-  if (CallConv == CallingConv::AVR_BUILTIN) {
-    CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
-  } else {
-    analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
-  }
+  analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
 
   // Copy all of the result registers out of their specified physreg.
   for (CCValAssign const &RVLoc : RVLocs) {
@@ -1301,9 +1285,11 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
                  *DAG.getContext());
 
   MachineFunction &MF = DAG.getMachineFunction();
+  auto FuncType = MF.getFunction().getFunctionType()->getReturnType();
 
   // Currently only supporting the single calling convention.
-  CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
+  // CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
+  analyzeReturnValues(Outs, CCInfo, false);
 
   SDValue Flag;
   SDValue Glue;
@@ -1329,6 +1315,7 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   //   }
   // }
 
+  // RVLocs should realistically only be of size 1.
   for (unsigned i = 0, e = RVLocs.size(); i < e; ++i) {
     CCValAssign &VA = RVLocs[i];
     assert(VA.isRegLoc() && "Can only return in registers!");
@@ -1338,7 +1325,6 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
     // Guarantee that all emitted copies are stuck together with flags.
     Flag = Chain.getValue(1);
     RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-
   }
 
   // Update the chain

@@ -22,17 +22,6 @@ def RetCC_GameBoy_BUILTIN : CallingConv<[
   // CCIfType<[i32], CCAssignToReg<[RDRERBRC]>>
 ]>;
 
-// The SDCC Version 0 calling convention.
-def RetCC_GameBoy_SDCC_V1 : CallingConv<[
-  CCIfType<[i8], CCAssignToReg<[RA]>>,
-  CCIfType<[i16], CCAssignToReg<[RBRC]>>
-]>;
-
-def RetCC_GameBoy_SDCC_V0 : CallingConv<[
-  CCIfType<[i8], CCAssignToReg<[RE]>>,
-  CCIfType<[i16], CCAssignToReg<[RDRE]>>
-]>;
-
 //===----------------------------------------------------------------------===//
 // GameBoy Argument Calling Conventions
 //===----------------------------------------------------------------------===//

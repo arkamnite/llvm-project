@@ -1091,10 +1091,6 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
   for (unsigned i = 0; i != NumArgs;) {
     MVT VT = Args[i].VT;
 
-    // The whole byte counting thing is due to how the values are
-    // assigned to registers in decreasing number from R26. This
-    // is obviously not necessary here.
-
     ISD::ArgFlagsTy ArgFlags = Args[i].Flags;
     unsigned rid = 0;
     unsigned j = i + 1;
@@ -1110,67 +1106,6 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
       CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
     }
   }
-
-  /*
-  // This is the index of the last used register, in RegList*.
-  // -1 means R26 (R26 is never actually used in CC).
-  int RegLastIdx = -1;
-  // Once a value is passed to the stack it will always be used
-  bool UseStack = false;
-  for (unsigned i = 0; i != NumArgs;) {
-    MVT VT = Args[i].VT;
-    // We have to count the number of bytes for each function argument, that is
-    // those Args with the same OrigArgIndex. This is important in case the
-    // function takes an aggregate type.
-    // Current argument will be between [i..j).
-    unsigned ArgIndex = Args[i].OrigArgIndex;
-    unsigned TotalBytes = VT.getStoreSize();
-    unsigned j = i + 1;
-    for (; j != NumArgs; ++j) {
-      if (Args[j].OrigArgIndex != ArgIndex)
-        break;
-      TotalBytes += Args[j].VT.getStoreSize();
-    }
-    // Round up to even number of bytes.
-    TotalBytes = alignTo(TotalBytes, 2);
-    // Skip zero sized arguments
-    if (TotalBytes == 0)
-      continue;
-    // The index of the first register to be used
-    unsigned RegIdx = RegLastIdx + TotalBytes;
-    RegLastIdx = RegIdx;
-    // If there are not enough registers, use the stack
-    if (RegIdx >= RegList8.size()) {
-      UseStack = true;
-    }
-    for (; i != j; ++i) {
-      MVT VT = Args[i].VT;
-
-      if (UseStack) {
-        auto evt = EVT(VT).getTypeForEVT(CCInfo.getContext());
-        unsigned Offset = CCInfo.AllocateStack(TD->getTypeAllocSize(evt),
-                                               TD->getABITypeAlign(evt));
-        CCInfo.addLoc(
-            CCValAssign::getMem(i, VT, Offset, VT, CCValAssign::Full));
-      } else {
-        unsigned Reg;
-        if (VT == MVT::i8) {
-          Reg = CCInfo.AllocateReg(RegList8[RegIdx]);
-        } else if (VT == MVT::i16) {
-          Reg = CCInfo.AllocateReg(RegList16[RegIdx]);
-        } else {
-          llvm_unreachable(
-              "calling convention can only manage i8 and i16 types");
-        }
-        assert(Reg && "register not available in calling convention");
-        CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
-        // Registers inside a particular argument are sorted in increasing order
-        // (remember the array is reversed).
-        RegIdx -= VT.getStoreSize();
-      }
-    }
-  }
-  */
 }
 
 /// Count the total number of bytes needed to pass or return these arguments.
@@ -1348,9 +1283,9 @@ bool GameBoyTargetLowering::CanLowerReturn(
 
 /// @brief LowerReturn for the Game Boy.
 /// The current calling convention returns values as follows:
-/// 8-bit values : stored in e
-/// 16-bit values : stored in de
-/// Otherwise : pointer stored in (de)
+/// 8-bit values : stored in a, e
+/// 16-bit values : stored in bc
+/// Otherwise : pointer stored in (bc)
 SDValue
 GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
                                bool isVarArg,
@@ -1368,7 +1303,6 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   MachineFunction &MF = DAG.getMachineFunction();
 
   // Currently only supporting the single calling convention.
-  // 
   CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
 
   SDValue Flag;

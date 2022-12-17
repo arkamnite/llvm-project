@@ -299,7 +299,7 @@ GameBoyRegisterInfo::getPointerRegClass(const MachineFunction &MF,
 
 void GameBoyRegisterInfo::splitReg(Register Reg, Register &LoReg,
                                Register &HiReg) const {
-  assert(GameBoy::DREGSRegClass.contains(Reg) && "can only split 16-bit registers");
+  assert(GameBoy::GPRPairRegClass.contains(Reg) && "can only split 16-bit registers");
 
   LoReg = getSubReg(Reg, GameBoy::sub_lo);
   HiReg = getSubReg(Reg, GameBoy::sub_hi);

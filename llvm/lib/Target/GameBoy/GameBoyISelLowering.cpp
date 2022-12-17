@@ -1123,15 +1123,16 @@ getTotalArgumentsSizeInBytes(const SmallVectorImpl<ArgT> &Args) {
 
 /// Analyze incoming and outgoing value of returning from a function.
 /// This is similar to analyzeArguments except this time, we know there
-/// only one returning value of either 8-bits or 16-bits.
+/// only one returning value of either 8-bits or 16-bits, or 32-bits.
+// If 32-bit, will return true.
 template <typename ArgT>
-static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
-                                CCState &CCInfo, bool Tiny) {
+static bool analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
+                                CCState &CCInfo) {
   unsigned NumArgs = Args.size();
   unsigned TotalBytes = getTotalArgumentsSizeInBytes(Args);
   // CanLowerReturn() guarantees this assertion.
-  assert(TotalBytes <= 2 &&
-         "return values greater than 2 bytes cannot be lowered");
+  assert(TotalBytes <= 4 &&
+         "return values greater than 4 bytes cannot be lowered");
 
   // Choose the proper register list for argument passing according to the ABI.
   ArrayRef<MCPhysReg> RegList8 = makeArrayRef(Return8RegList, array_lengthof(Return8RegList));
@@ -1147,11 +1148,23 @@ static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
   } else if (VT == MVT::i16) {
     std::cout << "Found an i16" << std::endl;
     Reg = CCInfo.AllocateReg(RegList16[rid]);
+  } else if (VT == MVT::i32) {
+    // Split the value up into two 16-bit values, to be placed debc
+    // SDValue VLo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, MVT::i16, Args[0], DAG.getConstant(Args[0], DL, MVT::i32));
+    // This is the lower bytes of the 32-bit integer. It needs to be zero-extended.
+    Reg = CCInfo.AllocateReg(GameBoy::RDRE);
+    CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::ZExt));
+    // These are the upper bytes of the 32-bit integer. It has therefore been truncated.
+    Reg = CCInfo.AllocateReg(GameBoy::RBRC);
+    CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Trunc));
+    // Signal 32-bits.
+    return true;
   } else {
     llvm_unreachable("calling convention can only manage i8 and i16 types");
   }
   assert(Reg && "register not available in calling convention");
   CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Full));
+  return false;
 }
 
 SDValue GameBoyTargetLowering::LowerFormalArguments(
@@ -1234,15 +1247,15 @@ SDValue GameBoyTargetLowering::LowerCallResult(
   CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), RVLocs,
                  *DAG.getContext());
 
-  analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
+  analyzeReturnValues(Ins, CCInfo);
 
   // Copy all of the result registers out of their specified physreg.
   for (CCValAssign const &RVLoc : RVLocs) {
-    Chain = DAG.getCopyFromReg(Chain, dl, RVLoc.getLocReg(), RVLoc.getValVT(),
-                               InFlag)
-                .getValue(1);
-    InFlag = Chain.getValue(2);
-    InVals.push_back(Chain.getValue(0));
+      Chain = DAG.getCopyFromReg(Chain, dl, RVLoc.getLocReg(), RVLoc.getValVT(),
+                                InFlag)
+                  .getValue(1);
+      InFlag = Chain.getValue(2);
+      InVals.push_back(Chain.getValue(0));
   }
 
   return Chain;
@@ -1267,8 +1280,9 @@ bool GameBoyTargetLowering::CanLowerReturn(
 
 /// @brief LowerReturn for the Game Boy.
 /// The current calling convention returns values as follows:
-/// 8-bit values : stored in a, e
+/// 8-bit values : stored in a
 /// 16-bit values : stored in bc
+// 32-bit values: stored in debc
 /// Otherwise : pointer stored in (bc)
 SDValue
 GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
@@ -1289,7 +1303,17 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
 
   // Currently only supporting the single calling convention.
   // CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
-  analyzeReturnValues(Outs, CCInfo, false);
+  auto isI32 = analyzeReturnValues(Outs, CCInfo);
+  // If we are handling an I32, it will need to be split up.
+  SDValue retVal = OutVals[0];
+  SDValue rvLow, rvHigh;
+
+  if (isI32) {
+    rvLow = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i16, retVal,
+      DAG.getConstant(0, dl, MVT::i32));
+    rvHigh = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i16, retVal,
+      DAG.getConstant(1, dl, MVT::i32));
+  }
 
   SDValue Flag;
   SDValue Glue;
@@ -1315,16 +1339,28 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   //   }
   // }
 
-  // RVLocs should realistically only be of size 1.
+  // RVLocs will be of size 2 if we have to assign a 32-bit value to debc.
+  // Therefore we need to check whether this is a full value or not.
   for (unsigned i = 0, e = RVLocs.size(); i < e; ++i) {
     CCValAssign &VA = RVLocs[i];
     assert(VA.isRegLoc() && "Can only return in registers!");
+    if (VA.getLocInfo() == CCValAssign::Full) {
+      Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), OutVals[i], Flag);
 
-    Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), OutVals[i], Flag);
+      // Guarantee that all emitted copies are stuck together with flags.
+      Flag = Chain.getValue(1);
+      RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+    } else {
+      // Copy each HIGH and LOW to the appropriate register.
+      // Given that this is little-endian, copy the low bits first.
+      i == 0 
+        ? Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvLow, Flag) 
+        : Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvHigh, Flag);
 
-    // Guarantee that all emitted copies are stuck together with flags.
-    Flag = Chain.getValue(1);
-    RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+      // Guarantee that all emitted copies are stuck together with flags.
+      Flag = Chain.getValue(1);
+      RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+    }
   }
 
   // Update the chain

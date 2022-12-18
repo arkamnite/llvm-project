@@ -41,7 +41,8 @@ void GameBoyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   // of the form "ld reg, X+".
   // TODO: We should be able to rewrite this using TableGen data.
   switch (Opcode) {
-  case GameBoy::LDRdHLAddr:
+  case GameBoy::LDRd8Ptr:
+  case GameBoy::LDRdHLPtr:
   case GameBoy::LDAPtr:
   case GameBoy::LDPtrA:
   case GameBoy::LDAImm8Addr:

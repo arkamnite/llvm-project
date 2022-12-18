@@ -99,7 +99,7 @@ static DecodeStatus DecodeGPRPairRegisterClass(MCInst &Inst, unsigned RegNo,
 }
 
 // Method added for GB LoadSourceA register class.
-static DecodeStatus DecodeGPRLoadSourceARegisterClass(MCInst &Inst, unsigned RegNo,
+static DecodeStatus DecodeGPRLoadRegisterClass(MCInst &Inst, unsigned RegNo,
                                                       uint64_t Address,
                                                       const MCDisassembler *Decoder) {
   // Only return the A register here!

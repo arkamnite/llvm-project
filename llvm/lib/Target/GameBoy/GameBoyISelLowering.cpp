@@ -1088,29 +1088,31 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
 
   FunctionType *FType = F->getFunction().getFunctionType();
   unsigned NumArgs = Args.size();
-
-  for (unsigned i = 0; i != NumArgs;) {
+  auto n = F->getName();
+  std::cout << NumArgs << " arguments in function " << n.str() << std::endl;
+  unsigned rid = 0;
+  for (unsigned i = 0; i < NumArgs; i++) {
+    std::cout << "Handling argument " << i;
     MVT VT = Args[i].VT;
 
     // ISD::ArgFlagsTy ArgFlags = Args[i].Flags;
-    unsigned rid = 0;
     unsigned j = i + 1;
     unsigned Reg;
-    for (; i != j; ++i) {
+    // for (; i != j; ++i) {
       if (VT == MVT::i8) {
-        std::cout << "Found i8 argument for arg " << i << std::endl;
         Reg = CCInfo.AllocateReg(RegList8[rid]);
+        std::cout << " Found i8 argument in reg " << Reg << " where rid " << rid << std::endl;
         rid++;
       } else if (VT == MVT::i16) {
-        std::cout << "Found i16 argument for arg " << i << std::endl;
         Reg = CCInfo.AllocateReg(RegList16[rid]);
+        std::cout << " Found i16 argument in reg " << Reg << " where rid " << rid << std::endl;
         rid++;
       } else {
         llvm_unreachable("calling convention can only manage i8 and i16 argument types.");
       }
-      assert(Reg && "register not available in calling convention (arg)");
+      // assert(Reg && "register not available in calling convention (arg)");
       CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
-    }
+    // }
   }
 }
 
@@ -1144,16 +1146,17 @@ static bool analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
   ArrayRef<MCPhysReg> RegList16 = makeArrayRef(Return16RegList, array_lengthof(Return16RegList));
 
   // We only have one argument, so find out what type it is
+  unsigned rid = 0;
+  std::cout << "Found " << NumArgs << " return values in function" << std::endl;
   for (unsigned i = 0; i < NumArgs; ++i) {
     MVT VT = Args[0].VT;
-    unsigned rid = 0;
     unsigned Reg;
     if (VT == MVT::i8) {
-      std::cout << "Found an i8" << std::endl;
+      std::cout << "Found an i8 return value with index " << rid << std::endl;
       Reg = CCInfo.AllocateReg(RegList8[rid]);
     } else if (VT == MVT::i16) {
       Reg = CCInfo.AllocateReg(RegList16[rid]);
-      std::cout << "Found an i16 with index " << rid << ", " << i << std::endl;
+      std::cout << "Found an i16 return value with index " << rid << ", " << i << std::endl;
     } else if (VT == MVT::i32) {
       std::cout << "Found an i32" << std::endl;
       // This is the lower bytes of the 32-bit integer. It needs to be zero-extended.
@@ -1167,10 +1170,7 @@ static bool analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
     } else {
       llvm_unreachable("calling convention can only manage i8 and i16 types");
     }
-    if (Reg) {
-      // assert(Reg && "register not available in calling convention");
-      CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Full));
-    }
+    CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Full));
     rid++;
   }
   return false;
@@ -1189,17 +1189,18 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
   // Assign locations to all of the incoming arguments.
   SmallVector<CCValAssign, 16> ArgLocs;
   CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs, *DAG.getContext());
-  analyzeArguments(nullptr, &MF.getFunction(), &DL, Ins, ArgLocs, CCInfo,
-                     false);
-
+  // analyzeArguments(nullptr, &MF.getFunction(), &DL, Ins, ArgLocs, CCInfo, false);
+  CCInfo.AnalyzeFormalArguments(Ins, ArgCC_GameBoy_Default);
   // Variadic functions unsupported for the time being.
-  // Used with vargs to accumulate store chains.
-  std::vector<SDValue> OutChains;
+  // CCInfo.AnalyzeFormalArguments(Ins, ArgCC_GameBoy_VarArg);
 
+  std::cout << "Lowering formal arguments for function " << MF.getName().str() << std::endl;
   // Handles basic register values
-  for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
-    CCValAssign &VA = ArgLocs[i];
-    SDValue ArgValue;
+  SDValue ArgValue;
+  std::cout << "Found " << ArgLocs.size() << " many arglocs" << std::endl;
+  // for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
+  for (CCValAssign &VA : ArgLocs) {
+    // CCValAssign &VA = ArgLocs[i];
 
     // Arguments stored in registers
     if (VA.isRegLoc()) {
@@ -1248,10 +1249,10 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
 
   // Handle structs here in another for loop.
 
-  if (!OutChains.empty()) {
-    OutChains.push_back(Chain);
-    Chain = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, OutChains);
-  }
+  // if (!OutChains.empty()) {
+  //   OutChains.push_back(Chain);
+  //   Chain = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, OutChains);
+  // }
 
   return Chain;
 }
@@ -1382,7 +1383,7 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   if (!Ins.empty()) {
     InFlag = Chain.getValue(1);
   }
-  
+
   // Handle result values, copy them from physical registers into virtual registers
   // that we return.
   return LowerCallResult(Chain, InFlag, CallConv, isVarArg, Ins, DL, DAG, InVals);
@@ -1445,6 +1446,7 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
                                const SmallVectorImpl<SDValue> &OutVals,
                                const SDLoc &dl, SelectionDAG &DAG) const {
 
+  std::cout << "Lowering return" << std::endl;
   // CCValAssign - represent the assignment of the return value to locations.
   SmallVector<CCValAssign, 16> RVLocs;
 
@@ -1453,11 +1455,12 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
                  *DAG.getContext());
 
   MachineFunction &MF = DAG.getMachineFunction();
-  auto FuncType = MF.getFunction().getFunctionType()->getReturnType();
 
   // Currently only supporting the single calling convention.
   // CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
-  auto isI32 = analyzeReturnValues(Outs, CCInfo);
+  // auto isI32 = analyzeReturnValues(Outs, CCInfo);
+  CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
+  bool isI32 = false;
   // If we are handling an I32, it will need to be split up.
   SDValue retVal = OutVals[0];
   SDValue rvLow, rvHigh;
@@ -1471,37 +1474,36 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   }
 
   SDValue Flag;
-  SDValue Glue;
   SmallVector<SDValue, 4> RetOps(1, Chain);
   // Copy the result values into the output registers.
   // RVLocs will be of size 2 if we have to assign a 32-bit value to debc.
   // Therefore we need to check whether this is a full value or not.
-  for (unsigned i = 0, e = RVLocs.size(); i < e; ++i) {
+  for (unsigned i = 0, e = RVLocs.size(); i != e; ++i) {
     CCValAssign &VA = RVLocs[i];
     assert(VA.isRegLoc() && "Can only return in registers!");
-    if (VA.getLocInfo() == CCValAssign::Full) {
-      Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), OutVals[i], Flag);
+    Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), OutVals[i], Flag);
 
-      // Guarantee that all emitted copies are stuck together with flags.
-      Flag = Chain.getValue(1);
-      RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-    } else {
-      // Copy each HIGH and LOW to the appropriate register.
-      // Given that this is little-endian, copy the low bits first.
-      i == 0 
-        ? Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvLow, Flag) 
-        : Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvHigh, Flag);
-      // Guarantee that all emitted copies are stuck together with flags.
-      Flag = Chain.getValue(1);
-      RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-    }
+    // Guarantee that all emitted copies are stuck together with flags.
+    Flag = Chain.getValue(1);
+    RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+    // if (VA.getLocInfo() == CCValAssign::Full) {
+    // } else {
+    //   // Copy each HIGH and LOW to the appropriate register.
+    //   // Given that this is little-endian, copy the low bits first.
+    //   i == 0 
+    //     ? Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvLow, Flag) 
+    //     : Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvHigh, Flag);
+    //   // Guarantee that all emitted copies are stuck together with flags.
+    //   Flag = Chain.getValue(1);
+    //   RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
+    // }
   }
 
   // Update the chain
   RetOps[0] = Chain;
   // Add the glue node if we still have it
-  if (Glue.getNode()) {
-    RetOps.push_back(Glue);
+  if (Flag.getNode()) {
+    RetOps.push_back(Flag);
   }
 
   // This is where we set the ret flag that is used in instruction selection.

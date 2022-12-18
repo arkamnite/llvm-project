@@ -368,6 +368,14 @@ def GameBoy_Condition_NC : PatLeaf<(i8 0)>;
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 
+// A special operand type for the LDRdRr instruction, which converts
+// each register number into a 3-bit field used in the instruction.
+def LDRdRrReg : Operand<i16> {
+  let MIOperandInfo = (ops GPR);
+  let EncoderMethod = "encodeLDRdRrReg";
+  let ParserMatchClass = PtrRegAsmOperand;
+}
+
 //===----------------------------------------------------------------------===//
 // 8-bit transfer and input/output instructions
 //===----------------------------------------------------------------------===//
@@ -395,8 +403,19 @@ def LDRdImm8 : GBFRd< 0b00, 0b110,
 }
 
 let mayLoad = 1 in {
+
+// Pseudo instruction needed to lower LD Rd8, &Ptr
+// LD Rd, (RR)
+def LDRd8Ptr : Pseudo< (outs GPR : $rd),
+                  (ins GPRPair : $ptrreg),
+                  "ld\t$rd, [ $ptrreg ]",
+                  [(set GPR : $rd, (load i16 : $ptrreg))]>;
+
+// To move entire register pairs, the following pseudo instruction
+// must be constructed. LD RdH, RrH; LD RdL, RrL
+
 // LD Rd, (HL)
-def LDRdHLAddr : GBFRd< 0b01, 0b110,
+def LDRdHLPtr : GBFRd< 0b01, 0b110,
                         (outs GPR : $rd),
                         (ins GPRPairPointerHL : $ptrreg),
                         "ld\t$rd, [hl]",
@@ -410,21 +429,6 @@ def LDAPtr : GBFLdAPtr< (outs GPRLoad : $rd),
                         "ld\ta, [ $ptrreg ]",
                         [(set GPRLoad :
                           $rd, (load i16 : $ptrreg))]>;
-
-// LD A, (BC)
-// def LDABCAddr : GBF0< 0b00001010,
-//                       (outs GPRLoadDestination : $rd),
-//                       (ins GPRPairPointerBC : $ptrreg),
-//                       "ld\ta, [bc]",
-//                       [(set GPRLoadDestination : 
-//                         $rd, (load i16 : $ptrreg))]>;
-// // LD A, (DE)
-// def LDADEAddr : GBF0< 0b00011010,
-//                       (outs GPRLoadDestination : $rd),
-//                       (ins GPRPairPointerDE : $ptrreg),
-//                       "ld\ta, [de]",
-//                       [(set GPRLoadDestination : 
-//                         $rd, (load i16 : $ptrreg))]>;
 
 // LD A, (C)
 // Applies specifically to the range FF00 - FFFF
@@ -445,6 +449,9 @@ def LDAImm16Addr : GBF0< 0b11111010,
 }
 
 let mayStore = 1 in {
+// Need a psuedo instruction for LD Ptr, Rr
+
+
 // LD (HL), Rr
 def LDHLAddrRr : GBFRd2<0b01110,
                         (outs),
@@ -472,13 +479,13 @@ let mayStore = 1 in {
 // LD (Imm8), A [ rules apply for (Imm8)]
 def LDImm8AddrA : GBF0< 0b11100000,
                         (outs),
-                        (ins GPRLoadSourceA : $ra, i8imm : $n),
+                        (ins GPRLoad : $ra, i8imm : $n),
                         "ld\t$n [addr], a",
                         [(store i8 : $ra, imm : $n)]>;
 // LD (Imm16), A
 def LDImm16AddrA : GBF0< 0b11101010,
                         (outs),
-                        (ins GPRLoadSourceA : $ra, i16imm : $n),
+                        (ins GPRLoad : $ra, i16imm : $n),
                         "ld\t$n [addr], a",
                         [(store i8 : $ra, imm : $n)]>;
                         // []>;
@@ -490,20 +497,6 @@ def LDPtrA : GBFLdPtrA< (outs),
                         (ins GPRPairPointer : $ptrreg, GPRLoad : $ra),
                         "ld\t[ $ptrreg ], a",
                         [(store GPRLoad : $ra, GPRPairPointer : $ptrreg)]>;
-
-/*
-def LDBCAddrA : GBF0< 0b00000010,
-                      (outs),
-                      (ins GPRPairPointerBC : $ptrreg, GPRLoadSourceA : $ra),
-                      "ld\t[bc], a",
-                      [(store GPRLoadSourceA : $ra, GPRPairPointerBC : $ptrreg)]>;
-// LD (DE), A
-def LDDEAddrA : GBF0< 0b00010010,
-                      (outs),
-                      (ins GPRPairPointerDE : $ptrreg, GPRLoadSourceA : $ra),
-                      "ld\t[de], a",
-                      [(store GPRLoadSourceA : $ra, GPRPairPointerDE : $ptrreg)]>;
-*/
 }
 
 let mayLoad = 1, hasSideEffects = 1 in {
@@ -594,7 +587,7 @@ let mayLoad = 1 in {
 let Constraints = "$src = $rd" in {
 // ADD A, r
 def AddARr : GBFRd2<0b10000,
-                    (outs GPRLoadSourceA : $rd),
+                    (outs GPRLoad : $rd),
                     (ins GPR : $src, GPR : $rr),
                     "add\ta, $rr",
                     [(set i8 : $rd,

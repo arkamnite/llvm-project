@@ -113,7 +113,7 @@ GameBoyRegisterInfo::getLargestLegalSuperClass(const TargetRegisterClass *RC,
                                            const MachineFunction &MF) const {
   const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
   if (TRI->isTypeLegalForClass(*RC, MVT::i16)) {
-    return &GameBoy::DREGSRegClass;
+    return &GameBoy::GPRPairRegClass;
   }
 
   if (TRI->isTypeLegalForClass(*RC, MVT::i8)) {

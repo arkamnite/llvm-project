@@ -24,7 +24,6 @@
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/ErrorHandling.h"
-#include <iostream>
 
 #include "GameBoy.h"
 #include "GameBoyMachineFunctionInfo.h"
@@ -38,8 +37,6 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
                                      const GameBoySubtarget &STI)
     : TargetLowering(TM), Subtarget(STI) {
   // Set up the register classes.
-  addRegisterClass(MVT::i8, &GameBoy::GPRRegClass);
-  addRegisterClass(MVT::i16, &GameBoy::GPRPairRegClass);
   addRegisterClass(MVT::i8, &GameBoy::GPR8RegClass);
   addRegisterClass(MVT::i16, &GameBoy::DREGSRegClass);
 
@@ -60,7 +57,6 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i8, Expand);
   setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i16, Expand);
 
-  // TODO: What happens when loading types?
   for (MVT VT : MVT::integer_valuetypes()) {
     for (auto N : {ISD::EXTLOAD, ISD::SEXTLOAD, ISD::ZEXTLOAD}) {
       setLoadExtAction(N, VT, MVT::i1, Promote);
@@ -70,7 +66,6 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
 
   setTruncStoreAction(MVT::i16, MVT::i8, Expand);
 
-  // TODO: Does Game Boy support these instructions in the form of SUBC and ADDC? 
   for (MVT VT : MVT::integer_valuetypes()) {
     setOperationAction(ISD::ADDC, VT, Legal);
     setOperationAction(ISD::SUBC, VT, Legal);
@@ -274,7 +269,6 @@ EVT GameBoyTargetLowering::getSetCCResultType(const DataLayout &DL, LLVMContext 
   return MVT::i8;
 }
 
-// TODO: Check that shifts are being done in a Game Boy friendly way.
 SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const {
   unsigned Opc8;
   const SDNode *N = Op.getNode();
@@ -315,7 +309,6 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
   }
 
   uint64_t ShiftAmount = cast<ConstantSDNode>(N->getOperand(1))->getZExtValue();
-  // 
   SDValue Victim = N->getOperand(0);
 
   switch (Op.getOpcode()) {
@@ -342,7 +335,6 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
 
   // Optimize int8/int16 shifts.
   if (VT.getSizeInBits() == 8) {
-
     if (Op.getOpcode() == ISD::SHL && 4 <= ShiftAmount && ShiftAmount < 7) {
       // Optimize LSL when 4 <= ShiftAmount <= 6.
       Victim = DAG.getNode(GameBoyISD::SWAP, dl, VT, Victim);
@@ -882,16 +874,16 @@ void GameBoyTargetLowering::ReplaceNodeResults(SDNode *N,
   SDLoc DL(N);
 
   switch (N->getOpcode()) {
-  // case ISD::ADD: {
-  //   // Convert add (x, imm) into sub (x, -imm).
-  //   if (const ConstantSDNode *C = dyn_cast<ConstantSDNode>(N->getOperand(1))) {
-  //     SDValue Sub = DAG.getNode(
-  //         ISD::SUB, DL, N->getValueType(0), N->getOperand(0),
-  //         DAG.getConstant(-C->getAPIntValue(), DL, C->getValueType(0)));
-  //     Results.push_back(Sub);
-  //   }
-  //   break;
-  // }
+  case ISD::ADD: {
+    // Convert add (x, imm) into sub (x, -imm).
+    if (const ConstantSDNode *C = dyn_cast<ConstantSDNode>(N->getOperand(1))) {
+      SDValue Sub = DAG.getNode(
+          ISD::SUB, DL, N->getValueType(0), N->getOperand(0),
+          DAG.getConstant(-C->getAPIntValue(), DL, C->getValueType(0)));
+      Results.push_back(Sub);
+    }
+    break;
+  }
   default: {
     SDValue Res = LowerOperation(SDValue(N, 0), DAG);
 
@@ -1049,25 +1041,26 @@ bool GameBoyTargetLowering::isOffsetFoldingLegal(
 
 #include "GameBoyGenCallingConv.inc"
 
-static const MCPhysReg Argument8RegList[] = {
-    // GameBoy::RD,  GameBoy::RE,  GameBoy::RH,  GameBoy::RL
-    GameBoy::RA,  GameBoy::RE
+/// Registers for calling conventions, ordered in reverse as required by ABI.
+/// Both arrays must be of the same length.
+// static const MCPhysReg RegList8GameBoy[] = {
+//     GameBoy::R25, GameBoy::R24, GameBoy::R23, GameBoy::R22, GameBoy::R21, GameBoy::R20,
+//     GameBoy::R19, GameBoy::R18, GameBoy::R17, GameBoy::R16, GameBoy::R15, GameBoy::R14,
+//     GameBoy::R13, GameBoy::R12, GameBoy::R11, GameBoy::R10, GameBoy::R9,  GameBoy::R8};
+static const MCPhysReg RegList8GameBoy[] = {
+    GameBoy::RA, GameBoy::RE
 };
-
-static const MCPhysReg Return8RegList[] = {
-    // GameBoy::RD,  GameBoy::RE,  GameBoy::RH,  GameBoy::RL
-    GameBoy::RA,  GameBoy::RE
-};
-
-static const MCPhysReg Argument16RegList[] = {
-    // GameBoy::RDRE, GameBoy::RDRE,  GameBoy::RHRL, GameBoy::RHRL
+static const MCPhysReg RegList16GameBoy[] = {
     GameBoy::RDRE, GameBoy::RBRC
 };
+// static const MCPhysReg RegList16GameBoy[] = {
+//     GameBoy::R26R25, GameBoy::R25R24, GameBoy::R24R23, GameBoy::R23R22, GameBoy::R22R21,
+//     GameBoy::R21R20, GameBoy::R20R19, GameBoy::R19R18, GameBoy::R18R17, GameBoy::R17R16,
+//     GameBoy::R16R15, GameBoy::R15R14, GameBoy::R14R13, GameBoy::R13R12, GameBoy::R12R11,
+//     GameBoy::R11R10, GameBoy::R10R9,  GameBoy::R9R8};
 
-static const MCPhysReg Return16RegList[] = {
-    // GameBoy::RDRE, GameBoy::RDRE,  GameBoy::RHRL, GameBoy::RHRL
-    GameBoy::RBRC, GameBoy::RBRC
-};
+// static_assert(array_lengthof(RegList8GameBoy) == array_lengthof(RegList16GameBoy),
+//               "8-bit and 16-bit register arrays must be of equal length");
 
 /// Analyze incoming and outgoing function arguments. We need custom C++ code
 /// to handle special constraints in the ABI.
@@ -1082,37 +1075,67 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
   // Choose the proper register list for argument passing according to the ABI.
   ArrayRef<MCPhysReg> RegList8;
   ArrayRef<MCPhysReg> RegList16;
-  
-  RegList8 = makeArrayRef(Argument8RegList, array_lengthof(Argument8RegList));
-  RegList16 = makeArrayRef(Argument16RegList, array_lengthof(Argument16RegList));
+  RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
+  RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
 
-  FunctionType *FType = F->getFunction().getFunctionType();
   unsigned NumArgs = Args.size();
-  auto n = F->getName();
-  std::cout << NumArgs << " arguments in function " << n.str() << std::endl;
-  unsigned rid = 0;
-  for (unsigned i = 0; i < NumArgs; i++) {
-    std::cout << "Handling argument " << i;
+  // This is the index of the last used register, in RegList*.
+  // -1 means R26 (R26 is never actually used in CC).
+  int RegLastIdx = -1;
+  // Once a value is passed to the stack it will always be used
+  bool UseStack = false;
+  for (unsigned i = 0; i != NumArgs;) {
     MVT VT = Args[i].VT;
-
-    // ISD::ArgFlagsTy ArgFlags = Args[i].Flags;
+    // We have to count the number of bytes for each function argument, that is
+    // those Args with the same OrigArgIndex. This is important in case the
+    // function takes an aggregate type.
+    // Current argument will be between [i..j).
+    unsigned ArgIndex = Args[i].OrigArgIndex;
+    unsigned TotalBytes = VT.getStoreSize();
     unsigned j = i + 1;
-    unsigned Reg;
-    // for (; i != j; ++i) {
-      if (VT == MVT::i8) {
-        Reg = CCInfo.AllocateReg(RegList8[rid]);
-        std::cout << " Found i8 argument in reg " << Reg << " where rid " << rid << std::endl;
-        rid++;
-      } else if (VT == MVT::i16) {
-        Reg = CCInfo.AllocateReg(RegList16[rid]);
-        std::cout << " Found i16 argument in reg " << Reg << " where rid " << rid << std::endl;
-        rid++;
+    for (; j != NumArgs; ++j) {
+      if (Args[j].OrigArgIndex != ArgIndex)
+        break;
+      TotalBytes += Args[j].VT.getStoreSize();
+    }
+    // Round up to even number of bytes.
+    TotalBytes = alignTo(TotalBytes, 2);
+    // Skip zero sized arguments
+    if (TotalBytes == 0)
+      continue;
+    // The index of the first register to be used
+    unsigned RegIdx = RegLastIdx + TotalBytes;
+    RegLastIdx = RegIdx;
+    // If there are not enough registers, use the stack
+    if (RegIdx >= RegList8.size()) {
+      UseStack = true;
+    }
+    for (; i != j; ++i) {
+      MVT VT = Args[i].VT;
+
+      if (UseStack) {
+        auto evt = EVT(VT).getTypeForEVT(CCInfo.getContext());
+        unsigned Offset = CCInfo.AllocateStack(TD->getTypeAllocSize(evt),
+                                               TD->getABITypeAlign(evt));
+        CCInfo.addLoc(
+            CCValAssign::getMem(i, VT, Offset, VT, CCValAssign::Full));
       } else {
-        llvm_unreachable("calling convention can only manage i8 and i16 argument types.");
+        unsigned Reg;
+        if (VT == MVT::i8) {
+          Reg = CCInfo.AllocateReg(RegList8[RegIdx]);
+        } else if (VT == MVT::i16) {
+          Reg = CCInfo.AllocateReg(RegList16[RegIdx]);
+        } else {
+          llvm_unreachable(
+              "calling convention can only manage i8 and i16 types");
+        }
+        assert(Reg && "register not available in calling convention");
+        CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
+        // Registers inside a particular argument are sorted in increasing order
+        // (remember the array is reversed).
+        RegIdx -= VT.getStoreSize();
       }
-      // assert(Reg && "register not available in calling convention (arg)");
-      CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
-    // }
+    }
   }
 }
 
@@ -1129,97 +1152,95 @@ getTotalArgumentsSizeInBytes(const SmallVectorImpl<ArgT> &Args) {
 }
 
 /// Analyze incoming and outgoing value of returning from a function.
-/// This is similar to analyzeArguments except this time, we know there
-/// only one returning value of either 8-bits or 16-bits, or 32-bits.
-// If 32-bit, will return true.
+/// The algorithm is similar to analyzeArguments, but there can only be
+/// one value, possibly an aggregate, and it is limited to 8 bytes.
 template <typename ArgT>
-static bool analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
-                                CCState &CCInfo) {
+static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
+                                CCState &CCInfo, bool Tiny) {
   unsigned NumArgs = Args.size();
   unsigned TotalBytes = getTotalArgumentsSizeInBytes(Args);
   // CanLowerReturn() guarantees this assertion.
-  assert(TotalBytes <= 4 &&
-         "return values greater than 4 bytes cannot be lowered");
+  assert(TotalBytes <= 8 &&
+         "return values greater than 8 bytes cannot be lowered");
 
   // Choose the proper register list for argument passing according to the ABI.
-  ArrayRef<MCPhysReg> RegList8 = makeArrayRef(Return8RegList, array_lengthof(Return8RegList));
-  ArrayRef<MCPhysReg> RegList16 = makeArrayRef(Return16RegList, array_lengthof(Return16RegList));
+  ArrayRef<MCPhysReg> RegList8;
+  ArrayRef<MCPhysReg> RegList16;
+  RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
+  RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
 
-  // We only have one argument, so find out what type it is
-  unsigned rid = 0;
-  std::cout << "Found " << NumArgs << " return values in function" << std::endl;
-  for (unsigned i = 0; i < NumArgs; ++i) {
-    MVT VT = Args[0].VT;
+  // GCC-ABI says that the size is rounded up to the next even number,
+  // but actually once it is more than 4 it will always round up to 8.
+  if (TotalBytes > 4) {
+    TotalBytes = 8;
+  } else {
+    TotalBytes = alignTo(TotalBytes, 2);
+  }
+
+  // The index of the first register to use.
+  int RegIdx = TotalBytes - 1;
+  for (unsigned i = 0; i != NumArgs; ++i) {
+    MVT VT = Args[i].VT;
     unsigned Reg;
     if (VT == MVT::i8) {
-      std::cout << "Found an i8 return value with index " << rid << std::endl;
-      Reg = CCInfo.AllocateReg(RegList8[rid]);
+      Reg = CCInfo.AllocateReg(RegList8[RegIdx]);
     } else if (VT == MVT::i16) {
-      Reg = CCInfo.AllocateReg(RegList16[rid]);
-      std::cout << "Found an i16 return value with index " << rid << ", " << i << std::endl;
-    } else if (VT == MVT::i32) {
-      std::cout << "Found an i32" << std::endl;
-      // This is the lower bytes of the 32-bit integer. It needs to be zero-extended.
-      Reg = CCInfo.AllocateReg(GameBoy::RDRE);
-      CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::ZExt));
-      // These are the upper bytes of the 32-bit integer. It has therefore been truncated.
-      Reg = CCInfo.AllocateReg(GameBoy::RBRC);
-      CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Trunc));
-      // Signal 32-bits.
-      return true;
+      Reg = CCInfo.AllocateReg(RegList16[RegIdx]);
     } else {
       llvm_unreachable("calling convention can only manage i8 and i16 types");
     }
-    CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Full));
-    rid++;
+    assert(Reg && "register not available in calling convention");
+    CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
+    // Registers sort in increasing order
+    RegIdx -= VT.getStoreSize();
   }
-  return false;
 }
 
 SDValue GameBoyTargetLowering::LowerFormalArguments(
     SDValue Chain, CallingConv::ID CallConv, bool isVarArg,
     const SmallVectorImpl<ISD::InputArg> &Ins, const SDLoc &dl,
     SelectionDAG &DAG, SmallVectorImpl<SDValue> &InVals) const {
-
-
   MachineFunction &MF = DAG.getMachineFunction();
   MachineFrameInfo &MFI = MF.getFrameInfo();
   auto DL = DAG.getDataLayout();
 
   // Assign locations to all of the incoming arguments.
   SmallVector<CCValAssign, 16> ArgLocs;
-  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs, *DAG.getContext());
-  // analyzeArguments(nullptr, &MF.getFunction(), &DL, Ins, ArgLocs, CCInfo, false);
-  CCInfo.AnalyzeFormalArguments(Ins, ArgCC_GameBoy_Default);
-  // Variadic functions unsupported for the time being.
-  // CCInfo.AnalyzeFormalArguments(Ins, ArgCC_GameBoy_VarArg);
+  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs,
+                 *DAG.getContext());
 
-  std::cout << "Lowering formal arguments for function " << MF.getName().str() << std::endl;
-  // Handles basic register values
+  // Variadic functions do not need all the analysis below.
+  if (isVarArg) {
+    CCInfo.AnalyzeFormalArguments(Ins, ArgCC_GameBoy_Vararg);
+  } else {
+    analyzeArguments(nullptr, &MF.getFunction(), &DL, Ins, ArgLocs, CCInfo,
+                     Subtarget.hasTinyEncoding());
+  }
+
   SDValue ArgValue;
-  std::cout << "Found " << ArgLocs.size() << " many arglocs" << std::endl;
-  // for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
   for (CCValAssign &VA : ArgLocs) {
-    // CCValAssign &VA = ArgLocs[i];
 
-    // Arguments stored in registers
+    // Arguments stored on registers.
     if (VA.isRegLoc()) {
       EVT RegVT = VA.getLocVT();
       const TargetRegisterClass *RC;
       if (RegVT == MVT::i8) {
-        RC = &GameBoy::GPRRegClass;
+        RC = &GameBoy::GPR8RegClass;
       } else if (RegVT == MVT::i16) {
-        RC = &GameBoy::GPRPairRegClass;
+        RC = &GameBoy::DREGSRegClass;
       } else {
         llvm_unreachable("Unknown argument type!");
       }
 
-      // Transform the arguments stored on physical registers into virtual registers
       Register Reg = MF.addLiveIn(VA.getLocReg(), RC);
       ArgValue = DAG.getCopyFromReg(Chain, dl, Reg, RegVT);
 
-      // Clang shouldn't do this, but sometimes 8-bit values will be promoted to 16-bit.
-      // We can check for this by asserting sext or zext to capture this, and then truncate it down.
+      // :NOTE: Clang should not promote any i8 into i16 but for safety the
+      // following code will handle zexts or sexts generated by other
+      // front ends. Otherwise:
+      // If this is an 8 bit value, it is really passed promoted
+      // to 16 bits. Insert an assert[sz]ext to capture this, then
+      // truncate to the right size.
       switch (VA.getLocInfo()) {
       default:
         llvm_unreachable("Unknown loc info!");
@@ -1239,20 +1260,34 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
         ArgValue = DAG.getNode(ISD::TRUNCATE, dl, VA.getValVT(), ArgValue);
         break;
       }
-      
+
       InVals.push_back(ArgValue);
-    } else if (VA.isMemLoc()) {
-      llvm_unreachable("Stack not supported yet for arguments.");
-      // Create load nodes to retrieve arguments from the stack
+    } else {
+      // Only arguments passed on the stack should make it here.
+      assert(VA.isMemLoc());
+
+      EVT LocVT = VA.getLocVT();
+
+      // Create the frame index object for this incoming parameter.
+      int FI = MFI.CreateFixedObject(LocVT.getSizeInBits() / 8,
+                                     VA.getLocMemOffset(), true);
+
+      // Create the SelectionDAG nodes corresponding to a load
+      // from this parameter.
+      SDValue FIN = DAG.getFrameIndex(FI, getPointerTy(DL));
+      InVals.push_back(DAG.getLoad(LocVT, dl, Chain, FIN,
+                                   MachinePointerInfo::getFixedStack(MF, FI)));
     }
   }
 
-  // Handle structs here in another for loop.
+  // If the function takes variable number of arguments, make a frame index for
+  // the start of the first vararg value... for expansion of llvm.va_start.
+  if (isVarArg) {
+    unsigned StackSize = CCInfo.getNextStackOffset();
+    GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
 
-  // if (!OutChains.empty()) {
-  //   OutChains.push_back(Chain);
-  //   Chain = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, OutChains);
-  // }
+    AFI->setVarArgsFrameIndex(MFI.CreateFixedObject(2, StackSize, true));
+  }
 
   return Chain;
 }
@@ -1263,7 +1298,6 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
 
 SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
                                      SmallVectorImpl<SDValue> &InVals) const {
-
   SelectionDAG &DAG = CLI.DAG;
   SDLoc &DL = CLI.DL;
   SmallVectorImpl<ISD::OutputArg> &Outs = CLI.Outs;
@@ -1271,18 +1305,23 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   SmallVectorImpl<ISD::InputArg> &Ins = CLI.Ins;
   SDValue Chain = CLI.Chain;
   SDValue Callee = CLI.Callee;
-  /// Currently unsupported.
   bool &isTailCall = CLI.IsTailCall;
   CallingConv::ID CallConv = CLI.CallConv;
   bool isVarArg = CLI.IsVarArg;
-  isVarArg = false;
 
-  // Analyze operands of call, assign locations to each operand.
+  MachineFunction &MF = DAG.getMachineFunction();
+
+  // GameBoy does not yet support tail call optimization.
+  isTailCall = false;
+
+  // Analyze operands of the call, assigning locations to each operand.
   SmallVector<CCValAssign, 16> ArgLocs;
-  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs, *DAG.getContext());
+  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs,
+                 *DAG.getContext());
 
-  // Convert GlobalAddress/ExternalSymbol node to a TargetGlobalAddress/TargetExternalSymbol
-  // so that legalisation doesn't mess this up. From AVRISelLowering.cpp
+  // If the callee is a GlobalAddress/ExternalSymbol node (quite common, every
+  // direct call is) turn it into a TargetGlobalAddress/TargetExternalSymbol
+  // node so that legalize doesn't hack it.
   const Function *F = nullptr;
   if (const GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee)) {
     const GlobalValue *GV = G->getGlobal();
@@ -1296,18 +1335,22 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
                                          getPointerTy(DAG.getDataLayout()));
   }
 
-  // Variadic functions do not need any of this analysis.
+  // Variadic functions do not need all the analysis below.
+  if (isVarArg) {
+    CCInfo.AnalyzeCallOperands(Outs, ArgCC_GameBoy_Vararg);
+  } else {
+    analyzeArguments(&CLI, F, &DAG.getDataLayout(), Outs, ArgLocs, CCInfo,
+                     Subtarget.hasTinyEncoding());
+  }
 
-  // We currently don't need to push anything on the stack.
+  // Get a count of how many bytes are to be pushed on the stack.
   unsigned NumBytes = CCInfo.getNextStackOffset();
 
-  // Create the start of the CALLSEQ
   Chain = DAG.getCALLSEQ_START(Chain, NumBytes, 0, DL);
 
   SmallVector<std::pair<unsigned, SDValue>, 8> RegsToPass;
 
-  // Walk the register assignments and insert copies where needed.
-  // (for loop)
+  // First, walk the register assignments, inserting copies.
   unsigned AI, AE;
   bool HasStackArgs = false;
   for (AI = 0, AE = ArgLocs.size(); AI != AE; ++AI) {
@@ -1335,33 +1378,69 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
       break;
     }
 
-    // Handle stack argument here with VA.isMemLoc()
-    // RegsToPass stores all the arguments on registers.
+    // Stop when we encounter a stack argument, we need to process them
+    // in reverse order in the loop below.
+    if (VA.isMemLoc()) {
+      HasStackArgs = true;
+      break;
+    }
+
+    // Arguments that can be passed on registers must be kept in the RegsToPass
+    // vector.
     RegsToPass.push_back(std::make_pair(VA.getLocReg(), Arg));
   }
 
-  // Build a sequence of copy-to-reg nodes which copy the outgoing arguments into registers.
-  // InFlag is used to stick all instructions together.
+  // Second, stack arguments have to walked.
+  // Previously this code created chained stores but those chained stores appear
+  // to be unchained in the legalization phase. Therefore, do not attempt to
+  // chain them here. In fact, chaining them here somehow causes the first and
+  // second store to be reversed which is the exact opposite of the intended
+  // effect.
+  if (HasStackArgs) {
+    SmallVector<SDValue, 8> MemOpChains;
+    for (; AI != AE; AI++) {
+      CCValAssign &VA = ArgLocs[AI];
+      SDValue Arg = OutVals[AI];
+
+      assert(VA.isMemLoc());
+
+      // SP points to one stack slot further so add one to adjust it.
+      SDValue PtrOff = DAG.getNode(
+          ISD::ADD, DL, getPointerTy(DAG.getDataLayout()),
+          DAG.getRegister(GameBoy::SP, getPointerTy(DAG.getDataLayout())),
+          DAG.getIntPtrConstant(VA.getLocMemOffset() + 1, DL));
+
+      MemOpChains.push_back(
+          DAG.getStore(Chain, DL, Arg, PtrOff,
+                       MachinePointerInfo::getStack(MF, VA.getLocMemOffset())));
+    }
+
+    if (!MemOpChains.empty())
+      Chain = DAG.getNode(ISD::TokenFactor, DL, MVT::Other, MemOpChains);
+  }
+
+  // Build a sequence of copy-to-reg nodes chained together with token chain and
+  // flag operands which copy the outgoing args into registers.  The InFlag in
+  // necessary since all emited instructions must be stuck together.
   SDValue InFlag;
   for (auto Reg : RegsToPass) {
     Chain = DAG.getCopyToReg(Chain, DL, Reg.first, Reg.second, InFlag);
     InFlag = Chain.getValue(1);
   }
 
-  // Creates a chain and flag for the retval copy to use.
+  // Returns a chain & a flag for retval copy to use.
   SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
   SmallVector<SDValue, 8> Ops;
   Ops.push_back(Chain);
   Ops.push_back(Callee);
 
-  // Add argument registers to end of list, so they are known live into the call.
+  // Add argument registers to the end of the list so that they are known live
+  // into the call.
   for (auto Reg : RegsToPass) {
     Ops.push_back(DAG.getRegister(Reg.first, Reg.second.getValueType()));
   }
 
-  // Add a register mask operand which will represent the call-preserved registers.
-  // These are only HL.
-  // Check that the Subtarget doesn't mess this up.
+  // Add a register mask operand representing the call-preserved registers.
   const TargetRegisterInfo *TRI = Subtarget.getRegisterInfo();
   const uint32_t *Mask =
       TRI->getCallPreservedMask(DAG.getMachineFunction(), CallConv);
@@ -1372,7 +1451,6 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     Ops.push_back(InFlag);
   }
 
-  // Push the InFlag back onto the ops.
   Chain = DAG.getNode(GameBoyISD::CALL, DL, NodeTys, Ops);
   InFlag = Chain.getValue(1);
 
@@ -1384,9 +1462,10 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     InFlag = Chain.getValue(1);
   }
 
-  // Handle result values, copy them from physical registers into virtual registers
-  // that we return.
-  return LowerCallResult(Chain, InFlag, CallConv, isVarArg, Ins, DL, DAG, InVals);
+  // Handle result values, copying them out of physregs into vregs that we
+  // return.
+  return LowerCallResult(Chain, InFlag, CallConv, isVarArg, Ins, DL, DAG,
+                         InVals);
 }
 
 /// Lower the result values of a call into the
@@ -1402,15 +1481,20 @@ SDValue GameBoyTargetLowering::LowerCallResult(
   CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), RVLocs,
                  *DAG.getContext());
 
-  analyzeReturnValues(Ins, CCInfo);
+  // Handle runtime calling convs.
+  if (CallConv == CallingConv::AVR_BUILTIN) {
+    CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
+  } else {
+    analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
+  }
 
   // Copy all of the result registers out of their specified physreg.
   for (CCValAssign const &RVLoc : RVLocs) {
-      Chain = DAG.getCopyFromReg(Chain, dl, RVLoc.getLocReg(), RVLoc.getValVT(),
-                                InFlag)
-                  .getValue(1);
-      InFlag = Chain.getValue(2);
-      InVals.push_back(Chain.getValue(0));
+    Chain = DAG.getCopyFromReg(Chain, dl, RVLoc.getLocReg(), RVLoc.getValVT(),
+                               InFlag)
+                .getValue(1);
+    InFlag = Chain.getValue(2);
+    InVals.push_back(Chain.getValue(0));
   }
 
   return Chain;
@@ -1433,89 +1517,6 @@ bool GameBoyTargetLowering::CanLowerReturn(
   return TotalBytes <= 8;
 }
 
-/// @brief LowerReturn for the Game Boy.
-/// The current calling convention returns values as follows:
-/// 8-bit values : stored in a
-/// 16-bit values : stored in bc
-/// 32-bit values: stored in debc
-/// Otherwise : pointer stored in (bc)
-SDValue
-GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
-                               bool isVarArg,
-                               const SmallVectorImpl<ISD::OutputArg> &Outs,
-                               const SmallVectorImpl<SDValue> &OutVals,
-                               const SDLoc &dl, SelectionDAG &DAG) const {
-
-  std::cout << "Lowering return" << std::endl;
-  // CCValAssign - represent the assignment of the return value to locations.
-  SmallVector<CCValAssign, 16> RVLocs;
-
-  // CCState - Info about the registers and stack slot.
-  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), RVLocs,
-                 *DAG.getContext());
-
-  MachineFunction &MF = DAG.getMachineFunction();
-
-  // Currently only supporting the single calling convention.
-  // CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
-  // auto isI32 = analyzeReturnValues(Outs, CCInfo);
-  CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
-  bool isI32 = false;
-  // If we are handling an I32, it will need to be split up.
-  SDValue retVal = OutVals[0];
-  SDValue rvLow, rvHigh;
-
-  if (isI32) {
-    std::cout << "Found i32, handling." << std::endl;
-    rvLow = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i16, retVal,
-      DAG.getConstant(0, dl, MVT::i32));
-    rvHigh = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i16, retVal,
-      DAG.getConstant(1, dl, MVT::i32));
-  }
-
-  SDValue Flag;
-  SmallVector<SDValue, 4> RetOps(1, Chain);
-  // Copy the result values into the output registers.
-  // RVLocs will be of size 2 if we have to assign a 32-bit value to debc.
-  // Therefore we need to check whether this is a full value or not.
-  for (unsigned i = 0, e = RVLocs.size(); i != e; ++i) {
-    CCValAssign &VA = RVLocs[i];
-    assert(VA.isRegLoc() && "Can only return in registers!");
-    Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), OutVals[i], Flag);
-
-    // Guarantee that all emitted copies are stuck together with flags.
-    Flag = Chain.getValue(1);
-    RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-    // if (VA.getLocInfo() == CCValAssign::Full) {
-    // } else {
-    //   // Copy each HIGH and LOW to the appropriate register.
-    //   // Given that this is little-endian, copy the low bits first.
-    //   i == 0 
-    //     ? Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvLow, Flag) 
-    //     : Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), rvHigh, Flag);
-    //   // Guarantee that all emitted copies are stuck together with flags.
-    //   Flag = Chain.getValue(1);
-    //   RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-    // }
-  }
-
-  // Update the chain
-  RetOps[0] = Chain;
-  // Add the glue node if we still have it
-  if (Flag.getNode()) {
-    RetOps.push_back(Flag);
-  }
-
-  // This is where we set the ret flag that is used in instruction selection.
-  unsigned RetOpc = GameBoyISD::RET_FLAG;
-  // TODO: Add interrupt here
-  // if (Func.hasFnAttribute("interrupt"))
-  // See RISCVIselLowering.cpp line 11036
-
-  return DAG.getNode(RetOpc, dl, MVT::Other, RetOps);
-}
-
-/*
 SDValue
 GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
                                bool isVarArg,
@@ -1534,10 +1535,6 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   // Analyze return values.
   if (CallConv == CallingConv::AVR_BUILTIN) {
     CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
-  } else if (CallConv == CallingConv::SDCC_V1) {
-    CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_SDCC_V1);
-  } else if (CallConv == CallingConv::SDCC_V0) {
-    CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_SDCC_V0);
   } else {
     analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());
   }
@@ -1575,7 +1572,6 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
 
   return DAG.getNode(RetOpc, dl, MVT::Other, RetOps);
 }
-*/
 
 //===----------------------------------------------------------------------===//
 //  Custom Inserters

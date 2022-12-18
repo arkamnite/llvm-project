@@ -33,9 +33,9 @@ def ArgCC_GameBoy_Default : CallingConv<[
   // CCIfType<[i8], CCAssignToReg<[RA, RB, RC]>>,
   // CCIfType<[i16], CCAssignToReg<[RBRC]>>,
   CCIfType<[i8], CCAssignToReg<[RA, RE]>>,
-  CCIfType<[i8], CCAssignToStack<1, 1>>,
+  // CCIfType<[i8], CCAssignToStack<1, 1>>,
   CCIfType<[i16], CCAssignToReg<[RDRE, RBRC]>>,
-  CCAssignToStack<2, 2>
+  // CCAssignToStack<2, 2>
 ]>;
 // }
 
@@ -45,13 +45,6 @@ def ArgCC_GameBoy_Vararg : CallingConv<[
   CCIfType<[i8], CCAssignToStack<1, 1>>,
   // i16 are always passed through the stack with an alignment of 1.
   CCAssignToStack<2, 1>
-]>;
-
-// Basic calling convention - arguments are passed in registers where possible
-def ArgCC_GameBoy_SDCC_V1: CallingConv<[
-  CCIfType<[i8], CCAssignToReg<[RA, RB, RC]>>,
-  CCIfType<[i16], CCAssignToReg<[RBRC]>>,
-  CCIfType<[i32], CCAssignToStack<4, 4>>
 ]>;
 
 //===----------------------------------------------------------------------===//

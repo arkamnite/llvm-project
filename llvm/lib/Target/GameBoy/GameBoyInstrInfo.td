@@ -401,33 +401,46 @@ def LDRdHLAddr : GBFRd< 0b01, 0b110,
                         (ins GPRPairPointerHL : $ptrreg),
                         "ld\t$rd, [hl]",
                         [(set GPR : $rd, (load i16 : $ptrreg))]>;
+
+// LD A, (rr) where rr is a register pair
 // LD A, (BC)
-def LDABCAddr : GBF0< 0b00001010,
-                      (outs GPRLoadDestination : $rd),
-                      (ins GPRPairPointerBC : $ptrreg),
-                      "ld\ta, [bc]",
-                      [(set GPRLoadDestination : 
-                        $rd, (load i16 : $ptrreg))]>;
 // LD A, (DE)
-def LDADEAddr : GBF0< 0b00011010,
-                      (outs GPRLoadDestination : $rd),
-                      (ins GPRPairPointerDE : $ptrreg),
-                      "ld\ta, [de]",
-                      [(set GPRLoadDestination : 
-                        $rd, (load i16 : $ptrreg))]>;
+def LDAPtr : GBFLdAPtr< (outs GPRLoad : $rd),
+                        (ins GPRPairPointer : $ptrreg),
+                        "ld\ta, [ $ptrreg ]",
+                        [(set GPRLoad :
+                          $rd, (load i16 : $ptrreg))]>;
+
+// LD A, (BC)
+// def LDABCAddr : GBF0< 0b00001010,
+//                       (outs GPRLoadDestination : $rd),
+//                       (ins GPRPairPointerBC : $ptrreg),
+//                       "ld\ta, [bc]",
+//                       [(set GPRLoadDestination : 
+//                         $rd, (load i16 : $ptrreg))]>;
+// // LD A, (DE)
+// def LDADEAddr : GBF0< 0b00011010,
+//                       (outs GPRLoadDestination : $rd),
+//                       (ins GPRPairPointerDE : $ptrreg),
+//                       "ld\ta, [de]",
+//                       [(set GPRLoadDestination : 
+//                         $rd, (load i16 : $ptrreg))]>;
+
 // LD A, (C)
+// Applies specifically to the range FF00 - FFFF
+
 // LD A, (Imm8) [ rules apply for (Imm8)]
 def LDAImm8Addr : GBF0< 0b11110000,
-                        (outs GPRLoadDestination : $rd),
+                        (outs GPRLoad : $rd),
                         (ins i8imm : $addr),
                         "ld\ta, $addr",
-                        [(set GPRLoadDestination : $rd, (load i8 : $addr))]>;
+                        [(set GPRLoad : $rd, (load i8 : $addr))]>;
 // LD A, (Imm16)
 def LDAImm16Addr : GBF0< 0b11111010,
-                              (outs GPRLoadDestination : $rd),
+                              (outs GPRLoad : $rd),
                               (ins i16imm : $addr),
                               "ld\ta, $addr",
-                              [(set GPRLoadDestination :
+                              [(set GPRLoad :
                                 $rd, (load i16 : $addr))]>;
 }
 
@@ -449,9 +462,9 @@ def LDHLAddrImm8 : GBF0Imm8<0b00110110,
 // LD (C), A
 def LDCAddrA : GBF0<0b11100010,
                     (outs),
-                    (ins GPRPointerC : $rcaddr, GPRLoadSourceA : $ra),
+                    (ins GPRPointerC : $rcaddr, GPRLoad : $ra),
                     "ld\t[c], a",
-                    [(store GPRLoadSourceA : $ra, GPRPointerC : $rcaddr)]>;
+                    [(store GPRLoad : $ra, GPRPointerC : $rcaddr)]>;
 
 }
 
@@ -470,7 +483,15 @@ def LDImm16AddrA : GBF0< 0b11101010,
                         [(store i8 : $ra, imm : $n)]>;
                         // []>;
 
+// LD (rr), A : Load A into a location in memory.
 // LD (BC), A
+// LD (DE), A
+def LDPtrA : GBFLdPtrA< (outs),
+                        (ins GPRPairPointer : $ptrreg, GPRLoad : $ra),
+                        "ld\t[ $ptrreg ], a",
+                        [(store GPRLoad : $ra, GPRPairPointer : $ptrreg)]>;
+
+/*
 def LDBCAddrA : GBF0< 0b00000010,
                       (outs),
                       (ins GPRPairPointerBC : $ptrreg, GPRLoadSourceA : $ra),
@@ -482,6 +503,7 @@ def LDDEAddrA : GBF0< 0b00010010,
                       (ins GPRPairPointerDE : $ptrreg, GPRLoadSourceA : $ra),
                       "ld\t[de], a",
                       [(store GPRLoadSourceA : $ra, GPRPairPointerDE : $ptrreg)]>;
+*/
 }
 
 let mayLoad = 1, hasSideEffects = 1 in {

@@ -141,6 +141,33 @@ class GBFRdRr<bits<2> op, dag outs, dag ins, string asmstr, list<dag> pattern>
 }
 
 //===----------------------------------------------------------------------===//
+// LD A, (rr): <| 00 - rr1 - 010 |>
+//===----------------------------------------------------------------------===//
+class GBFLdAPtr<dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst8<outs, ins, asmstr, pattern>
+{
+  bits<2> rr;
+
+  let Inst{7 - 6} = 0b00;
+  let Inst{5 - 4} = rr;
+  let Inst{3 - 0} = 0b1010;
+}
+
+//===----------------------------------------------------------------------===//
+// LD A, (rr): <| 00 - rrr - 010 |>
+//===----------------------------------------------------------------------===//
+class GBFLdPtrA<dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst8<outs, ins, asmstr, pattern>
+{
+  bits<2> rr;
+
+  let Inst{7 - 6} = 0b00;
+  let Inst{5 - 4} = rr;
+  let Inst{3 - 0} = 0b0010;
+}
+
+
+//===----------------------------------------------------------------------===//
 // PUSH/POP instruction: <| 11 - qq0 - xxx |>
 //===----------------------------------------------------------------------===//
 class GBFPushPop<bits<3> op, dag outs, dag ins, string asmstr, list<dag> pattern>

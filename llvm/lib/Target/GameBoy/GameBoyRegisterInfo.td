@@ -74,8 +74,7 @@ def GPRPair : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL)>;
 
 // The Game Boy can load a pointer from these registers.
 def GPRPairPointerHL : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
-def GPRPairPointerBC : RegisterClass<"GameBoy", [i16], 16, (add RBRC)>;
-def GPRPairPointerDE : RegisterClass<"GameBoy", [i16], 16, (add RDRE)>;
+def GPRPairPointer : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE)>;
 def GPRPointerC : RegisterClass<"GameBoy", [i8], 8, (add RC)>;
 
 // Only the HL register may be incremented whilst being loaded into A
@@ -83,6 +82,7 @@ def GPRPairHLLoadInc : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
 
 // The Game Boy only supports RA as a destination for non-register
 // loads into an 8-bit register.
+def GPRLoad : RegisterClass<"GameBoy", [i8], 8, (add RA)>;
 def GPRLoadDestination : RegisterClass<"GameBoy", [i8], 8, (add RA)>;
 
 // LD (C), A will load into address stored in C from A.

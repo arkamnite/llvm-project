@@ -73,20 +73,15 @@ def GPR : RegisterClass<"GameBoy", [i8], 8, (add RA, RB, RC, RD, RE, RH, RL)>;
 def GPRPair : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL)>;
 
 // The Game Boy can load a pointer from these registers.
-def GPRPairPointerHL : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
 def GPRPairPointer : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE)>;
+// RHRL has special properties including being able to increment and decrement "whilst"
+// loading.
+def GPRPairPointerHL : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
 def GPRPointerC : RegisterClass<"GameBoy", [i8], 8, (add RC)>;
 
-// Only the HL register may be incremented whilst being loaded into A
-def GPRPairHLLoadInc : RegisterClass<"GameBoy", [i16], 16, (add RHRL)>;
-
-// The Game Boy only supports RA as a destination for non-register
-// loads into an 8-bit register.
+// The Game Boy only supports RA as a specific destination for pointer loads,
+// as well as a specific source for these pointer loads with exception to C.
 def GPRLoad : RegisterClass<"GameBoy", [i8], 8, (add RA)>;
-def GPRLoadDestination : RegisterClass<"GameBoy", [i8], 8, (add RA)>;
-
-// LD (C), A will load into address stored in C from A.
-def GPRLoadSourceA : RegisterClass<"GameBoy", [i8], 8, (add RA)>;
 
 // The Game Boy PUSH/POP instructions can only push or pop these registers to the stack.
 def StackRegisters : RegisterClass<"GameBoy", [i16], 16, (add RBRC, RDRE, RHRL, RARF)>;

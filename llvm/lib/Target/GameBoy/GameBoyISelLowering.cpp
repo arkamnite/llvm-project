@@ -1098,12 +1098,17 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
     unsigned Reg;
     for (; i != j; ++i) {
       if (VT == MVT::i8) {
+        std::cout << "Found i8 argument for arg " << i << std::endl;
         Reg = CCInfo.AllocateReg(RegList8[rid]);
         rid++;
       } else if (VT == MVT::i16) {
+        std::cout << "Found i16 argument for arg " << i << std::endl;
         Reg = CCInfo.AllocateReg(RegList16[rid]);
         rid++;
+      } else {
+        llvm_unreachable("calling convention can only manage i8 and i16 argument types.");
       }
+      assert(Reg && "register not available in calling convention (arg)");
       CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
     }
   }
@@ -1149,10 +1154,8 @@ static bool analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
     } else if (VT == MVT::i16) {
       Reg = CCInfo.AllocateReg(RegList16[rid]);
       std::cout << "Found an i16 with index " << rid << ", " << i << std::endl;
-    /*
     } else if (VT == MVT::i32) {
-      // Split the value up into two 16-bit values, to be placed debc
-      // SDValue VLo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, MVT::i16, Args[0], DAG.getConstant(Args[0], DL, MVT::i32));
+      std::cout << "Found an i32" << std::endl;
       // This is the lower bytes of the 32-bit integer. It needs to be zero-extended.
       Reg = CCInfo.AllocateReg(GameBoy::RDRE);
       CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::ZExt));
@@ -1161,7 +1164,6 @@ static bool analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
       CCInfo.addLoc(CCValAssign::getReg(0, VT, Reg, VT, CCValAssign::Trunc));
       // Signal 32-bits.
       return true;
-    */
     } else {
       llvm_unreachable("calling convention can only manage i8 and i16 types");
     }
@@ -1194,7 +1196,6 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
   // Used with vargs to accumulate store chains.
   std::vector<SDValue> OutChains;
 
-
   // Handles basic register values
   for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
     CCValAssign &VA = ArgLocs[i];
@@ -1211,6 +1212,10 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
       } else {
         llvm_unreachable("Unknown argument type!");
       }
+
+      // Transform the arguments stored on physical registers into virtual registers
+      Register Reg = MF.addLiveIn(VA.getLocReg(), RC);
+      ArgValue = DAG.getCopyFromReg(Chain, dl, Reg, RegVT);
 
       // Clang shouldn't do this, but sometimes 8-bit values will be promoted to 16-bit.
       // We can check for this by asserting sext or zext to capture this, and then truncate it down.
@@ -1234,9 +1239,6 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
         break;
       }
       
-      // Transform the arguments stored on physical registers into virtual registers
-      Register Reg = MF.addLiveIn(VA.getLocReg(), RC);
-      ArgValue = DAG.getCopyFromReg(Chain, dl, Reg, RegVT);
       InVals.push_back(ArgValue);
     } else if (VA.isMemLoc()) {
       llvm_unreachable("Stack not supported yet for arguments.");
@@ -1260,7 +1262,130 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
 
 SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
                                      SmallVectorImpl<SDValue> &InVals) const {
-  return CLI.Chain;
+
+  SelectionDAG &DAG = CLI.DAG;
+  SDLoc &DL = CLI.DL;
+  SmallVectorImpl<ISD::OutputArg> &Outs = CLI.Outs;
+  SmallVectorImpl<SDValue> &OutVals = CLI.OutVals;
+  SmallVectorImpl<ISD::InputArg> &Ins = CLI.Ins;
+  SDValue Chain = CLI.Chain;
+  SDValue Callee = CLI.Callee;
+  /// Currently unsupported.
+  bool &isTailCall = CLI.IsTailCall;
+  CallingConv::ID CallConv = CLI.CallConv;
+  bool isVarArg = CLI.IsVarArg;
+  isVarArg = false;
+
+  // Analyze operands of call, assign locations to each operand.
+  SmallVector<CCValAssign, 16> ArgLocs;
+  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs, *DAG.getContext());
+
+  // Convert GlobalAddress/ExternalSymbol node to a TargetGlobalAddress/TargetExternalSymbol
+  // so that legalisation doesn't mess this up. From AVRISelLowering.cpp
+  const Function *F = nullptr;
+  if (const GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee)) {
+    const GlobalValue *GV = G->getGlobal();
+    if (isa<Function>(GV))
+      F = cast<Function>(GV);
+    Callee =
+        DAG.getTargetGlobalAddress(GV, DL, getPointerTy(DAG.getDataLayout()));
+  } else if (const ExternalSymbolSDNode *ES =
+                 dyn_cast<ExternalSymbolSDNode>(Callee)) {
+    Callee = DAG.getTargetExternalSymbol(ES->getSymbol(),
+                                         getPointerTy(DAG.getDataLayout()));
+  }
+
+  // Variadic functions do not need any of this analysis.
+
+  // We currently don't need to push anything on the stack.
+  unsigned NumBytes = CCInfo.getNextStackOffset();
+
+  // Create the start of the CALLSEQ
+  Chain = DAG.getCALLSEQ_START(Chain, NumBytes, 0, DL);
+
+  SmallVector<std::pair<unsigned, SDValue>, 8> RegsToPass;
+
+  // Walk the register assignments and insert copies where needed.
+  // (for loop)
+  unsigned AI, AE;
+  bool HasStackArgs = false;
+  for (AI = 0, AE = ArgLocs.size(); AI != AE; ++AI) {
+    CCValAssign &VA = ArgLocs[AI];
+    EVT RegVT = VA.getLocVT();
+    SDValue Arg = OutVals[AI];
+
+    // Promote the value if needed. With Clang this should not happen.
+    switch (VA.getLocInfo()) {
+    default:
+      llvm_unreachable("Unknown loc info!");
+    case CCValAssign::Full:
+      break;
+    case CCValAssign::SExt:
+      Arg = DAG.getNode(ISD::SIGN_EXTEND, DL, RegVT, Arg);
+      break;
+    case CCValAssign::ZExt:
+      Arg = DAG.getNode(ISD::ZERO_EXTEND, DL, RegVT, Arg);
+      break;
+    case CCValAssign::AExt:
+      Arg = DAG.getNode(ISD::ANY_EXTEND, DL, RegVT, Arg);
+      break;
+    case CCValAssign::BCvt:
+      Arg = DAG.getNode(ISD::BITCAST, DL, RegVT, Arg);
+      break;
+    }
+
+    // Handle stack argument here with VA.isMemLoc()
+    // RegsToPass stores all the arguments on registers.
+    RegsToPass.push_back(std::make_pair(VA.getLocReg(), Arg));
+  }
+
+  // Build a sequence of copy-to-reg nodes which copy the outgoing arguments into registers.
+  // InFlag is used to stick all instructions together.
+  SDValue InFlag;
+  for (auto Reg : RegsToPass) {
+    Chain = DAG.getCopyToReg(Chain, DL, Reg.first, Reg.second, InFlag);
+    InFlag = Chain.getValue(1);
+  }
+
+  // Creates a chain and flag for the retval copy to use.
+  SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
+  SmallVector<SDValue, 8> Ops;
+  Ops.push_back(Chain);
+  Ops.push_back(Callee);
+
+  // Add argument registers to end of list, so they are known live into the call.
+  for (auto Reg : RegsToPass) {
+    Ops.push_back(DAG.getRegister(Reg.first, Reg.second.getValueType()));
+  }
+
+  // Add a register mask operand which will represent the call-preserved registers.
+  // These are only HL.
+  // Check that the Subtarget doesn't mess this up.
+  const TargetRegisterInfo *TRI = Subtarget.getRegisterInfo();
+  const uint32_t *Mask =
+      TRI->getCallPreservedMask(DAG.getMachineFunction(), CallConv);
+  assert(Mask && "Missing call preserved mask for calling convention");
+  Ops.push_back(DAG.getRegisterMask(Mask));
+
+  if (InFlag.getNode()) {
+    Ops.push_back(InFlag);
+  }
+
+  // Push the InFlag back onto the ops.
+  Chain = DAG.getNode(GameBoyISD::CALL, DL, NodeTys, Ops);
+  InFlag = Chain.getValue(1);
+
+  // Create the CALLSEQ_END node.
+  Chain = DAG.getCALLSEQ_END(Chain, DAG.getIntPtrConstant(NumBytes, DL, true),
+                             DAG.getIntPtrConstant(0, DL, true), InFlag, DL);
+
+  if (!Ins.empty()) {
+    InFlag = Chain.getValue(1);
+  }
+  
+  // Handle result values, copy them from physical registers into virtual registers
+  // that we return.
+  return LowerCallResult(Chain, InFlag, CallConv, isVarArg, Ins, DL, DAG, InVals);
 }
 
 /// Lower the result values of a call into the

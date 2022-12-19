@@ -31,6 +31,8 @@
 #include "GameBoyTargetMachine.h"
 #include "MCTargetDesc/GameBoyMCTargetDesc.h"
 
+#include <iostream>
+
 namespace llvm {
 
 GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
@@ -62,7 +64,7 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   for (MVT VT : MVT::integer_valuetypes()) {
     for (auto N : {ISD::EXTLOAD, ISD::SEXTLOAD, ISD::ZEXTLOAD}) {
       setLoadExtAction(N, VT, MVT::i1, Promote);
-      setLoadExtAction(N, VT, MVT::i8, Expand);
+      // setLoadExtAction(N, VT, MVT::i8, Expand);
     }
   }
 
@@ -1053,7 +1055,7 @@ static const MCPhysReg ArgList8GameBoy[] = {
     GameBoy::RA, GameBoy::RE
 };
 static const MCPhysReg ArgList16GameBoy[] = {
-    GameBoy::RDRE, GameBoy::RBRC
+    GameBoy::RBRC, GameBoy::RDRE
 };
 static const MCPhysReg RetList8GameBoy[] = {
     GameBoy::RA, GameBoy::RA
@@ -1222,7 +1224,6 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
 
   SDValue ArgValue;
   for (CCValAssign &VA : ArgLocs) {
-
     // Arguments stored on registers.
     if (VA.isRegLoc()) {
       EVT RegVT = VA.getLocVT();
@@ -1344,8 +1345,9 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   if (isVarArg) {
     CCInfo.AnalyzeCallOperands(Outs, ArgCC_GameBoy_Vararg);
   } else {
-    analyzeArguments(&CLI, F, &DAG.getDataLayout(), Outs, ArgLocs, CCInfo,
-                     Subtarget.hasTinyEncoding());
+    // analyzeArguments(&CLI, F, &DAG.getDataLayout(), Outs, ArgLocs, CCInfo,
+                    //  Subtarget.hasTinyEncoding());
+    CCInfo.AnalyzeArguments(Outs, ArgCC_GameBoy_Default);
   }
 
   // Get a count of how many bytes are to be pushed on the stack.
@@ -1492,9 +1494,9 @@ SDValue GameBoyTargetLowering::LowerCallResult(
   // } else {
   // }
 
-  analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
+  // analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
   // Use the non-convoluted RetCC function by default.
-  // CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
+  CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
 
   // Copy all of the result registers out of their specified physreg.
   for (CCValAssign const &RVLoc : RVLocs) {

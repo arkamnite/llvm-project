@@ -37,8 +37,10 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
                                      const GameBoySubtarget &STI)
     : TargetLowering(TM), Subtarget(STI) {
   // Set up the register classes.
-  addRegisterClass(MVT::i8, &GameBoy::GPR8RegClass);
-  addRegisterClass(MVT::i16, &GameBoy::DREGSRegClass);
+  // addRegisterClass(MVT::i8, &GameBoy::GPR8RegClass);
+  addRegisterClass(MVT::i8, &GameBoy::GPRRegClass);
+  // addRegisterClass(MVT::i16, &GameBoy::DREGSRegClass);
+  addRegisterClass(MVT::i16, &GameBoy::GPRPairRegClass);
 
   // Compute derived properties from the register classes.
   computeRegisterProperties(Subtarget.getRegisterInfo());
@@ -1047,11 +1049,17 @@ bool GameBoyTargetLowering::isOffsetFoldingLegal(
 //     GameBoy::R25, GameBoy::R24, GameBoy::R23, GameBoy::R22, GameBoy::R21, GameBoy::R20,
 //     GameBoy::R19, GameBoy::R18, GameBoy::R17, GameBoy::R16, GameBoy::R15, GameBoy::R14,
 //     GameBoy::R13, GameBoy::R12, GameBoy::R11, GameBoy::R10, GameBoy::R9,  GameBoy::R8};
-static const MCPhysReg RegList8GameBoy[] = {
+static const MCPhysReg ArgList8GameBoy[] = {
     GameBoy::RA, GameBoy::RE
 };
-static const MCPhysReg RegList16GameBoy[] = {
+static const MCPhysReg ArgList16GameBoy[] = {
     GameBoy::RDRE, GameBoy::RBRC
+};
+static const MCPhysReg RetList8GameBoy[] = {
+    GameBoy::RA, GameBoy::RA
+};
+static const MCPhysReg RetList16GameBoy[] = {
+    GameBoy::RBRC, GameBoy::RBRC
 };
 // static const MCPhysReg RegList16GameBoy[] = {
 //     GameBoy::R26R25, GameBoy::R25R24, GameBoy::R24R23, GameBoy::R23R22, GameBoy::R22R21,
@@ -1075,8 +1083,8 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
   // Choose the proper register list for argument passing according to the ABI.
   ArrayRef<MCPhysReg> RegList8;
   ArrayRef<MCPhysReg> RegList16;
-  RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
-  RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
+  RegList8 = makeArrayRef(ArgList8GameBoy, array_lengthof(ArgList8GameBoy));
+  RegList16 = makeArrayRef(ArgList16GameBoy, array_lengthof(ArgList16GameBoy));
 
   unsigned NumArgs = Args.size();
   // This is the index of the last used register, in RegList*.
@@ -1098,8 +1106,8 @@ static void analyzeArguments(TargetLowering::CallLoweringInfo *CLI,
         break;
       TotalBytes += Args[j].VT.getStoreSize();
     }
-    // Round up to even number of bytes.
-    TotalBytes = alignTo(TotalBytes, 2);
+    // Removed round up to even number of bytes.
+    // TotalBytes = alignTo(TotalBytes, 2);
     // Skip zero sized arguments
     if (TotalBytes == 0)
       continue;
@@ -1166,33 +1174,27 @@ static void analyzeReturnValues(const SmallVectorImpl<ArgT> &Args,
   // Choose the proper register list for argument passing according to the ABI.
   ArrayRef<MCPhysReg> RegList8;
   ArrayRef<MCPhysReg> RegList16;
-  RegList8 = makeArrayRef(RegList8GameBoy, array_lengthof(RegList8GameBoy));
-  RegList16 = makeArrayRef(RegList16GameBoy, array_lengthof(RegList16GameBoy));
-
-  // GCC-ABI says that the size is rounded up to the next even number,
-  // but actually once it is more than 4 it will always round up to 8.
-  if (TotalBytes > 4) {
-    TotalBytes = 8;
-  } else {
-    TotalBytes = alignTo(TotalBytes, 2);
-  }
+  RegList8 = makeArrayRef(RetList8GameBoy, array_lengthof(RetList8GameBoy));
+  RegList16 = makeArrayRef(RetList16GameBoy, array_lengthof(RetList16GameBoy));
 
   // The index of the first register to use.
-  int RegIdx = TotalBytes - 1;
+  // int RegIdx = TotalBytes - 1;
   for (unsigned i = 0; i != NumArgs; ++i) {
     MVT VT = Args[i].VT;
     unsigned Reg;
     if (VT == MVT::i8) {
-      Reg = CCInfo.AllocateReg(RegList8[RegIdx]);
+      Reg = CCInfo.AllocateReg(RegList8[i]);
     } else if (VT == MVT::i16) {
-      Reg = CCInfo.AllocateReg(RegList16[RegIdx]);
+      Reg = CCInfo.AllocateReg(RegList16[i]);
+    } else if (VT == MVT::i32) {
+      llvm_unreachable("calling convention cannot handle i32 types");
     } else {
       llvm_unreachable("calling convention can only manage i8 and i16 types");
     }
     assert(Reg && "register not available in calling convention");
     CCInfo.addLoc(CCValAssign::getReg(i, VT, Reg, VT, CCValAssign::Full));
     // Registers sort in increasing order
-    RegIdx -= VT.getStoreSize();
+    // RegIdx -= VT.getStoreSize();
   }
 }
 
@@ -1213,8 +1215,9 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
   if (isVarArg) {
     CCInfo.AnalyzeFormalArguments(Ins, ArgCC_GameBoy_Vararg);
   } else {
-    analyzeArguments(nullptr, &MF.getFunction(), &DL, Ins, ArgLocs, CCInfo,
-                     Subtarget.hasTinyEncoding());
+    // analyzeArguments(nullptr, &MF.getFunction(), &DL, Ins, ArgLocs, CCInfo,
+    //                  Subtarget.hasTinyEncoding());
+    CCInfo.AnalyzeArguments(Ins, ArgCC_GameBoy_Default);
   }
 
   SDValue ArgValue;
@@ -1225,9 +1228,11 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
       EVT RegVT = VA.getLocVT();
       const TargetRegisterClass *RC;
       if (RegVT == MVT::i8) {
-        RC = &GameBoy::GPR8RegClass;
+        // RC = &GameBoy::GPR8RegClass;
+        RC = &GameBoy::GPRRegClass;
       } else if (RegVT == MVT::i16) {
-        RC = &GameBoy::DREGSRegClass;
+        // RC = &GameBoy::DREGSRegClass;
+        RC = &GameBoy::GPRPairRegClass;
       } else {
         llvm_unreachable("Unknown argument type!");
       }
@@ -1482,11 +1487,14 @@ SDValue GameBoyTargetLowering::LowerCallResult(
                  *DAG.getContext());
 
   // Handle runtime calling convs.
-  if (CallConv == CallingConv::AVR_BUILTIN) {
-    CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
-  } else {
-    analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
-  }
+  // if (CallConv == CallingConv::AVR_BUILTIN) {
+  //   CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
+  // } else {
+  // }
+
+  analyzeReturnValues(Ins, CCInfo, Subtarget.hasTinyEncoding());
+  // Use the non-convoluted RetCC function by default.
+  // CCInfo.AnalyzeCallResult(Ins, RetCC_GameBoy_BUILTIN);
 
   // Copy all of the result registers out of their specified physreg.
   for (CCValAssign const &RVLoc : RVLocs) {
@@ -1533,11 +1541,12 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   MachineFunction &MF = DAG.getMachineFunction();
 
   // Analyze return values.
-  if (CallConv == CallingConv::AVR_BUILTIN) {
-    CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
-  } else {
-    analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());
-  }
+  // if (CallConv == CallingConv::AVR_BUILTIN) {
+  //   CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
+  // } else {
+  // }
+  // CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
+  analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());
 
   SDValue Flag;
   SmallVector<SDValue, 4> RetOps(1, Chain);

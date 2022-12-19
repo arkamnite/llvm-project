@@ -73,6 +73,10 @@ static const uint16_t GameBoyGPRPairDecoderTable[] = {
     GameBoy::RARF,  GameBoy::RBRC,  GameBoy::RDRE,  GameBoy::RHRL,
 };
 
+static const uint16_t GameBoyGPRPairPointerHLDecoderTable[] = {
+    GameBoy::RHRL,
+};
+
 // Method added for GB 8-bit registers.
 static DecodeStatus DecodeGPRRegisterClass(MCInst &Inst, unsigned RegNo,
                                             uint64_t Address,
@@ -111,7 +115,20 @@ static DecodeStatus DecodeGPRLoadRegisterClass(MCInst &Inst, unsigned RegNo,
   return MCDisassembler::Success;
 }
 
-static DecodeStatus DecodeStackRegisterClass(MCInst &Inst, unsigned RegNo,
+// Method added for GB LoadSourceA register class.
+static DecodeStatus DecodeGPRPairPointerHLRegisterClass(MCInst &Inst, unsigned RegNo,
+                                                      uint64_t Address,
+                                                      const MCDisassembler *Decoder) {
+  // Only return the A register here!
+  if (RegNo != 0)
+    return MCDisassembler::Fail;
+
+  unsigned Register = GameBoyGPRPairPointerHLDecoderTable[RegNo];
+  Inst.addOperand(MCOperand::createReg(Register));
+  return MCDisassembler::Success;
+}
+
+static DecodeStatus DecodeStackRegistersClass(MCInst &Inst, unsigned RegNo,
                                               uint64_t Address,
                                               const MCDisassembler *Decoder) {
  if (RegNo > 6)

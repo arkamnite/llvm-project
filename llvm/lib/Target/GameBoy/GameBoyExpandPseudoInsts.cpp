@@ -308,6 +308,32 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
   return true;
 }
 
+// Will expand ADD Rpd, Imm16 into
+// LD HL, Rpd
+// LD Rpd, Imm16
+// ADD HL, Rpd
+// LD Rpd, HL
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  Register DstReg = MI.getOperand(0).getReg();
+  auto Val = MI.getOperand(1).getImm();
+  // PUSH HL
+  buildMI(MBB, MBBI, GameBoy::PUSHRd).addReg(GameBoy::RHRL);
+  // LD HL, Rpd
+  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair).addReg(GameBoy::RHRL).addReg(DstReg);
+  // LD Rpd, Imm16
+  buildMI(MBB, MBBI, GameBoy::LDRdImm16).addReg(DstReg).addImm(Val);
+  // ADD HL, Rpd
+  buildMI(MBB, MBBI, GameBoy::ADDHLPair).addReg(GameBoy::RHRL).addReg(DstReg);
+  // LD Rpd, HL
+  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair).addReg(DstReg).addReg(GameBoy::RHRL);
+  // POP HL
+  buildMI(MBB, MBBI, GameBoy::POPRd).addReg(GameBoy::RHRL);
+  MI.eraseFromParent();
+  return true;
+}
+
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::ADDWRdRr>(Block &MBB, BlockIt MBBI) {
   return expandArith(GameBoy::ADDRdRr, GameBoy::ADCRdRr, MBB, MBBI);

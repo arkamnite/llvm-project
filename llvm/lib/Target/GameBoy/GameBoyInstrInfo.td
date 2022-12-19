@@ -386,8 +386,8 @@ def LDRdRr : GBFRdRr<0b01,
                       (ins GPR
                       : $rr),
                       "ld\t$rd, $rr",
-                      // [(set GPR : $rd, GPR : $rr)]>;
-                      []>; // This is handled by copyPhysReg.
+                      [(set GPR : $rd, GPR : $rr)]>;
+                      // []>; // This is handled by copyPhysReg.
 }
 
 // [(Imm8) rule says that (Imm8) = in range FF00 - FFFF]
@@ -527,6 +527,15 @@ let mayStore = 1 in {
 }
 
 //===----------------------------------------------------------------------===//
+// 16-bit transfer pseudo instructions
+//===----------------------------------------------------------------------===//
+
+def LDRdPairRrPair : Pseudo<(outs GPRPair : $rd),
+                            (ins GPRPair : $rr),
+                            "ld\t$rd, $rr",
+                            [(set GPRPair : $rd, GPRPair : $rr)]>;
+
+//===----------------------------------------------------------------------===//
 // 16-bit transfer instructions
 //===----------------------------------------------------------------------===//
 
@@ -569,16 +578,10 @@ let mayLoad = 1 in {
 
 // LDHL SP, s8
 
-// TODO: So the error is being caused by the fact that it is not possible to
-// add a value to the node. This only happens when there is a load it seems?
-// I need to find out which register it is trying to load the argument from, and
-// then work out why the backend is refusing to add this as a value. I'm guessing
-// there is a store instruction somewhere which is not loading values in correctly.
-
 // LD (Imm16), SP
 
 //===----------------------------------------------------------------------===//
-// Arithmetic Pseudo instructions
+// 8-bit arithmetic pseudo instructions
 //===----------------------------------------------------------------------===//
 let Constraints = "$src = $rd" in {
 // AddRdRr = ADD Rd, Rr
@@ -681,10 +684,33 @@ def DECRd : GBFRd<0b00, 0b101,
 // DEC (HL)
 
 //===----------------------------------------------------------------------===//
+// 16-bit arithmetic pseudo instructions
+//===----------------------------------------------------------------------===//
+
+// ADD RPd, Imm16
+// Uses HL as a temporary.
+// the expand will PUSH and POP HL from the stack accordingly.
+// let Constraints = "$src = $rd", Uses = [RHRL] in {
+let Constraints = "$src = $rd" in {
+def AddRpdImm16 : Pseudo< (outs GPRPair : $rd),
+                          (ins GPRPair : $src, i16imm : $n),
+                          "add\t$rd, $n",
+                          [(set i16 : $rd, (add i16 : $src, i16 : $n))]>;
+}
+
+
+//===----------------------------------------------------------------------===//
 // 16-bit arithmetic instructions
 //===----------------------------------------------------------------------===//
 
 // ADD HL, RPd
+let Constraints = "$src = $rd" in {
+def ADDHLPair : GBFPair<0b00, 0b1001,
+                        (outs GPRPairPointerHL : $rd),
+                        (ins GPRPairPointerHL : $src, GPRPair : $rr),
+                        "add\t$rd, $rr",
+                        [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
+}
 // ADD SP, s8
 
 let Constraints = "$src = $rd" in {

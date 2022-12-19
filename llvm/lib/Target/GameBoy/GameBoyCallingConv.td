@@ -34,7 +34,7 @@ def ArgCC_GameBoy_Default : CallingConv<[
   // CCIfType<[i16], CCAssignToReg<[RBRC]>>,
   CCIfType<[i8], CCAssignToReg<[RA, RE]>>,
   // CCIfType<[i8], CCAssignToStack<1, 1>>,
-  CCIfType<[i16], CCAssignToReg<[RDRE, RBRC]>>,
+  CCIfType<[i16], CCAssignToReg<[RBRC, RDRE]>>,
   // CCAssignToStack<2, 2>
 ]>;
 // }

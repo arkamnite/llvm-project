@@ -182,38 +182,9 @@ class GBFPushPop<bits<3> op, dag outs, dag ins, string asmstr, list<dag> pattern
 }
 
 //===----------------------------------------------------------------------===//
-// Immediate 8-bit data instruction: <| xx - xxx - xxx |> <n8>
-//===----------------------------------------------------------------------===//
-class GBF0Imm8<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
-: GameBoyInst16<outs, ins, asmstr, pattern>
-{
-  bits<8> imm8;
-  let Inst{15 - 8} = op;
-  let Inst{7 - 0} = imm8;
-}
-
-//===----------------------------------------------------------------------===//
-// Immediate 16-bit data instruction: <| xx - xxx - xxx |> <n8> <n8>
-// UNUSED !!
-//===----------------------------------------------------------------------===//
-class GBF0Imm16<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>
-: GameBoyInst24<outs, ins, asmstr, pattern>
-{
-  bits<8> lo;
-  bits<8> hi;
-  let Inst{23 - 16} = op;
-  let Inst{15 - 8} = lo;
-  let Inst{7 - 0} = hi;
-}
-
-//===----------------------------------------------------------------------===//
-// Immediate 8-bit data, with register: <| xx - rrr - xxx |> <n8>
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
 // Immediate 16-bit data, with register pair: <| xx - ddx - xxx|> <n8> <n8>
 //===----------------------------------------------------------------------===//
-class GBFLD16<bits<2> op1, bits<4> op2, dag outs, dag ins, string asmstr, list<dag> pattern>
+class GBFPair<bits<2> op1, bits<4> op2, dag outs, dag ins, string asmstr, list<dag> pattern>
 : GameBoyInst8<outs, ins, asmstr, pattern>
 {
   bits<2> rd;

@@ -460,7 +460,7 @@ def LDHLAddrRr : GBFRd2<0b01110,
                         [(store i8 : $rr, GPRPairPointerHL : $ptrreg)]>;
 
 // LD (HL), Imm8
-def LDHLAddrImm8 : GBF0Imm8<0b00110110,
+def LDHLAddrImm8 : GBF0<0b00110110,
                             (outs),
                             (ins GPRPairPointerHL : $ptrreg, i8imm : $n),
                             "ld\t[hl], $n",
@@ -533,7 +533,7 @@ let mayStore = 1 in {
 let isReMaterializable = 1 in  {
 
 // LD dd, Imm16
-def LDRdImm16 : GBFLD16<0b00, 0b0001,
+def LDRdImm16 : GBFPair<0b00, 0b0001,
                         (outs GPRPair : $rd),
                         (ins i16imm : $src),
                         "ld\t$rd, $src",
@@ -645,9 +645,23 @@ def AddARr : GBFRd2<0b10000,
 // CP A, (HL)
 
 // INC r
+let Constraints = "$src = $rd" in {
+def INCRd : GBFRd<0b00, 0b100,
+                  (outs GPR : $rd),
+                  (ins GPR : $src),
+                  "inc\t$rd",
+                  [(set i8 : $rd, (add i8
+                                  : $src, 1))]>;
+// DEC r
+def DECRd : GBFRd<0b00, 0b101,
+                  (outs GPR : $rd),
+                  (ins GPR : $src),
+                  "inc\t$rd",
+                  [(set i8 : $rd, (add i8
+                                  : $src, -1))]>;
+}
 // INC (HL)
 
-// DEC r
 // DEC (HL)
 
 //===----------------------------------------------------------------------===//
@@ -656,8 +670,21 @@ def AddARr : GBFRd2<0b10000,
 
 // ADD HL, RPd
 // ADD SP, s8
+
+let Constraints = "$src = $rd" in {
 // INC RPd
+def INCPair : GBFPair<0b00, 0b0011,
+                      (outs GPRPair : $rd),
+                      (ins GPRPair : $src),
+                      "inc\t$rd",
+                      [(set i16 : $rd, (add i16 : $src, 1))]>;
 // DEC RPd
+def DECPair : GBFPair<0b00, 0b1011,
+                      (outs GPRPair : $rd),
+                      (ins GPRPair : $src),
+                      "inc\t$rd",
+                      [(set i16 : $rd, (add i16 : $src, 1))]>;
+}
 
 //===----------------------------------------------------------------------===//
 // Rotate shift instructions
@@ -1031,6 +1058,7 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
 //===----------------------------------------------------------------------===//
 // Increment and Decrement
 //===----------------------------------------------------------------------===//
+/*
 let Constraints = "$src = $rd", Defs = [SREG] in {
   def INCRd
       : FRd<0b1001, 0b0100011,
@@ -1054,6 +1082,7 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
                                   : $src, -1)),
                          (implicit SREG)]>;
 }
+*/
 
 //===----------------------------------------------------------------------===//
 // Multiplication

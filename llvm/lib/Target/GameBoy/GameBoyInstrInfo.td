@@ -578,23 +578,33 @@ let mayLoad = 1 in {
 // LD (Imm16), SP
 
 //===----------------------------------------------------------------------===//
-// 8-bit arithmetic instructions
+// Arithmetic Pseudo instructions
 //===----------------------------------------------------------------------===//
-
-// Pseudo instruction to add two 8-bit registers. This is commutable.
+let Constraints = "$src = $rd" in {
 // AddRdRr = ADD Rd, Rr
 // Expands to 
 // LD A, Rr
 // ADD A, Rd
 // LD Rd, A
-let Constraints = "$src = $rd" in {
 def AddRdRr : Pseudo< (outs GPR : $rd),
                       (ins GPR : $src, GPR : $rr),
                       "add\t$rd, $rr",
                       [(set i8 : $rd, 
                           (add i8 : $src, i8 : $rr))]>;
+
+// ADD R, Imm8
+// Expands to 
+// ADD A, Imm8
+// LD A, R
+def AddRdImm8 : Pseudo< (outs GPR : $rd),
+                        (ins GPR : $src, i8imm : $n),
+                        "add\t$rd, $n",
+                        [(set i8 : $rd, (add i8 : $src, i8 : $n))]>;
 }
 
+//===----------------------------------------------------------------------===//
+// 8-bit arithmetic instructions
+//===----------------------------------------------------------------------===//
 
 // Force us to store the results in the same register we use as a source.
 // In other words, A is used as a source as well as the destination, whilst $rr
@@ -607,6 +617,12 @@ def AddARr : GBFRd2<0b10000,
                     "add\ta, $rr",
                     [(set i8 : $rd,
                         (add i8 : $src, i8 : $rr))]>;
+
+def AddAImm8 : GBF0<0b11000110,
+                      (outs GPRLoad : $rd),
+                      (ins GPRLoad : $src, i8imm : $n),
+                      "add\ta, $n",
+                      [(set i8 : $rd, (add i8 : $src, i8 : $n))]>;
 }
 
 // ADD A, Imm8
@@ -682,8 +698,8 @@ def INCPair : GBFPair<0b00, 0b0011,
 def DECPair : GBFPair<0b00, 0b1011,
                       (outs GPRPair : $rd),
                       (ins GPRPair : $src),
-                      "inc\t$rd",
-                      [(set i16 : $rd, (add i16 : $src, 1))]>;
+                      "dec\t$rd",
+                      [(set i16 : $rd, (add i16 : $src, -1))]>;
 }
 
 //===----------------------------------------------------------------------===//

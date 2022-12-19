@@ -294,6 +294,20 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdRr>(Block &MBB, BlockIt MBBI) {
   return true;
 }
 
+// Will expand ADD R Imm8 using A as a temporary.
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  Register DstReg = MI.getOperand(0).getReg();
+  auto Val = MI.getOperand(1).getImm();
+  // ADD A, Imm8
+  buildMI(MBB, MBBI, GameBoy::AddAImm8).addReg(GameBoy::RA).addImm(Val);
+  // LD R, A
+  buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstReg).addReg(GameBoy::RA);
+  MI.eraseFromParent();
+  return true;
+}
+
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::ADDWRdRr>(Block &MBB, BlockIt MBBI) {
   return expandArith(GameBoy::ADDRdRr, GameBoy::ADCRdRr, MBB, MBBI);

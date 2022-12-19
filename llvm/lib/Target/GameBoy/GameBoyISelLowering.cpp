@@ -77,6 +77,10 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
     setOperationAction(ISD::SUBE, VT, Legal);
   }
 
+  // We must expand each of these instructions since we do not have a generalised
+  // ADD Rd, Rr nor ADD Rd Imm8 instruction.
+  setOperationAction(ISD::ADD, MVT::i8, Custom);
+
   // sub (x, imm) gets canonicalized to add (x, -imm), so for illegal types
   // revert into a sub since we don't have an add with immediate instruction.
   setOperationAction(ISD::ADD, MVT::i32, Custom);

@@ -274,6 +274,26 @@ bool GameBoyExpandPseudo::expandLogicImm(unsigned Op, Block &MBB, BlockIt MBBI) 
   return true;
 }
 
+/// @brief Will expand Add Rd, Rr into the correct load-store sequence
+/// utilising register A as a temporary.
+/// @param MBB 
+/// @param MBBI 
+/// @return 
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AddRdRr>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  Register DstReg = MI.getOperand(0).getReg();
+  Register SrcReg = MI.getOperand(1).getReg();
+  // LD A, Rr
+  auto MI2 = buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(GameBoy::RA).addReg(SrcReg);
+  // ADD A, Rd
+  buildMI(MBB, MBBI, GameBoy::AddARr).addReg(DstReg);
+  // LD Rd, A
+  buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstReg).addReg(GameBoy::RA);
+  MI.eraseFromParent();
+  return true;
+}
+
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::ADDWRdRr>(Block &MBB, BlockIt MBBI) {
   return expandArith(GameBoy::ADDRdRr, GameBoy::ADCRdRr, MBB, MBBI);

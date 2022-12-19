@@ -581,6 +581,21 @@ let mayLoad = 1 in {
 // 8-bit arithmetic instructions
 //===----------------------------------------------------------------------===//
 
+// Pseudo instruction to add two 8-bit registers. This is commutable.
+// AddRdRr = ADD Rd, Rr
+// Expands to 
+// LD A, Rr
+// ADD A, Rd
+// LD Rd, A
+let Constraints = "$src = $rd" in {
+def AddRdRr : Pseudo< (outs GPR : $rd),
+                      (ins GPR : $src, GPR : $rr),
+                      "add\t$rd, $rr",
+                      [(set i8 : $rd, 
+                          (add i8 : $src, i8 : $rr))]>;
+}
+
+
 // Force us to store the results in the same register we use as a source.
 // In other words, A is used as a source as well as the destination, whilst $rr
 // is any other 8-bit register.

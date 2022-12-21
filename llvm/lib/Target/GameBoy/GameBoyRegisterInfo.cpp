@@ -77,6 +77,11 @@ BitVector GameBoyRegisterInfo::getReservedRegs(const MachineFunction &MF) const 
   Reserved.set(GameBoy::R1);
   Reserved.set(GameBoy::R1R0);
 
+  // Reserve result register A which is used for all arithmetic.
+  Reserved.set(GameBoy::RA);
+  Reserved.set(GameBoy::RF);
+  Reserved.set(GameBoy::RARF);
+
   // Reserve the stack pointer.
   Reserved.set(GameBoy::SPL);
   Reserved.set(GameBoy::SPH);

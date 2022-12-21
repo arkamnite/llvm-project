@@ -48,7 +48,7 @@ def RL : GameBoyReg<7, "l">, DwarfRegNum<[7]>;
 let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
   def RARF : GameBoyReg<0, "af", [RA, RF]>, DwarfRegNum<[0]>;
   def RBRC : GameBoyReg<2, "bc", [RB, RC]>, DwarfRegNum<[2]>;
-  def RDRE : GameBoyReg<4, "de", [RC, RD]>, DwarfRegNum<[4]>;
+  def RDRE : GameBoyReg<4, "de", [RD, RE]>, DwarfRegNum<[4]>;
   def RHRL : GameBoyReg<6, "hl", [RH, RL]>, DwarfRegNum<[6]>;
 }
 

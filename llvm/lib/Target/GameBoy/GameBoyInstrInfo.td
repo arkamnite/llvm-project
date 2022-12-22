@@ -500,9 +500,6 @@ def LDPtrA : GBFLdPtrA< (outs),
 }
 
 let mayLoad = 1, hasSideEffects = 1 in {
-// These instructions are to be implemented last, they are equivalent to 
-// LD A, (HL)
-// HL <- HL ± 1
 
 // LD A, (HL+)
 /*
@@ -574,6 +571,9 @@ let mayLoad = 1 in {
                     : $reg),
                   "PUSH\t$reg",
                   []>;
+
+// PUSH HL
+// Used for pseudo-instructions where HL is used as a temporary.
 }
 
 // LDHL SP, s8
@@ -621,6 +621,7 @@ def AddARr : GBFRd2<0b10000,
                     [(set i8 : $rd,
                         (add i8 : $src, i8 : $rr))]>;
 
+// ADD A, Imm8
 def AddAImm8 : GBF0<0b11000110,
                       (outs GPRLoad : $rd),
                       (ins GPRLoad : $src, i8imm : $n),
@@ -628,19 +629,66 @@ def AddAImm8 : GBF0<0b11000110,
                       [(set i8 : $rd, (add i8 : $src, i8 : $n))]>;
 }
 
-// ADD A, Imm8
 // ADD A, (HL)
+// Need to handle truncating the (HL) operand.
+// def AddAHLPtr : GBFLdPtrA< (outs),
+//                         (ins GPRPairPointer : $ptrreg, GPRLoad : $ra),
+//                         "ld\t[ $ptrreg ], a",
+//                         [(store GPRLoad : $ra, GPRPairPointer : $ptrreg)]>;
 
+let Constraints = "$src = $rd" in {
 // ADC A, r
+def AdcARr : GBFRd2<0b10001,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, GPR : $rr),
+                    "adc\t$rd, $rr",
+                    [(set i8 : $rd, (adde i8 : $src, i8 : $rr))]>;
+
 // ADC A, Imm8
+def AdcAImm8 : GBF0<0b11001110,
+                      (outs GPRLoad : $rd),
+                      (ins GPRLoad : $src, i8imm : $n),
+                      "add\ta, $n",
+                      [(set i8 : $rd, (adde i8 : $src, i8 : $n))]>;
+}
+
 // ADC A, (HL)
 
+let Constraints = "$src = $rd" in {
 // SUB A, r
+def SubARr : GBFRd2<0b10010,
+                    (outs GPRLoad : $rd),
+                    (ins GPR : $src, GPR : $rr),
+                    "add\ta, $rr",
+                    [(set i8 : $rd,
+                        (sub i8 : $src, i8 : $rr))]>;
+
 // SUB A, Imm8
+def SubAImm8 : GBF0<0b11010110,
+                      (outs GPRLoad : $rd),
+                      (ins GPRLoad : $src, i8imm : $n),
+                      "add\ta, $n",
+                      [(set i8 : $rd, (sub i8 : $src, i8 : $n))]>;
+}
 // SUB A, (HL)
 
+let Constraints = "$src = $rd" in {
 // SBC A, r
+def SbcARr : GBFRd2<0b10011,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, GPR : $rr),
+                    "adc\t$rd, $rr",
+                    [(set i8 : $rd, (sube i8 : $src, i8 : $rr))]>;
+
 // SBC A, Imm8
+def SbcAImm8 : GBF0<0b11011110,
+                      (outs GPRLoad : $rd),
+                      (ins GPRLoad : $src, i8imm : $n),
+                      "add\ta, $n",
+                      [(set i8 : $rd, (sube i8 : $src, i8 : $n))]>;
+}
+
+
 // SBC A, (HL)
 
 //===----------------------------------------------------------------------===//
@@ -866,11 +914,12 @@ let isCommutable = 1, Constraints = "$src = $rd", Defs = [SREG] in {
                : $src, GPR8
                : $rr),
               "add\t$rd, $rr",
-              [(set i8
-                : $rd, (add i8
-                        : $src, i8
-                        : $rr)),
-               (implicit SREG)]>;
+              []>;
+              // [(set i8
+              //   : $rd, (add i8
+              //           : $src, i8
+              //           : $rr)),
+              //  (implicit SREG)]>;
 
   // ADDW Rd+1:Rd, Rr+1:Rr
   // Pseudo instruction to add four 8-bit registers as two 16-bit values.
@@ -885,11 +934,12 @@ let isCommutable = 1, Constraints = "$src = $rd", Defs = [SREG] in {
                 : $src, DREGS
                 : $rr),
                "addw\t$rd, $rr",
-               [(set i16
-                 : $rd, (add i16
-                         : $src, i16
-                         : $rr)),
-                (implicit SREG)]>;
+               []>;
+              //  [(set i16
+              //    : $rd, (add i16
+              //            : $src, i16
+              //            : $rr)),
+              //   (implicit SREG)]>;
 
   // ADC Rd, Rr
   // Adds two 8-bit registers with carry.
@@ -2906,6 +2956,7 @@ def : Pat<(subc i16 : $src, imm : $src2), (SUBIWRdK i16 : $src, imm : $src2)>;
 
 // These patterns convert add (x, -imm) to sub (x, imm) since we dont have
 // any add with imm instructions. Also take care of the adiw/sbiw instructions.
+/*
 def : Pat<(add i16
            : $src1, imm0_63_neg
            : $src2),
@@ -2918,19 +2969,21 @@ def : Pat<(add i16
           (SUBIWRdK i16
            : $src1, (imm16_neg_XFORM imm
                      : $src2))>;
+*/
 def : Pat<(addc i16
            : $src1, imm
            : $src2),
           (SUBIWRdK i16
            : $src1, (imm16_neg_XFORM imm
                      : $src2))>;
-
+/*
 def : Pat<(add i8
            : $src1, imm
            : $src2),
           (SUBIRdK i8
            : $src1, (imm8_neg_XFORM imm
                      : $src2))>;
+*/
 def : Pat<(addc i8
            : $src1, imm
            : $src2),

@@ -53,6 +53,11 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setStackPointerRegisterToSaveRestore(GameBoy::SP);
   setSupportsUnalignedAtomics(true);
 
+  // We cannot directly load from two i16 registers, so must expand this as appropriate.
+  setOperationAction(ISD::LOAD, MVT::i16, Custom);
+  setOperationAction(ISD::STORE, MVT::i16, Custom);
+  setOperationAction(ISD::CopyToReg, MVT::i16, Custom);
+
   setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
   setOperationAction(ISD::BlockAddress, MVT::i16, Custom);
 
@@ -79,7 +84,9 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
 
   // We must expand each of these instructions since we do not have a generalised
   // ADD Rd, Rr nor ADD Rd Imm8 instruction.
-  setOperationAction(ISD::ADD, MVT::i8, Custom);
+  // EDIT: We have pseudo instructions to handle these now.
+  // setOperationAction(ISD::ADD, MVT::i8, Expand);
+  // setOperationAction(ISD::ADD, MVT::i8, Expand);
 
   // sub (x, imm) gets canonicalized to add (x, -imm), so for illegal types
   // revert into a sub since we don't have an add with immediate instruction.
@@ -844,10 +851,39 @@ SDValue GameBoyTargetLowering::LowerVASTART(SDValue Op, SelectionDAG &DAG) const
                       MachinePointerInfo(SV));
 }
 
+SDValue GameBoyTargetLowering::LowerCopyToReg(SDValue Op, SelectionDAG &DAG) const {
+  dbgs() << "Lowering copy to register\n";
+  // When lowering a copy to a register, we need to split the value up into two 8-bit
+  // values and then copy these invidually.
+  // This should only be happening with i16, but we will sanity check anyways.
+  assert(Op.getValueType() != MVT::i16 && "Attempted to expand non-i16 CopyToReg");
+  SDLoc DL(Op);
+  // Extract values
+  SDValue Lo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, MVT::i8, Op, DAG.getIntPtrConstant(0, DL));
+  // Copy to the correct register
+  Lo = DAG.getNode(ISD::CopyToReg, DL, MVT::i8, Lo);
+  SDValue High = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, MVT::i8, Op, DAG.getIntPtrConstant(1, DL));
+  High = DAG.getNode(ISD::CopyToReg, DL, MVT::i8, High);
+  return High;
+}
+
+SDValue GameBoyTargetLowering::LowerLoad(SDValue Op, SelectionDAG &DAG) const {
+  // Check if we are attempting to load from a register to a register.
+  dbgs() << "lowering a load\n";
+  return SDValue();
+}
+
+// This is where the custom and expanded operations are lowered to various ISD nodes.
 SDValue GameBoyTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
   default:
     llvm_unreachable("Don't know how to custom lower this!");
+  // case ISD::LOAD:
+
+  case ISD::CopyToReg:
+    return LowerCopyToReg(Op, DAG);
+  // case ISD::LOAD:
+    // return LowerLoad(Op, DAG);
   case ISD::SHL:
   case ISD::SRA:
   case ISD::SRL:
@@ -882,16 +918,16 @@ void GameBoyTargetLowering::ReplaceNodeResults(SDNode *N,
   SDLoc DL(N);
 
   switch (N->getOpcode()) {
-  case ISD::ADD: {
-    // Convert add (x, imm) into sub (x, -imm).
-    if (const ConstantSDNode *C = dyn_cast<ConstantSDNode>(N->getOperand(1))) {
-      SDValue Sub = DAG.getNode(
-          ISD::SUB, DL, N->getValueType(0), N->getOperand(0),
-          DAG.getConstant(-C->getAPIntValue(), DL, C->getValueType(0)));
-      Results.push_back(Sub);
-    }
-    break;
-  }
+  // case ISD::ADD: {
+  //   // Convert add (x, imm) into sub (x, -imm).
+  //   if (const ConstantSDNode *C = dyn_cast<ConstantSDNode>(N->getOperand(1))) {
+  //     SDValue Sub = DAG.getNode(
+  //         ISD::SUB, DL, N->getValueType(0), N->getOperand(0),
+  //         DAG.getConstant(-C->getAPIntValue(), DL, C->getValueType(0)));
+  //     Results.push_back(Sub);
+  //   }
+  //   break;
+  // }
   default: {
     SDValue Res = LowerOperation(SDValue(N, 0), DAG);
 

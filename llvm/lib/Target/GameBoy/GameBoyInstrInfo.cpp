@@ -39,7 +39,8 @@ GameBoyInstrInfo::GameBoyInstrInfo()
     : GameBoyGenInstrInfo(GameBoy::ADJCALLSTACKDOWN, GameBoy::ADJCALLSTACKUP), RI() {}
 
 // A smaller and leaner version of the original AVR copyPhysReg.
-// The Game Boy can only directly copy to and from an 8-bit register.
+// The Game Boy can only directly copy to and from an 8-bit register,
+// but we have a pseudo instruction for copying from RP to RP.
 void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                MachineBasicBlock::iterator MI,
                                const DebugLoc &DL, MCRegister DestReg,
@@ -55,18 +56,36 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     BuildMI(MBB, MI, DL, get(Opc), DestReg).
       addReg(SrcReg, getKillRegState(KillSrc));
   } else if (GameBoy::GPRPairRegClass.contains(DestReg, SrcReg)) {
-    // Split up the register pairs.
-    Register DestLo, DestHi, SrcLo, SrcHi;
-    TRI.splitReg(DestReg, DestLo, DestHi);
-    TRI.splitReg(SrcReg, SrcLo, SrcHi);
+    Opc = GameBoy::LDRdPairRrPair;
 
-    // Copy registers individually
-    BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo).
-      addReg(SrcLo, getKillRegState(KillSrc));
-    BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestHi).
-      addReg(SrcHi, getKillRegState(KillSrc));
+    BuildMI(MBB, MI, DL, get(Opc), DestReg).
+      addReg(SrcReg, getKillRegState(KillSrc));
+    // Split up the register pairs.
+    // Register DestLo, DestHi, SrcLo, SrcHi;
+    // TRI.splitReg(DestReg, DestLo, DestHi);
+    // TRI.splitReg(SrcReg, SrcLo, SrcHi);
+
+    // // Copy registers individually
+    // BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo).
+    //   addReg(SrcLo, getKillRegState(KillSrc));
+    // BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestHi).
+    //   addReg(SrcHi, getKillRegState(KillSrc));
 
   } else {
+    // We have a case where the registers are in different classes.
+    // Therefore we must handle copies from 8-bit registers to 16-bit registers.
+    if (GameBoy::GPRRegClass.contains(SrcReg, SrcReg)) {
+      // Split the register pair in half.
+      Register DestLo, DestHi;
+      TRI.splitReg(DestReg, DestLo, DestHi);
+      // Load an immediate 0 into the upper half.
+      BuildMI(MBB, MI, DL, get(GameBoy::LDRdImm8), DestHi).addImm(0);
+      // Copy to the lower reg.
+      BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo).addReg(SrcReg, getKillRegState(KillSrc));
+    } else {
+      // We cannot do narrowing copies
+      llvm_unreachable("Impossible to copy from a 16-bit register to an 8-bit register");
+    }
   }
 
   // Check if we are copying to or from the stack pointer

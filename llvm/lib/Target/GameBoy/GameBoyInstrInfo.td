@@ -386,8 +386,8 @@ def LDRdRr : GBFRdRr<0b01,
                       (ins GPR
                       : $rr),
                       "ld\t$rd, $rr",
-                      [(set GPR : $rd, GPR : $rr)]>;
-                      // []>; // This is handled by copyPhysReg.
+                      // [(set GPR : $rd, GPR : $rr)]>;
+                      []>; // This is handled by copyPhysReg.
 }
 
 // [(Imm8) rule says that (Imm8) = in range FF00 - FFFF]
@@ -530,7 +530,10 @@ let mayStore = 1 in {
 def LDRdPairRrPair : Pseudo<(outs GPRPair : $rd),
                             (ins GPRPair : $rr),
                             "ld\t$rd, $rr",
-                            [(set GPRPair : $rd, GPRPair : $rr)]>;
+                            // [(set GPRPair : $rd, GPRPair : $rr)]>;
+                            []>; // Handled by CopyPhysReg
+
+
 
 //===----------------------------------------------------------------------===//
 // 16-bit transfer instructions
@@ -739,7 +742,7 @@ def DECRd : GBFRd<0b00, 0b101,
 // Uses HL as a temporary.
 // the expand will PUSH and POP HL from the stack accordingly.
 // let Constraints = "$src = $rd", Uses = [RHRL] in {
-let Constraints = "$src = $rd" in {
+let Defs = [RHRL], Uses = [RHRL], Constraints = "$src = $rd" in {
 def AddRpdImm16 : Pseudo< (outs GPRPair : $rd),
                           (ins GPRPair : $src, i16imm : $n),
                           "add\t$rd, $n",
@@ -757,7 +760,8 @@ def ADDHLPair : GBFPair<0b00, 0b1001,
                         (outs GPRPairPointerHL : $rd),
                         (ins GPRPairPointerHL : $src, GPRPair : $rr),
                         "add\t$rd, $rr",
-                        [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
+                        []>; // Manually selected by pseudo instructions.
+                        // [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
 }
 // ADD SP, s8
 

@@ -293,13 +293,14 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRd8Ptr>(Block &MBB, BlockIt MBBI) {
   // RA, then we must first move the pointer to RA, then LD Rd, A
 
   // Select now from HL, or BC/DE
-  if (SrcReg == GameBoy::RHRL) {
+  auto rclass = getRegInfo(MBB).getRegClass(SrcReg);
+  if (rclass == &GameBoy::GPRPairPointerHLRegClass) {
     MINew = buildMI(MBB, MBBI, GameBoy::LDRdHLPtr)
-      .addReg(GameBoy::RA)
-      .addReg(GameBoy::RHRL);
+      .addReg(GameBoy::RA, RegState::Define)
+      .addReg(GameBoy::RHRL, RegState::Define);
   } else {
     MINew = buildMI(MBB, MBBI, GameBoy::LDRdPtr)
-      .addReg(GameBoy::RA)
+      .addReg(GameBoy::RA, RegState::Define)
       .addReg(SrcReg);
   }    
 
@@ -338,6 +339,7 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
+  dbgs() << "Expanding AddRdImm8\n";
   auto Val = MI.getOperand(1).getImm();
   // ADD A, Imm8
   buildMI(MBB, MBBI, GameBoy::AddAImm8, GameBoy::RA).addImm(Val);
@@ -357,15 +359,15 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI)
   // return expandArith(GameBoy::AddRdRr, GameBoy::AddRdRr, MBB, MBBI);
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
-  bool DstIsDead = MI.getOperand(0).isDead();
+  dbgs() << "Expanding AddRpdImm16\n";
   auto Val = MI.getOperand(1).getImm();
   // Create a virtual register for RHRL
-  auto hlReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRPairPointerHLRegClass);
+  // auto hlReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRPairPointerHLRegClass);
   // PUSH HL
   // buildMI(MBB, MBBI, GameBoy::PUSHRd).addReg(hlReg);
   // LD HL, Rpd
   // buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, RegState::Define | getDeadRegState(DstIsDead));
-  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg);
+  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, RegState::Define);
   // LD Rpd, Imm16
   buildMI(MBB, MBBI, GameBoy::LDRdImm16, DstReg).addImm(Val);
   // ADD HL, Rpd
@@ -383,18 +385,23 @@ template <>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairRrPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   Register DstLoReg, DstHiReg, SrcLoReg, SrcHiReg;
+  Register SrcReg = MI.getPrevNode()->getOperand(0).getReg();
+  dbgs() << "Expanding LDRdPairRrPair\n";
+  // Register SrcReg = MI.getOperand(1).getReg();
   Register DstReg = MI.getOperand(0).getReg();
-  Register SrcReg = MI.getOperand(1).getReg();
   TRI->splitReg(DstReg, DstLoReg, DstHiReg);
   TRI->splitReg(SrcReg, SrcLoReg, SrcHiReg);
-
+  // SrcLoReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
+  // SrcHiReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
+  // DstLoReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
+  // DstHiReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
   // LD DstHi, SrcHi
   auto ld = buildMI(MBB, MBBI, GameBoy::LDRdRr, DstHiReg).addReg(SrcHiReg, RegState::Define);
   // LD DstLo, SrcLo
   buildMI(MBB, MBBI, GameBoy::LDRdRr, DstLoReg).addReg(SrcLoReg, RegState::Define);
   // remove previous instruction.
   ld.setMemRefs(MI.memoperands());
-  // MI.removeFromParent();
+  MI.removeFromParent();
   return true;
 }
 
@@ -2554,11 +2561,13 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     return expand<Op>(MBB, MI)
 
   switch (Opcode) {
+    // Game Boy
     EXPAND(GameBoy::LDRd8Ptr);
     EXPAND(GameBoy::LDRdPairRrPair);
     EXPAND(GameBoy::AddRdRr);
     EXPAND(GameBoy::AddRdImm8);
     EXPAND(GameBoy::AddRpdImm16);
+    // AVR
     EXPAND(GameBoy::ADDWRdRr);
     EXPAND(GameBoy::ADCWRdRr);
     EXPAND(GameBoy::SUBWRdRr);

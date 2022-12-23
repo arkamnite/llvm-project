@@ -363,31 +363,17 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt M
 
   return true;
 }
-// Will expand ADD Rpd, Imm16 into
-// LD HL, Rpd
-// LD Rpd, Imm16 <- this appears to already have been taken into account.
-// ADD HL, Rpd
-// LD Rpd, HL
+// Will expand ADD Rpd, Imm16 
+// TODO: Investigate optimisation using A and HIGH(n) LOW(n) from RGBASM.
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI) {
-  // return expandArith(GameBoy::AddRdRr, GameBoy::AddRdRr, MBB, MBBI);
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(2).getReg();
-  // bool SrcIsKill = MI.getOperand(2).isKill();
-  auto v = MI.getNumOperands();
-  dbgs() << "Expanding AddRpdImm16, found " << v << " operands in original function\n";
-  for (unsigned int i = 0; i < v; i++) {
-    dbgs() << MI.getOperand(i) << "\n";
-  }
-  dbgs() << "Storing in " << MI.getOperand(0);
-  dbgs() << "\nImm Value stored in " << MI.getOperand(2) << "\n";
   // LD HL, Rpd
-  // buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, RegState::Define | getDeadRegState(DstIsDead));
   buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, RegState::Define);
   // LD Src, Imm16 happens implicitly.
   // ADD HL, Src
-  // buildMI(MBB, MBBI, GameBoy::ADDHLPair).addReg(GameBoy::RHRL).addReg(SrcReg, RegState::Define);
   buildMI(MBB, MBBI, GameBoy::ADDHLPair).addReg(GameBoy::RHRL).addReg(SrcReg, RegState::Define);
   // LD Rpd, HL
   buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair).addReg(DstReg).addReg(GameBoy::RHRL);

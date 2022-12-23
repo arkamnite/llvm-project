@@ -284,9 +284,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRd8Ptr>(Block &MBB, BlockIt MBBI) {
 
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
-  Register TmpReg = 0; // 0 for no temporary register
   Register SrcReg = MI.getOperand(1).getReg();
-  bool SrcIsKill = MI.getOperand(1).isKill();
   MachineInstrBuilder MINew;
 
   // If we are attempting to load a pointer into any other register than
@@ -325,7 +323,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdRr>(Block &MBB, BlockIt MBBI) {
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(1).getReg();
   // LD A, Rr
-  auto MI2 = buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(SrcReg);
+  buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(SrcReg);
   // ADD A, Rd
   buildMI(MBB, MBBI, GameBoy::AddARr, DstReg).addReg(GameBoy::RA);
   // LD Rd, A
@@ -356,10 +354,10 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  Register DstReg = MI.getOperand(0).getReg();
+  // Register DstReg = MI.getOperand(0).getReg();
   auto v = MI.getNumOperands();
-  dbgs() << "Expanding AddRdPairRrPair, found " << v << " operands in original function\n";
-  for (auto i = 0; i < v; i++) {
+  dbgs() << "INCOMPLETE Expanding AddRdPairRrPair, found " << v << " operands in original function\n";
+  for (unsigned int i = 0; i < v; i++) {
     dbgs() << MI.getOperand(i) << "\n";
   }
 
@@ -376,10 +374,10 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI)
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(2).getReg();
-  bool SrcIsKill = MI.getOperand(2).isKill();
+  // bool SrcIsKill = MI.getOperand(2).isKill();
   auto v = MI.getNumOperands();
   dbgs() << "Expanding AddRpdImm16, found " << v << " operands in original function\n";
-  for (auto i = 0; i < v; i++) {
+  for (unsigned int i = 0; i < v; i++) {
     dbgs() << MI.getOperand(i) << "\n";
   }
   dbgs() << "Storing in " << MI.getOperand(0);
@@ -402,17 +400,20 @@ template <>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairRrPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   Register DstLoReg, DstHiReg, SrcLoReg, SrcHiReg;
-  Register SrcReg = MI.getPrevNode()->getOperand(0).getReg();
-  dbgs() << "Expanding LDRdPairRrPair\n";
-  // Register SrcReg = MI.getOperand(1).getReg();
+  // Register SrcReg = MI.getPrevNode()->getOperand(0).getReg();
+  // dbgs() << "Expanding LDRdPairRrPair\n";
+  auto v = MI.getNumOperands();
+  dbgs() << "Expanding LDRdPairRrPair, found " << v << " operands in original function\n";
+  for (unsigned int i = 0; i < v; i++) {
+    dbgs() << MI.getOperand(i) << "\n";
+  }
   Register DstReg = MI.getOperand(0).getReg();
+  Register SrcReg = MI.getOperand(1).getReg();
   TRI->splitReg(DstReg, DstLoReg, DstHiReg);
   TRI->splitReg(SrcReg, SrcLoReg, SrcHiReg);
-  // SrcLoReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
-  // SrcHiReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
-  // DstLoReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
-  // DstHiReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRRegClass);
   // LD DstHi, SrcHi
+  dbgs() << "Dst: " << MI.getOperand(0) << "\n";
+  dbgs() << "Src: " << MI.getOperand(1) << "\n";
   auto ld = buildMI(MBB, MBBI, GameBoy::LDRdRr, DstHiReg).addReg(SrcHiReg, RegState::Define);
   // LD DstLo, SrcLo
   buildMI(MBB, MBBI, GameBoy::LDRdRr, DstLoReg).addReg(SrcLoReg, RegState::Define);

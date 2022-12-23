@@ -128,17 +128,27 @@ void GameBoyInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     return;
   }
 
-  if (OpNo >= MI->size()) {
+  if (OpNo > MI->size()) {
     // Not all operands are correctly disassembled at the moment. This means
     // that some machine instructions won't have all the necessary operands
     // set.
     // To avoid asserting, print <unknown> instead until the necessary support
     // has been implemented.
-    O << "<unknown>";
+    
+    O << OpNo << " <unknown> " << MI->size();
     return;
+  } else if (OpNo == MI->size()) {
+    // We need to be able to disassemble the operand `def $reg` 
+    // See if it is possible to skip over this operand. This is useful for scenarios where 
+    // we are printing a definition-operand in the same instruction.
+    // If we exhaust the list then we move on to the next instruction.
+    return printOperand(MI, --OpNo, O);
+    // O << OpNo << " <unknown> " << MI->size();
+    // return;
   }
 
   const MCOperand &Op = MI->getOperand(OpNo);
+
 
   if (Op.isReg()) {
     bool isPtrReg = (MOI.RegClass == GameBoy::PTRREGSRegClassID) ||

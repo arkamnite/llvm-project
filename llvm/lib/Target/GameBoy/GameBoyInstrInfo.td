@@ -743,10 +743,19 @@ def DECRd : GBFRd<0b00, 0b101,
 // the expand will PUSH and POP HL from the stack accordingly.
 // let Constraints = "$src = $rd", Uses = [RHRL] in {
 let Defs = [RHRL], Uses = [RHRL], Constraints = "$src = $rd" in {
+// let Constraints = "$src = $rd" in {
 def AddRpdImm16 : Pseudo< (outs GPRPair : $rd),
                           (ins GPRPair : $src, i16imm : $n),
                           "add\t$rd, $n",
                           [(set i16 : $rd, (add i16 : $src, i16 : $n))]>;
+
+// ADD RdPair, RrPair
+// Uses HL as a temporary; the expand will PUSH and POP HL from the
+// stack accordingly.
+def AddRdPairRrPair : Pseudo< (outs GPRPair : $rd),
+                              (ins GPRPair : $src, GPRPair : $rr),
+                              "add\t$rd, $rr",
+                              [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
 }
 
 

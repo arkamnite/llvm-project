@@ -349,9 +349,25 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
   return true;
 }
 
+// Will expand ADD RdPair, RrPair into
+// LD HL, Rd
+// ADD HL, Rr
+// LD Rd, HL
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  Register DstReg = MI.getOperand(0).getReg();
+  auto v = MI.getNumOperands();
+  dbgs() << "Expanding AddRdPairRrPair, found " << v << " operands in original function\n";
+  for (auto i = 0; i < v; i++) {
+    dbgs() << MI.getOperand(i) << "\n";
+  }
+
+  return true;
+}
 // Will expand ADD Rpd, Imm16 into
 // LD HL, Rpd
-// LD Rpd, Imm16
+// LD Rpd, Imm16 <- this appears to already have been taken into account.
 // ADD HL, Rpd
 // LD Rpd, HL
 template<>
@@ -359,23 +375,24 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI)
   // return expandArith(GameBoy::AddRdRr, GameBoy::AddRdRr, MBB, MBBI);
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
-  dbgs() << "Expanding AddRpdImm16\n";
-  auto Val = MI.getOperand(1).getImm();
-  // Create a virtual register for RHRL
-  // auto hlReg = getRegInfo(MBB).createVirtualRegister(&GameBoy::GPRPairPointerHLRegClass);
-  // PUSH HL
-  // buildMI(MBB, MBBI, GameBoy::PUSHRd).addReg(hlReg);
+  Register SrcReg = MI.getOperand(2).getReg();
+  bool SrcIsKill = MI.getOperand(2).isKill();
+  auto v = MI.getNumOperands();
+  dbgs() << "Expanding AddRpdImm16, found " << v << " operands in original function\n";
+  for (auto i = 0; i < v; i++) {
+    dbgs() << MI.getOperand(i) << "\n";
+  }
+  dbgs() << "Storing in " << MI.getOperand(0);
+  dbgs() << "\nImm Value stored in " << MI.getOperand(2) << "\n";
   // LD HL, Rpd
   // buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, RegState::Define | getDeadRegState(DstIsDead));
   buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, RegState::Define);
-  // LD Rpd, Imm16
-  buildMI(MBB, MBBI, GameBoy::LDRdImm16, DstReg).addImm(Val);
-  // ADD HL, Rpd
-  buildMI(MBB, MBBI, GameBoy::ADDHLPair).addReg(GameBoy::RHRL).addReg(DstReg);
+  // LD Src, Imm16 happens implicitly.
+  // ADD HL, Src
+  // buildMI(MBB, MBBI, GameBoy::ADDHLPair).addReg(GameBoy::RHRL).addReg(SrcReg, RegState::Define);
+  buildMI(MBB, MBBI, GameBoy::ADDHLPair).addReg(GameBoy::RHRL).addReg(SrcReg, RegState::Define);
   // LD Rpd, HL
   buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair).addReg(DstReg).addReg(GameBoy::RHRL);
-  // POP HL
-  // buildMI(MBB, MBBI, GameBoy::POPRd).addReg(hlReg);
   MI.eraseFromParent();
   return true;
 }
@@ -2566,6 +2583,7 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::LDRdPairRrPair);
     EXPAND(GameBoy::AddRdRr);
     EXPAND(GameBoy::AddRdImm8);
+    EXPAND(GameBoy::AddRdPairRrPair);
     EXPAND(GameBoy::AddRpdImm16);
     // AVR
     EXPAND(GameBoy::ADDWRdRr);

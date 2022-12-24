@@ -2992,21 +2992,18 @@ def : Pat<(add i16
           (SUBIWRdK i16
            : $src1, (imm16_neg_XFORM imm
                      : $src2))>;
-*/
 def : Pat<(addc i16
            : $src1, imm
            : $src2),
           (SUBIWRdK i16
            : $src1, (imm16_neg_XFORM imm
                      : $src2))>;
-/*
 def : Pat<(add i8
            : $src1, imm
            : $src2),
           (SUBIRdK i8
            : $src1, (imm8_neg_XFORM imm
                      : $src2))>;
-*/
 def : Pat<(addc i8
            : $src1, imm
            : $src2),
@@ -3019,6 +3016,7 @@ def : Pat<(adde i8
           (SBCIRdK i8
            : $src1, (imm8_neg_XFORM imm
                      : $src2))>;
+*/
 
 // Calls.
 let Predicates = [HasJMPCALL] in {
@@ -3028,11 +3026,12 @@ let Predicates = [HasJMPCALL] in {
 def : Pat<(GameBoycall(i16 tglobaladdr:$dst)), (RCALLk tglobaladdr:$dst)>;
 def : Pat<(GameBoycall(i16 texternalsym:$dst)), (RCALLk texternalsym:$dst)>;
 
-// `anyext`
+// `anyext` 
 def : Pat<(i16(anyext i8
                : $src)),
           (INSERT_SUBREG(i16(IMPLICIT_DEF)), i8
            : $src, sub_lo)>;
+
 
 // `trunc`
 def : Pat<(i8(trunc i16 : $src)), (EXTRACT_SUBREG i16 : $src, sub_lo)>;
@@ -3094,4 +3093,4 @@ def : Pat<(GameBoytst i8 : $rd), (ANDRdRr GPR8 : $rd, GPR8 : $rd)>;
 
 // Lowering of 'lsl' node to 'LSL' instruction.
 // LSL is an alias of 'ADD Rd, Rd'
-def : Pat<(GameBoylsl i8 : $rd), (ADDRdRr GPR8 : $rd, GPR8 : $rd)>;
+// def : Pat<(GameBoylsl i8 : $rd), (ADDRdRr GPR8 : $rd, GPR8 : $rd)>;

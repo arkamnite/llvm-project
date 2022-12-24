@@ -2400,6 +2400,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::ASRBNRd>(Block &MBB, BlockIt MBBI) {
 }
 
 template <> bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
+  dbgs() << "Expanding SEXT instruction\n";
   MachineInstr &MI = *MBBI;
   Register DstLoReg, DstHiReg;
   // sext R17:R16, R17

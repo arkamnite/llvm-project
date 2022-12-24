@@ -15,8 +15,6 @@
 
 // Special return value calling convention for runtime functions.
 def RetCC_GameBoy_BUILTIN : CallingConv<[
-  // CCIfType<[i8], CCAssignToReg<[R24, R25]>>,
-  // CCIfType<[i16], CCAssignToReg<[R23R22, R25R24]>>
   CCIfType<[i8], CCAssignToReg<[RA, RE]>>,
   CCIfType<[i16], CCAssignToReg<[RBRC, RDRE]>>,
   // CCIfType<[i32], CCAssignToReg<[RDRERBRC]>>

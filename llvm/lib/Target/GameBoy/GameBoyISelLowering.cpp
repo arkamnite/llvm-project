@@ -1311,6 +1311,7 @@ SDValue GameBoyTargetLowering::LowerFormalArguments(
         ArgValue = DAG.getNode(ISD::BITCAST, dl, VA.getValVT(), ArgValue);
         break;
       case CCValAssign::SExt:
+        dbgs() << "Found a SExt in arguments, truncating this value\n";
         ArgValue = DAG.getNode(ISD::AssertSext, dl, RegVT, ArgValue,
                                DAG.getValueType(VA.getValVT()));
         ArgValue = DAG.getNode(ISD::TRUNCATE, dl, VA.getValVT(), ArgValue);
@@ -1427,6 +1428,7 @@ SDValue GameBoyTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
     case CCValAssign::Full:
       break;
     case CCValAssign::SExt:
+      dbgs() << "SExting a value in LowerCall\n";
       Arg = DAG.getNode(ISD::SIGN_EXTEND, DL, RegVT, Arg);
       break;
     case CCValAssign::ZExt:
@@ -1602,8 +1604,8 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   //   CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
   // } else {
   // }
-  // CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
-  analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());
+  CCInfo.AnalyzeReturn(Outs, RetCC_GameBoy_BUILTIN);
+  // analyzeReturnValues(Outs, CCInfo, Subtarget.hasTinyEncoding());
 
   SDValue Flag;
   SmallVector<SDValue, 4> RetOps(1, Chain);

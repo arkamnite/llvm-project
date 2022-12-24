@@ -621,15 +621,17 @@ def AddARr : GBFRd2<0b10000,
                     (outs GPRLoad : $rd),
                     (ins GPR : $src, GPR : $rr),
                     "add\ta, $rr",
-                    [(set i8 : $rd,
-                        (add i8 : $src, i8 : $rr))]>;
+                    // [(set i8 : $rd,
+                    //     (add i8 : $src, i8 : $rr))]>;
+                      []>;
 
 // ADD A, Imm8
 def AddAImm8 : GBF0<0b11000110,
                       (outs GPRLoad : $rd),
                       (ins GPRLoad : $src, i8imm : $n),
                       "add\ta, $n",
-                      [(set i8 : $rd, (add i8 : $src, i8 : $n))]>;
+                      // [(set i8 : $rd, (add i8 : $src, i8 : $n))]>;
+                      []>;
 }
 
 // ADD A, (HL)
@@ -868,6 +870,12 @@ let isTerminator = 1, isReturn = 1, isBarrier = 1 in {
 // General purpose arithmetic operations and CPU control instructions
 //===----------------------------------------------------------------------===//
 
+// Creating SEXT and ZEXT instructions as these are probably needed at the moment.
+def SEXT : GBF0<0b10101010,
+                (outs GPRPair : $dst),
+                (ins GPR : $src),
+                "sext\t$dst, $src",
+                [(set i16 : $dst, (sext i8 : $src))]>;
 // DAA A
 // CPL A
 // NOP
@@ -2751,6 +2759,7 @@ def WDR : F16<0b1001010110101000, (outs), (ins), "wdr", []>;
 //: TODO: Optimize this for wider types AND optimize the following code
 //       compile int foo(char a, char b, char c, char d) {return d+b;}
 //       looks like a missed sext_inreg opportunity.
+/*
 def SEXT
     : ExtensionPseudo<(outs DREGS
                        : $dst),
@@ -2761,6 +2770,7 @@ def SEXT
                         : $dst, (sext i8
                                  : $src)),
                        (implicit SREG)]>;
+*/
 
 def ZEXT
     : ExtensionPseudo<(outs DREGS

@@ -56,7 +56,9 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   // We cannot directly load from two i16 registers, so must expand this as appropriate.
   setOperationAction(ISD::LOAD, MVT::i16, Custom);
   setOperationAction(ISD::STORE, MVT::i16, Custom);
-  setOperationAction(ISD::CopyToReg, MVT::i16, Custom);
+  // setOperationAction(ISD::CopyToReg, MVT::i16, Custom);
+  setOperationAction(ISD::CopyFromReg, MVT::i8, Custom);
+  setOperationAction(ISD::CopyFromReg, MVT::i16, Custom);
 
   setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
   setOperationAction(ISD::BlockAddress, MVT::i16, Custom);
@@ -867,6 +869,17 @@ SDValue GameBoyTargetLowering::LowerCopyToReg(SDValue Op, SelectionDAG &DAG) con
   return High;
 }
 
+SDValue GameBoyTargetLowering::LowerCopyFromReg(SDValue Op, SelectionDAG &DAG) const {
+  dbgs() << "Lowering copy from register " << Op.getNumOperands() << "\n";
+  auto type = Op.getValueType();
+  if (type == MVT::i8)
+    dbgs() << "Found i8 operand" << "\n";
+  else if (type == MVT::i16)
+    dbgs() << "Found i16 operand" << "\n";
+  // dbgs() << "OP2: " << Op.getOperand(1).getSimpleValueType().getStr << "\n";
+  return SDValue();
+}
+
 SDValue GameBoyTargetLowering::LowerLoad(SDValue Op, SelectionDAG &DAG) const {
   // Check if we are attempting to load from a register to a register.
   dbgs() << "lowering a load\n";
@@ -880,8 +893,10 @@ SDValue GameBoyTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) con
     llvm_unreachable("Don't know how to custom lower this!");
   // case ISD::LOAD:
 
-  case ISD::CopyToReg:
-    return LowerCopyToReg(Op, DAG);
+  // case ISD::CopyToReg:
+  //   return LowerCopyToReg(Op, DAG);
+  case ISD::CopyFromReg:
+    return LowerCopyFromReg(Op, DAG);
   // case ISD::LOAD:
     // return LowerLoad(Op, DAG);
   case ISD::SHL:

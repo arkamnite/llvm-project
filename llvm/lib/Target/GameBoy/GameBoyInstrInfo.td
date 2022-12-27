@@ -365,6 +365,8 @@ def GameBoy_Condition_NC : PatLeaf<(i8 0)>;
 //
 // Instructions are being re-written here so that the AVR instructions can
 // eventually be phased out entirely by deleting them from the file.
+// 
+// TODO: Add implicit register uses to instructions, especially HL and F
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 
@@ -664,7 +666,7 @@ let Constraints = "$src = $rd" in {
 def SubARr : GBFRd2<0b10010,
                     (outs GPRLoad : $rd),
                     (ins GPR : $src, GPR : $rr),
-                    "add\ta, $rr",
+                    "sub\ta, $rr",
                     [(set i8 : $rd,
                         (sub i8 : $src, i8 : $rr))]>;
 
@@ -672,7 +674,7 @@ def SubARr : GBFRd2<0b10010,
 def SubAImm8 : GBF0<0b11010110,
                       (outs GPRLoad : $rd),
                       (ins GPRLoad : $src, i8imm : $n),
-                      "add\ta, $n",
+                      "sub\ta, $n",
                       [(set i8 : $rd, (sub i8 : $src, i8 : $n))]>;
 }
 // SUB A, (HL)
@@ -682,14 +684,14 @@ let Constraints = "$src = $rd" in {
 def SbcARr : GBFRd2<0b10011,
                     (outs GPRLoad : $rd),
                     (ins GPRLoad : $src, GPR : $rr),
-                    "adc\t$rd, $rr",
+                    "sbc\t$rd, $rr",
                     [(set i8 : $rd, (sube i8 : $src, i8 : $rr))]>;
 
 // SBC A, Imm8
 def SbcAImm8 : GBF0<0b11011110,
                       (outs GPRLoad : $rd),
                       (ins GPRLoad : $src, i8imm : $n),
-                      "add\ta, $n",
+                      "sbc\ta, $n",
                       [(set i8 : $rd, (sube i8 : $src, i8 : $n))]>;
 }
 
@@ -700,20 +702,109 @@ def SbcAImm8 : GBF0<0b11011110,
 // 8-bit logic instructions
 //===----------------------------------------------------------------------===//
 
+// Pseudo Instructions (excluding (HL))
+// AND Rd, Rr
+let Constraints = "$src = $rd" in {
+let isCommutable = 1 in {
+def AndRdRr : Pseudo< (outs GPR : $rd),
+                      (ins GPR : $src, GPR : $rr),
+                      "and\t$rd, $rr",
+                      [(set i8 : $rd, (and i8 : $src, i8 : $rr))]>;
+// OR Rd, Rr
+def OrRdRr : Pseudo< (outs GPR : $rd),
+                      (ins GPR : $src, GPR : $rr),
+                      "or\t$rd, $rr",
+                      [(set i8 : $rd, (or i8 : $src, i8 : $rr))]>;
+// XOR Rd, Rr
+def XorRdRr : Pseudo< (outs GPR : $rd),
+                      (ins GPR : $src, GPR : $rr),
+                      "xor\t$rd, $rr",
+                      [(set i8 : $rd, (xor i8 : $src, i8 : $rr))]>;
+}
+// AND Rd, Imm8
+def AndRdImm8 : Pseudo< (outs GPR : $rd),
+                        (ins GPR : $src, i8imm : $n),
+                        "and\t$rd, $n",
+                        [(set i8 : $rd, (and i8 : $src, i8 : $n))]>;
+// OR Rd, Imm8
+def OrRdImm8 : Pseudo<  (outs GPR : $rd),
+                        (ins GPR : $src, i8imm : $n),
+                        "or\t$rd, $n",
+                        [(set i8 : $rd, (or i8 : $src, i8 : $n))]>;
+// XOR Rd, Imm8
+def XorRdImm8 : Pseudo< (outs GPR : $rd),
+                        (ins GPR : $src, i8imm : $n),
+                        "xor\t$rd, $n",
+                        [(set i8 : $rd, (xor i8 : $src, i8 : $n))]>;
+}
+
+// CP Rd, Rr
+def CpRdRr : Pseudo<(outs),
+                    (ins GPR : $rd, GPR : $rr),
+                    "cp\t$rd, $rr",
+                    [(GameBoycmp i8 : $rd, i8 : $rr)]>;
+// CP Rd, Imm8
+def CpRdImm8 : Pseudo<(outs),
+                    (ins GPR : $rd, i8imm : $n),
+                    "cp\t$rd, $n",
+                    [(GameBoycmp i8 : $rd, i8 : $n)]>;
+
+// Original instructions are as follows
+let Constraints = "$src = $rd" in {
 // AND A, r
+def AndARr : GBFRd2<0b10100,
+                    (outs GPR : $rd),
+                    (ins GPR : $src, GPR : $rr),
+                    "and\t$rd, $rr",
+                    []>;
 // AND A, Imm8
-// AND A, (HL)
-
+def AndAImm8 : GBF0<0b11100110,
+                    (outs GPR : $rd),
+                    (ins GPR : $src, i8imm : $n),
+                    "and\t$rd, $n",
+                    []>;
 // OR A, r
+def OrARr :  GBFRd2<0b10110,
+                    (outs GPR : $rd),
+                    (ins GPR : $src, GPR : $rr),
+                    "or\t$rd, $rr",
+                    []>;
 // OR A, Imm8
-// OR A, (HL)
-
+def OrAImm8 : GBF0<0b11110110,
+                    (outs GPR : $rd),
+                    (ins GPR : $src, i8imm : $n),
+                    "or\t$rd, $n",
+                    []>;
 // XOR A, r
+def XorARr :  GBFRd2<0b10101,
+                    (outs GPR : $rd),
+                    (ins GPR : $src, GPR : $rr),
+                    "xor\t$rd, $rr",
+                    []>;
 // XOR A, Imm8
-// XOR A, (HL)
+def XorAImm8 : GBF0<0b11101110,
+                    (outs GPR : $rd),
+                    (ins GPR : $src, i8imm : $n),
+                    "xor\t$rd, $n",
+                    []>;
+}
 
 // CP A, r
+def CPARr :  GBFRd2<0b10111,
+                    (outs),
+                    (ins GPR : $rd, GPR : $rr),
+                    "cp\t$rd, $rr",
+                    []>;
 // CP A, Imm8
+def CPAImm8 : GBF0<0b11111110,
+                    (outs),
+                    (ins GPR : $rd, i8imm : $n),
+                    "cp\t$rd, $n",
+                    []>;
+
+// AND A, (HL)
+// OR A, (HL)
+// XOR A, (HL)
 // CP A, (HL)
 
 // INC r
@@ -871,11 +962,12 @@ let isTerminator = 1, isReturn = 1, isBarrier = 1 in {
 //===----------------------------------------------------------------------===//
 
 // Creating SEXT and ZEXT instructions as these are probably needed at the moment.
-def SEXT : GBF0<0b10101010,
-                (outs GPRPair : $dst),
-                (ins GPR : $src),
-                "sext\t$dst, $src",
-                [(set i16 : $dst, (sext i8 : $src))]>;
+// The best way of conducting a SEXT is to load the lower byte of a register pair
+// with the value, 
+def SEXT : Pseudo<(outs GPRPair : $dst),
+                  (ins GPR : $src),
+                  "sext\t$dst, $src",
+                  [(set i16 : $dst, (sext i8 : $src))]>;
 // DAA A
 // CPL A
 // NOP

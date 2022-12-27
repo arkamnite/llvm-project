@@ -510,13 +510,11 @@ bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
   Register SrcReg = MI.getOperand(1).getReg();
   // This will need to be split into HIGH and LOW.
   Register DstReg = MI.getOperand(0).getReg();
+  bool SrcIsKill = MI.getOperand(1).isKill();
+  bool DstIsDead = MI.getOperand(0).isDead();
   Register DstHi, DstLow;
   // The Hi and Low are swapped here.
   TRI->splitReg(DstReg, DstHi, DstLow);
-  dbgs() << "Expanding SEXT\n";
-  for (unsigned int i = 0; i < MI.getNumOperands(); i++) {
-    dbgs() << MI.getOperand(i) << "\n";
-  } 
   // Low byte is copied as is, then the sign bit is pushed into the carry bit
   // The sbc instruction is exploited to get a 0 or -1 via (A - A - Carry),
   // which is therefore the same as (-Carry). We then store this in the upper
@@ -524,10 +522,9 @@ bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
 
   // Store low byte
   if (DstLow.id() != SrcReg.id()) {
-    buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstLow).addReg(SrcReg);
-    dbgs() << "\tStored low byte in " << TRI->getRegAsmName(DstLow).str() << "\n";
-  } else {
-    dbgs() << "\tLow byte does not need to be transferred\n";
+    buildMI(MBB, MBBI, GameBoy::LDRdRr)
+      .addReg(DstLow)
+      .addReg(SrcReg, getKillRegState(SrcIsKill));
   }
 
   // If the source register is not A, then this will need to be accounted for.
@@ -540,25 +537,27 @@ bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
   bool lda = name.compare("RA");
   if (lda) {
     auto n = TRI->getRegClassName(TRI->getRegClass(SrcReg));
-    dbgs() << "\t" << name <<" is in " << n << "\n";
-    buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(GameBoy::RA, RegState::Define).addReg(SrcReg, RegState::Define);
-    dbgs() << "\tMoved to RA\n";
-    buildMI(MBB, MBBI, GameBoy::AddARr).addReg(GameBoy::RA, RegState::Define).addReg(GameBoy::RA);
-    dbgs() << "\tPushed sign into carry\n";
-    addDefines = true;
+    buildMI(MBB, MBBI, GameBoy::LDRdRr)
+      .addReg(GameBoy::RA, RegState::Define)
+      .addReg(SrcReg, getKillRegState(SrcIsKill));
+    buildMI(MBB, MBBI, GameBoy::AddARr)
+      .addReg(GameBoy::RA, RegState::Define)
+      .addReg(GameBoy::RA);
   } else {
-    dbgs() << "\tNo need for LD A, Src\n";
-    buildMI(MBB, MBBI, GameBoy::AddARr).addReg(SrcReg, RegState::Define).addReg(SrcReg);
-    dbgs() << "\tPushed sign into carry\n";
+    buildMI(MBB, MBBI, GameBoy::AddARr)
+      .addReg(SrcReg, RegState::Define)
+      .addReg(SrcReg);
   }
 
   // Convert to 0 or -1
-  buildMI(MBB, MBBI, GameBoy::SbcARr).addReg(GameBoy::RA, RegState::Define).addReg(GameBoy::RA);
-  dbgs() << "\tConverted to 0 or -1\n";
+  buildMI(MBB, MBBI, GameBoy::SbcARr)
+    .addReg(GameBoy::RA, RegState::Define)
+    .addReg(GameBoy::RA);
 
   // Store high byte
-  buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstHi).addReg(GameBoy::RA);
-  dbgs() << "\tStored high byte\n";
+  buildMI(MBB, MBBI, GameBoy::LDRdRr)
+    .addReg(DstHi, RegState::Define | getDeadRegState(DstIsDead))
+    .addReg(GameBoy::RA);
 
   // Remove old instruction
   MI.removeFromParent();

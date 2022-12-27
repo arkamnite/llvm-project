@@ -351,18 +351,46 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairRrPair>(Block &MBB, BlockIt MB
 // Arithmetic
 //===----------------------------------------------------------------------===//
 
+void printAllOperands(MachineInstr &MI) {
+  for (unsigned int i = 0; i < MI.getNumOperands(); i++) {
+    dbgs() << "\t" << MI.getOperand(i) << "\n";
+  }
+}
+
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdRr>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  Register DstReg = MI.getOperand(0).getReg();
-  Register SrcReg = MI.getOperand(1).getReg();
-  dbgs() << "Expanding AddRdRr\n";
-  // LD A, Rr
-  buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(SrcReg);
-  // ADD A, Rd
-  buildMI(MBB, MBBI, GameBoy::AddARr, DstReg).addReg(GameBoy::RA);
-  // LD Rd, A
-  buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstReg).addReg(GameBoy::RA);
+  Register DstReg = MI.getOperand(1).getReg();
+  Register SrcReg = MI.getOperand(2).getReg();
+  bool SrcIsKill = MI.getOperand(2).isKill();
+  bool DstIsDead = MI.getOperand(1).isDead();
+
+  if (SrcReg.id() == DstReg.id()) {  
+    dbgs() << "Expanding AddRdRr into Add A Rr\n";
+    printAllOperands(MI);
+    // ADD A, Rr
+    buildMI(MBB, MBBI, GameBoy::AddARr)
+      .addReg(GameBoy::RA, RegState::Define)
+      .addReg(SrcReg, getKillRegState(SrcIsKill));
+  } else {
+    dbgs() << "Expanding AddRd(" << DstReg.id() << ") Rr(" << SrcReg.id() << ")\n";
+    printAllOperands(MI);
+    // LD A, Rr
+    buildMI(MBB, MBBI, GameBoy::LDRdRr)
+      .addReg(GameBoy::RA, RegState::Define)
+      .addReg(SrcReg, getKillRegState(SrcIsKill));
+    dbgs() << "A\n";
+    // ADD A, Rd
+    buildMI(MBB, MBBI, GameBoy::AddARr)
+      .addReg(GameBoy::RA, RegState::Define)
+      .addReg(DstReg, getDeadRegState(DstIsDead));
+    dbgs() << "B\n";
+    // LD Rd, A
+    buildMI(MBB, MBBI, GameBoy::LDRdRr)
+      .addReg(DstReg, RegState::Define)
+      .addReg(GameBoy::RA);
+    dbgs() << "C\n";
+  }
   MI.eraseFromParent();
   return true;
 }
@@ -495,8 +523,12 @@ bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
   // byte
 
   // Store low byte
-  buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstLow).addReg(SrcReg);
-  dbgs() << "\tStored low byte in " << TRI->getRegAsmName(DstLow).str() << "\n";
+  if (DstLow.id() != SrcReg.id()) {
+    buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstLow).addReg(SrcReg);
+    dbgs() << "\tStored low byte in " << TRI->getRegAsmName(DstLow).str() << "\n";
+  } else {
+    dbgs() << "\tLow byte does not need to be transferred\n";
+  }
 
   // If the source register is not A, then this will need to be accounted for.
   // Push sign into carry with add a, a

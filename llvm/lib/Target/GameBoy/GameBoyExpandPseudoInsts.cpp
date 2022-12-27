@@ -275,7 +275,13 @@ bool GameBoyExpandPseudo::expandLogicImm(unsigned Op, Block &MBB, BlockIt MBBI) 
 }
 
 //===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
 // Game Boy Pseudo Instructions
+//===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// Loading
 //===----------------------------------------------------------------------===//
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRd8Ptr>(Block &MBB, BlockIt MBBI) {
@@ -312,16 +318,45 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRd8Ptr>(Block &MBB, BlockIt MBBI) {
   return true;
 }
 
-/// @brief Will expand Add Rd, Rr into the correct load-store sequence
-/// utilising register A as a temporary.
-/// @param MBB 
-/// @param MBBI 
-/// @return 
+// Transfer the register pair via individual registers.
+template <>
+bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairRrPair>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  Register DstLoReg, DstHiReg, SrcLoReg, SrcHiReg;
+  // Register SrcReg = MI.getPrevNode()->getOperand(0).getReg();
+  // dbgs() << "Expanding LDRdPairRrPair\n";
+  auto v = MI.getNumOperands();
+  dbgs() << "Expanding LDRdPairRrPair, found " << v << " operands in original function\n";
+  for (unsigned int i = 0; i < v; i++) {
+    dbgs() << MI.getOperand(i) << "\n";
+  }
+  Register DstReg = MI.getOperand(0).getReg();
+  Register SrcReg = MI.getOperand(1).getReg();
+  TRI->splitReg(DstReg, DstLoReg, DstHiReg);
+  TRI->splitReg(SrcReg, SrcLoReg, SrcHiReg);
+  // LD DstHi, SrcHi
+  dbgs() << "Dst: " << MI.getOperand(0) << "\n";
+  dbgs() << "Src: " << MI.getOperand(1) << "\n";
+  auto ld = buildMI(MBB, MBBI, GameBoy::LDRdRr, DstHiReg).addReg(SrcHiReg, RegState::Define);
+  // LD DstLo, SrcLo
+  buildMI(MBB, MBBI, GameBoy::LDRdRr, DstLoReg).addReg(SrcLoReg, RegState::Define);
+  // remove previous instruction.
+  ld.setMemRefs(MI.memoperands());
+  MI.removeFromParent();
+  return true;
+}
+
+
+//===----------------------------------------------------------------------===//
+// Arithmetic
+//===----------------------------------------------------------------------===//
+
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdRr>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(1).getReg();
+  dbgs() << "Expanding AddRdRr\n";
   // LD A, Rr
   buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(SrcReg);
   // ADD A, Rd
@@ -367,6 +402,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt M
 // TODO: Investigate optimisation using A and HIGH(n) LOW(n) from RGBASM.
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI) {
+  dbgs() << "Expanding AddRpdImm16\n";
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(2).getReg();
@@ -381,34 +417,128 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI)
   return true;
 }
 
-// Transfer the register pair via individual registers.
-template <>
-bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairRrPair>(Block &MBB, BlockIt MBBI) {
+//===----------------------------------------------------------------------===//
+// Logic
+//===----------------------------------------------------------------------===//
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AndRdRr>(Block &MBB, BlockIt MBBI) {
+  // See if Rd is A; if so, can avoid LD A, Rd
+  // MachineInstr &MI = *MBBI;
+  // Register DstReg = MI.getOperand(0).getReg();
+  // Register SrcReg = MI.getOperand(1).getReg();
+  llvm_unreachable("Incomplete AndRdRr");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AndRdImm8>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete AndRdImm8");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::OrRdRr>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete OrRdRr");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::OrRdImm8>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete OrRdImm8");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::XorRdRr>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete XorRdRr");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::XorRdImm8>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete XorRdImm8");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::CpRdRr>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete CpRdRr");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::CpRdImm8>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete CpRdImm8");
+  return true;
+}
+
+//===----------------------------------------------------------------------===//
+// General purpose arithmetic operands and CPU control instructions
+//===----------------------------------------------------------------------===//
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
+  bool addDefines = false;
   MachineInstr &MI = *MBBI;
-  Register DstLoReg, DstHiReg, SrcLoReg, SrcHiReg;
-  // Register SrcReg = MI.getPrevNode()->getOperand(0).getReg();
-  // dbgs() << "Expanding LDRdPairRrPair\n";
-  auto v = MI.getNumOperands();
-  dbgs() << "Expanding LDRdPairRrPair, found " << v << " operands in original function\n";
-  for (unsigned int i = 0; i < v; i++) {
-    dbgs() << MI.getOperand(i) << "\n";
-  }
-  Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(1).getReg();
-  TRI->splitReg(DstReg, DstLoReg, DstHiReg);
-  TRI->splitReg(SrcReg, SrcLoReg, SrcHiReg);
-  // LD DstHi, SrcHi
-  dbgs() << "Dst: " << MI.getOperand(0) << "\n";
-  dbgs() << "Src: " << MI.getOperand(1) << "\n";
-  auto ld = buildMI(MBB, MBBI, GameBoy::LDRdRr, DstHiReg).addReg(SrcHiReg, RegState::Define);
-  // LD DstLo, SrcLo
-  buildMI(MBB, MBBI, GameBoy::LDRdRr, DstLoReg).addReg(SrcLoReg, RegState::Define);
-  // remove previous instruction.
-  ld.setMemRefs(MI.memoperands());
+  // This will need to be split into HIGH and LOW.
+  Register DstReg = MI.getOperand(0).getReg();
+  Register DstHi, DstLow;
+  // The Hi and Low are swapped here.
+  TRI->splitReg(DstReg, DstHi, DstLow);
+  dbgs() << "Expanding SEXT\n";
+  for (unsigned int i = 0; i < MI.getNumOperands(); i++) {
+    dbgs() << MI.getOperand(i) << "\n";
+  } 
+  // Low byte is copied as is, then the sign bit is pushed into the carry bit
+  // The sbc instruction is exploited to get a 0 or -1 via (A - A - Carry),
+  // which is therefore the same as (-Carry). We then store this in the upper
+  // byte
+
+  // Store low byte
+  buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstLow).addReg(SrcReg);
+  dbgs() << "\tStored low byte in " << TRI->getRegAsmName(DstLow).str() << "\n";
+
+  // If the source register is not A, then this will need to be accounted for.
+  // Push sign into carry with add a, a
+
+  // This is a very rudimentary comparison, as for some reason the class is incorrectly
+  // being read as GPR8lo for A, due to the register number possibly.
+  auto regClass = TRI->getRegClass(SrcReg);
+  auto name = TRI->getRegAsmName(SrcReg).str();
+  bool lda = name.compare("RA");
+  if (lda) {
+    auto n = TRI->getRegClassName(TRI->getRegClass(SrcReg));
+    dbgs() << "\t" << name <<" is in " << n << "\n";
+    buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(GameBoy::RA, RegState::Define).addReg(SrcReg, RegState::Define);
+    dbgs() << "\tMoved to RA\n";
+    buildMI(MBB, MBBI, GameBoy::AddARr).addReg(GameBoy::RA, RegState::Define).addReg(GameBoy::RA);
+    dbgs() << "\tPushed sign into carry\n";
+    addDefines = true;
+  } else {
+    dbgs() << "\tNo need for LD A, Src\n";
+    buildMI(MBB, MBBI, GameBoy::AddARr).addReg(SrcReg, RegState::Define).addReg(SrcReg);
+    dbgs() << "\tPushed sign into carry\n";
+  }
+
+  // Convert to 0 or -1
+  buildMI(MBB, MBBI, GameBoy::SbcARr).addReg(GameBoy::RA, RegState::Define).addReg(GameBoy::RA);
+  dbgs() << "\tConverted to 0 or -1\n";
+
+  // Store high byte
+  buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstHi).addReg(GameBoy::RA);
+  dbgs() << "\tStored high byte\n";
+
+  // Remove old instruction
   MI.removeFromParent();
   return true;
 }
 
+
+//===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+// AVR Pseudo Instructions
+//===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::ADDWRdRr>(Block &MBB, BlockIt MBBI) {
   return expandArith(GameBoy::ADDRdRr, GameBoy::ADCRdRr, MBB, MBBI);
@@ -2399,6 +2529,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::ASRBNRd>(Block &MBB, BlockIt MBBI) {
   }
 }
 
+/*
 template <> bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
   dbgs() << "Expanding SEXT instruction\n";
   MachineInstr &MI = *MBBI;
@@ -2456,6 +2587,7 @@ template <> bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt 
   MI.eraseFromParent();
   return true;
 }
+*/
 
 template <> bool GameBoyExpandPseudo::expand<GameBoy::ZEXT>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
@@ -2573,6 +2705,14 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::AddRdImm8);
     EXPAND(GameBoy::AddRdPairRrPair);
     EXPAND(GameBoy::AddRpdImm16);
+    EXPAND(GameBoy::AndRdRr);
+    EXPAND(GameBoy::AndRdImm8);
+    EXPAND(GameBoy::OrRdRr);
+    EXPAND(GameBoy::OrRdImm8);
+    EXPAND(GameBoy::XorRdRr);
+    EXPAND(GameBoy::XorRdImm8);
+    EXPAND(GameBoy::CpRdRr);
+    EXPAND(GameBoy::CpRdImm8);
     // AVR
     EXPAND(GameBoy::ADDWRdRr);
     EXPAND(GameBoy::ADCWRdRr);

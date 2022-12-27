@@ -870,12 +870,12 @@ SDValue GameBoyTargetLowering::LowerCopyToReg(SDValue Op, SelectionDAG &DAG) con
 }
 
 SDValue GameBoyTargetLowering::LowerCopyFromReg(SDValue Op, SelectionDAG &DAG) const {
-  dbgs() << "Lowering copy from register " << Op.getNumOperands() << "\n";
+  // dbgs() << "Lowering copy from register " << Op.getNumOperands() << "\n";
   auto type = Op.getValueType();
-  if (type == MVT::i8)
-    dbgs() << "Found i8 operand" << "\n";
-  else if (type == MVT::i16)
-    dbgs() << "Found i16 operand" << "\n";
+  if (type == MVT::i8) {}
+    // dbgs() << "Found i8 operand" << "\n";
+  else if (type == MVT::i16) {}
+    // dbgs() << "Found i16 operand" << "\n";
   // dbgs() << "OP2: " << Op.getOperand(1).getSimpleValueType().getStr << "\n";
   return SDValue();
 }

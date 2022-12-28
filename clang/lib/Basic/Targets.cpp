@@ -115,6 +115,9 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
   default:
     return nullptr;
 
+  case llvm::Triple::gameboy:
+    return new GameBoyTargetInfo(Triple, Opts);
+
   case llvm::Triple::arc:
     return new ARCTargetInfo(Triple, Opts);
 

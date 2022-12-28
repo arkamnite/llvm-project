@@ -458,8 +458,8 @@ let mayStore = 1 in {
 def LDHLAddrRr : GBFRd2<0b01110,
                         (outs),
                         (ins GPRPairPointerHL : $ptrreg, GPR : $rr),
-                        "ld\t( $ptrreg ), $rr",
-                        [(store i8 : $rr, GPRPairPointerHL : $ptrreg)]>;
+                        "ld\t$ptrreg, $rr", // Brackets added in GameBoyInstPrinter.cpp
+                        [(store GPR : $rr, GPRPairPointerHL : $ptrreg)]>;
 
 // LD (HL), Imm8
 def LDHLAddrImm8 : GBF0<0b00110110,
@@ -566,7 +566,7 @@ let mayLoad = 1 in {
                   (outs StackRegisters
                     : $reg),
                   (ins),
-                  "POP\t$reg",
+                  "pop\t$reg",
                   []>;
 
 // PUSHRd / PUSH qq
@@ -574,7 +574,7 @@ let mayLoad = 1 in {
                   (outs),
                   (ins StackRegisters
                     : $reg),
-                  "PUSH\t$reg",
+                  "push\t$reg",
                   []>;
 
 // PUSH HL

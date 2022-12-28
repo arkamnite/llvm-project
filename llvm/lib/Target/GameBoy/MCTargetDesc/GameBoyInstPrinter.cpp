@@ -44,15 +44,23 @@ void GameBoyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   case GameBoy::LDRd8Ptr:
   case GameBoy::LDRdHLPtr:
   case GameBoy::LDAPtr:
-  case GameBoy::LDPtrA:
   case GameBoy::LDAImm8Addr:
   case GameBoy::LDAImm16Addr:
-    O << "\tld\t(";
+    O << "\tld\t";
     printOperand(MI, 0, O);
-    O << "), ";
+    O << ", [";
+    printOperand(MI, 1, O);
+    O << "]";
+    break;
+  // Pointer is first argument
+  case GameBoy::LDPtrA:
+  case GameBoy::LDHLAddrRr:
+  case GameBoy::LDHLAddrImm8:
+    O << "\tld\t[";
+    printOperand(MI, 0, O);
+    O << "], ";
     printOperand(MI, 1, O);
     break;
-
   // Original instructions go here
   case GameBoy::LDRdPtr:
   case GameBoy::LDRdPtrPi:

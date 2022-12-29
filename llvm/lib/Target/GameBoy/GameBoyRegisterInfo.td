@@ -34,7 +34,7 @@ let Namespace = "GameBoy" in { def ptr : RegAltNameIndex; }
 //===----------------------------------------------------------------------===//
 
 def RA : GameBoyReg<0, "a">, DwarfRegNum<[0]>;
-def RF : GameBoyReg<1, "F">, DwarfRegNum<[1]>;
+def RF : GameBoyReg<1, "f">, DwarfRegNum<[1]>;
 def RB : GameBoyReg<2, "b">, DwarfRegNum<[2]>;
 def RC : GameBoyReg<3, "c">, DwarfRegNum<[3]>;
 def RD : GameBoyReg<4, "d">, DwarfRegNum<[4]>;
@@ -51,13 +51,6 @@ let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
   def RDRE : GameBoyReg<4, "de", [RD, RE]>, DwarfRegNum<[4]>;
   def RHRL : GameBoyReg<6, "hl", [RH, RL]>, DwarfRegNum<[6]>;
 }
-
-//===---------------------------------------------------------------------===//
-// 32-bit general-purpose registers. These do not actually exist!
-//===---------------------------------------------------------------------===//
-// let SubRegIndices = [sub_lo, sub_hi], CoveredBySubRegs = 1 in {
-//   def RDRERBRC : GameBoyReg<3, "DEBC", [RD, RE, RB, RC]>, DwarfRegNum<[3]>;
-// }
 
 def SP : GameBoyReg<8, "SP">, DwarfRegNum<[8]>;
 

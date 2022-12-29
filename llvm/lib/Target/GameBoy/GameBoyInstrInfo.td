@@ -379,6 +379,19 @@ def LDRdRrReg : Operand<i16> {
 }
 
 //===----------------------------------------------------------------------===//
+// 8-bit transfer and input/output pseudo instructions
+//===----------------------------------------------------------------------===//
+
+let mayLoad = 1 in {
+// Pseudo instruction needed to lower LD Rd8, &Ptr
+// LD Rd, (RR)
+def LDRd8Ptr : Pseudo< (outs GPR : $rd),
+                  (ins GPRPair : $ptrreg),
+                  "ld\t$rd, [ $ptrreg ]",
+                  [(set GPR : $rd, (load i16 : $ptrreg))]>;
+}
+
+//===----------------------------------------------------------------------===//
 // 8-bit transfer and input/output instructions
 //===----------------------------------------------------------------------===//
 let hasSideEffects = 0 in {
@@ -406,12 +419,6 @@ def LDRdImm8 : GBFRd< 0b00, 0b110,
 
 let mayLoad = 1 in {
 
-// Pseudo instruction needed to lower LD Rd8, &Ptr
-// LD Rd, (RR)
-def LDRd8Ptr : Pseudo< (outs GPR : $rd),
-                  (ins GPRPair : $ptrreg),
-                  "ld\t$rd, [ $ptrreg ]",
-                  [(set GPR : $rd, (load i16 : $ptrreg))]>;
 
 // To move entire register pairs, the following pseudo instruction
 // must be constructed. LD RdH, RrH; LD RdL, RrL
@@ -1925,9 +1932,11 @@ let isReMaterializable = 1 in {
                         : $dst),
                        (ins i16imm
                         : $src),
-                       "ldiw\t$dst, $src", [(set i16
-                                             : $dst, imm
-                                             : $src)]>;
+                       "ldiw\t$dst, $src", 
+                       []>;
+                      //  [(set i16
+                      //                        : $dst, imm
+                      //                        : $src)]>;
 }
 
 // Load from data space into register.
@@ -1936,11 +1945,12 @@ let canFoldAsLoad = 1, isReMaterializable = 1 in {
                      (outs GPR8
                       : $rd),
                      (ins imm16
-                      : $k),
-                     "lds\t$rd, $k", [(set i8
-                                       : $rd, (load imm
-                                               : $k))]>,
-               Requires<[HasSRAM]>;
+                      : $k), "lds",
+                      []>;
+              //        "lds\t$rd, $k", [(set i8
+              //                          : $rd, (load imm
+              //                                  : $k))]>,
+              //  Requires<[HasSRAM]>;
 
   // LDSW Rd+1:Rd, K+1:K
   //

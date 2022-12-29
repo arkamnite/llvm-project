@@ -379,17 +379,17 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdRr>(Block &MBB, BlockIt MBBI) {
     buildMI(MBB, MBBI, GameBoy::LDRdRr)
       .addReg(GameBoy::RA, RegState::Define)
       .addReg(SrcReg, getKillRegState(SrcIsKill));
-    dbgs() << "A\n";
+    // dbgs() << "A\n";
     // ADD A, Rd
     buildMI(MBB, MBBI, GameBoy::AddARr)
       .addReg(GameBoy::RA, RegState::Define)
       .addReg(DstReg, getDeadRegState(DstIsDead));
-    dbgs() << "B\n";
+    // dbgs() << "B\n";
     // LD Rd, A
     buildMI(MBB, MBBI, GameBoy::LDRdRr)
       .addReg(DstReg, RegState::Define)
       .addReg(GameBoy::RA);
-    dbgs() << "C\n";
+    // dbgs() << "C\n";
   }
   MI.eraseFromParent();
   return true;

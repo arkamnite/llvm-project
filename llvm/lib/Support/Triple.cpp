@@ -121,7 +121,7 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
 
   case hexagon:     return "hexagon";
   // GameBoy
-  case gameboy:     return "dmg";
+  case gameboy:     return "gameboy";
 
   case amdgcn:      return "amdgcn";
   case r600:        return "r600";
@@ -840,6 +840,7 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
   case Triple::thumbeb:
   case Triple::ve:
   case Triple::xcore:
+  case Triple::gameboy: // Game Boy
     return Triple::ELF;
 
   case Triple::ppc64:
@@ -863,10 +864,6 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
 
   case Triple::dxil:
     return Triple::DXContainer;
-  
-  // Todo: Change this to bin format?
-  case Triple::gameboy:
-    return Triple::ELF;
   }
   llvm_unreachable("unknown architecture");
 }
@@ -1382,12 +1379,9 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::UnknownArch:
     return 0;
 
-  // Todo: Check that this is not in fact 8-bit.
-  case llvm::Triple::gameboy:
-    return 16;
-
   case llvm::Triple::avr:
   case llvm::Triple::msp430:
+  case llvm::Triple::gameboy: // TODO: Check this detail.
     return 16;
 
   case llvm::Triple::aarch64_32:
@@ -1472,6 +1466,7 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::UnknownArch:
   case Triple::amdgcn:
   case Triple::avr:
+  case Triple::gameboy:
   case Triple::bpfeb:
   case Triple::bpfel:
   case Triple::msp430:
@@ -1551,6 +1546,7 @@ Triple Triple::get64BitArchVariant() const {
   case Triple::UnknownArch:
   case Triple::arc:
   case Triple::avr:
+  case Triple::gameboy:
   case Triple::csky:
   case Triple::dxil:
   case Triple::hexagon:
@@ -1773,6 +1769,7 @@ bool Triple::isLittleEndian() const {
   case Triple::x86:
   case Triple::x86_64:
   case Triple::xcore:
+  case Triple::gameboy:
     return true;
   default:
     return false;

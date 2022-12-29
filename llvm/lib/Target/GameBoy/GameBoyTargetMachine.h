@@ -1,44 +1,51 @@
-#ifndef LLVM_LIB_TARGET_GAMEBOY_GAMEBOYTARGETMACHINE_H
-#define LLVM_LIB_TARGET_GAMEBOY_GAMEBOYTARGETMACHINE_H
+//===-- GameBoyTargetMachine.h - Define TargetMachine for GameBoy -------*- C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+//
+// This file declares the GameBoy specific subclass of TargetMachine.
+//
+//===----------------------------------------------------------------------===//
 
-// #include "GameBoySubTarget.h"
-// #include "MCTargetDesc/GameBoyMCTargetDesc.h"
+#ifndef LLVM_GameBoy_TARGET_MACHINE_H
+#define LLVM_GameBoy_TARGET_MACHINE_H
 
-#include "llvm/CodeGen/Passes.h"
-#include "llvm/CodeGen/SelectionDAGISel.h"
-
+#include "llvm/IR/DataLayout.h"
 #include "llvm/Target/TargetMachine.h"
-#include "GameBoyInstrInfo.h"
+
 #include "GameBoyFrameLowering.h"
+#include "GameBoyISelLowering.h"
+#include "GameBoyInstrInfo.h"
+#include "GameBoySelectionDAGInfo.h"
+#include "GameBoySubtarget.h"
 
-namespace llvm {    
+namespace llvm {
 
-// Generic GameBoy implementation.    
+/// A generic GameBoy implementation.
 class GameBoyTargetMachine : public LLVMTargetMachine {
 public:
-    // TODO: Check the signature is correct.
-    GameBoyTargetMachine(const Target &T, const Triple &TT, StringRef CPU,
+  GameBoyTargetMachine(const Target &T, const Triple &TT, StringRef CPU,
                    StringRef FS, const TargetOptions &Options,
                    Optional<Reloc::Model> RM, Optional<CodeModel::Model> CM,
                    CodeGenOpt::Level OL, bool JIT);
 
-    TargetLoweringObjectFile *getObjFileLowering() const override {
-        return this->TLOF.get();
-    }
+  const GameBoySubtarget *getSubtargetImpl() const;
+  const GameBoySubtarget *getSubtargetImpl(const Function &) const override;
 
-    TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
+  TargetLoweringObjectFile *getObjFileLowering() const override {
+    return this->TLOF.get();
+  }
 
-    ~GameBoyTargetMachine() override;
+  TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
 
-    // getInstrInfo()
-    // getInstrInfo()
-    // getFrameInfo()
-    // getDataLayout()
-    // getSubtargetImpl()
 private:
-    std::unique_ptr<TargetLoweringObjectFile> TLOF;
+  std::unique_ptr<TargetLoweringObjectFile> TLOF;
+  GameBoySubtarget SubTarget;
 };
 
 } // end namespace llvm
 
-#endif // LLVM_LIB_TARGET_GAMEBOY_GAMEBOYTARGETMACHINE_H
+#endif // LLVM_GameBoy_TARGET_MACHINE_H

@@ -1,43 +1,79 @@
-// GameBoy tablegen file
+//===-- GameBoy.td - Describe the GameBoy Target Machine ----------*- tablegen -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===---------------------------------------------------------------------===//
+// This is the top level entry point for the GameBoy target.
+//===---------------------------------------------------------------------===//
+
+//===---------------------------------------------------------------------===//
+// Target-independent interfaces which we are implementing
+//===---------------------------------------------------------------------===//
 
 include "llvm/Target/Target.td"
 
-// GameBoy subtarget features
+//===---------------------------------------------------------------------===//
+// GameBoy Device Definitions
+//===---------------------------------------------------------------------===//
 
-// DMG Register File Description
+include "GameBoyDevices.td"
+
+//===---------------------------------------------------------------------===//
+// Register File Description
+//===---------------------------------------------------------------------===//
 
 include "GameBoyRegisterInfo.td"
 
-// DMG Instruction Descriptions
+//===---------------------------------------------------------------------===//
+// Instruction Descriptions
+//===---------------------------------------------------------------------===//
 
 include "GameBoyInstrInfo.td"
+
 def GameBoyInstrInfo : InstrInfo;
 
-// DMG Calling Conventions
+//===---------------------------------------------------------------------===//
+// Calling Conventions
+//===---------------------------------------------------------------------===//
 
-// include "GameBoyCallingConv.td"
+include "GameBoyCallingConv.td"
 
+//===---------------------------------------------------------------------===//
 // Assembly Printers
+//===---------------------------------------------------------------------===//
 
-def GameBoyAsmWriter: AsmWriter {
-    string AsmWriterClassName = "InstPrinter";
-    bit isMCAsmWriter = 1;
+def GameBoyAsmWriter : AsmWriter {
+  string AsmWriterClassName = "InstPrinter";
+  bit isMCAsmWriter = 1;
 }
 
+//===---------------------------------------------------------------------===//
 // Assembly Parsers
+//===---------------------------------------------------------------------===//
 
 def GameBoyAsmParser : AsmParser {
-    bit ShouldEmitMatchingRegisterName = 0;
+  let ShouldEmitMatchRegisterName = 1;
+  let ShouldEmitMatchRegisterAltName = 1;
 }
 
 def GameBoyAsmParserVariant : AsmParserVariant {
-    int Variant = 0;
+  int Variant = 0;
+
+  // Recognize hard coded registers.
+  string RegisterPrefix = "$";
+  string TokenizingCharacters = "+";
 }
 
-// Target
+//===---------------------------------------------------------------------===//
+// Target Declaration
+//===---------------------------------------------------------------------===//
 
 def GameBoy : Target {
-    let InstructionSet = GameBoyInstrInfo;
-    let AssemblyParsers = [GameBoyAsmParser];
-    let AssemblyWriters = [GameBoyAsmWriter];
+  let InstructionSet = GameBoyInstrInfo;
+  let AssemblyWriters = [GameBoyAsmWriter];
+
+  let AssemblyParsers = [GameBoyAsmParser];
+  let AssemblyParserVariants = [GameBoyAsmParserVariant];
 }

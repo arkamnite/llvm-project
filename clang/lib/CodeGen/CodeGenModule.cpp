@@ -1999,7 +1999,7 @@ void CodeGenModule::SetLLVMFunctionAttributesForDefinition(const Decl *D,
     if (D->hasAttr<MinSizeAttr>())
       B.addAttribute(llvm::Attribute::MinSize);
   }
-
+  
   F->addFnAttrs(B);
 
   unsigned alignment = D->getMaxAlignment() / Context.getCharWidth();
@@ -2018,6 +2018,7 @@ void CodeGenModule::SetLLVMFunctionAttributesForDefinition(const Decl *D,
     if (F->getAlignment() < 2 && isa<CXXMethodDecl>(D))
       F->setAlignment(llvm::Align(2));
   }
+
 
   // In the cross-dso CFI mode with canonical jump tables, we want !type
   // attributes on definitions only.

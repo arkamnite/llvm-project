@@ -36,6 +36,7 @@
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm> // std::sort
+#include <iostream>
 
 using namespace clang;
 using namespace CodeGen;
@@ -8317,6 +8318,61 @@ void M68kTargetCodeGenInfo::setTargetAttributes(
 }
 
 //===----------------------------------------------------------------------===//
+// Game Boy ABI Implementation
+//===----------------------------------------------------------------------===//
+
+namespace {
+
+class GameBoyABIInfo : public DefaultABIInfo {
+public:
+  GameBoyABIInfo(CodeGenTypes &CGT) : DefaultABIInfo(CGT) {}
+
+  // Do not extend values! Use default type
+  ABIArgInfo classifyReturnType(QualType Ty) const {
+    if (Ty->isVoidType())
+      return ABIArgInfo::getIgnore();
+
+    return ABIArgInfo::getDirect();
+  }
+
+  // Do not extend or promote any values either.
+  ABIArgInfo classifyArgumentType(QualType Ty) const {
+    return ABIArgInfo::getDirect();
+  }
+
+  void computeInfo(CGFunctionInfo &FI) const override {
+    // Decide the return type.
+    if (!getCXXABI().classifyReturnType(FI))
+      FI.getReturnInfo() = classifyReturnType(FI.getReturnType());
+
+    // Decide each argument type. Handle vararg here!
+    for (auto &I : FI.arguments())
+      I.info = classifyArgumentType(I.type);
+  }
+};
+class GameBoyTargetCodeGenInfo : public TargetCodeGenInfo {
+public:
+  GameBoyTargetCodeGenInfo(CodeGenTypes &CGT)
+    : TargetCodeGenInfo(std::make_unique<GameBoyABIInfo>(CGT)) {}
+
+  void setTargetAttributes(const Decl *D, llvm::GlobalValue *GV,
+                            CodeGen::CodeGenModule &CGM) const override {
+    if (GV->isDeclaration())
+      return;
+    const auto *FD = dyn_cast_or_null<FunctionDecl>(D);
+    if (!FD) return;
+    auto *Fn = cast<llvm::Function>(GV);
+
+    if (FD->getAttr<AVRInterruptAttr>())
+      Fn->addFnAttr("interrupt");
+
+    if (FD->getAttr<AVRSignalAttr>())
+      Fn->addFnAttr("signal");
+  }
+};
+}
+
+//===----------------------------------------------------------------------===//
 // AVR ABI Implementation. Documented at
 // https://gcc.gnu.org/wiki/avr-gcc#Calling_Convention
 // https://gcc.gnu.org/wiki/avr-gcc#Reduced_Tiny
@@ -11532,6 +11588,9 @@ const TargetCodeGenInfo &CodeGenModule::getTargetCodeGenInfo() {
   default:
     return SetCGInfo(new DefaultTargetCodeGenInfo(Types));
 
+  case llvm::Triple::gameboy: {
+    return SetCGInfo(new GameBoyTargetCodeGenInfo(Types));
+  }
   case llvm::Triple::le32:
     return SetCGInfo(new PNaClTargetCodeGenInfo(Types));
   case llvm::Triple::m68k:
@@ -11547,6 +11606,7 @@ const TargetCodeGenInfo &CodeGenModule::getTargetCodeGenInfo() {
     return SetCGInfo(new MIPSTargetCodeGenInfo(Types, false));
 
   case llvm::Triple::avr: {
+    std::cout << "Using avr" << std::endl;
     // For passing parameters, R8~R25 are used on avr, and R18~R25 are used
     // on avrtiny. For passing return value, R18~R25 are used on avr, and
     // R22~R25 are used on avrtiny.

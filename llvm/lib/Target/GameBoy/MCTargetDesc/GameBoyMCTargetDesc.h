@@ -1,12 +1,24 @@
-#ifndef LLVM_LIB_TARGET_GAMEBOY_MCTARGETDESC_GAMEBOYMCTARGETDESC_H
-#define LLVM_LIB_TARGET_GAMEBOY_MCTARGETDESC_GAMEBOYMCTARGETDESC_H
+//===-- GameBoyMCTargetDesc.h - GameBoy Target Descriptions -------------*- C++ -*-===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+//
+// This file provides GameBoy specific target descriptions.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef LLVM_GameBoy_MCTARGET_DESC_H
+#define LLVM_GameBoy_MCTARGET_DESC_H
 
 #include "llvm/Support/DataTypes.h"
 
 #include <memory>
 
 namespace llvm {
-    
+
 class MCAsmBackend;
 class MCCodeEmitter;
 class MCContext;
@@ -19,32 +31,27 @@ class Target;
 
 MCInstrInfo *createGameBoyMCInstrInfo();
 
-/// Create a machine code emitter for GameBoy.
+/// Creates a machine code emitter for GameBoy.
 MCCodeEmitter *createGameBoyMCCodeEmitter(const MCInstrInfo &MCII,
-                                        MCContext &Ctx);
+                                      MCContext &Ctx);
 
-/// Create an assembly backend for GameBoy.
+/// Creates an assembly backend for GameBoy.
 MCAsmBackend *createGameBoyAsmBackend(const Target &T, const MCSubtargetInfo &STI,
-                                    const MCRegisterInfo &MRI,
-                                    const MCTargetOptions &Options);
+                                  const MCRegisterInfo &MRI,
+                                  const llvm::MCTargetOptions &TO);
 
-/// Create an ELF object writer for GameBoy.
-std::unique_ptr<MCObjectTargetWriter> createGameBoyELFObjectWriter(bool Is64Bit,
-                                                                 uint8_t OSABI);
-} // End llvm namespace
+/// Creates an ELF object writer for GameBoy.
+std::unique_ptr<MCObjectTargetWriter> createGameBoyELFObjectWriter(uint8_t OSABI);
 
-// Defines symbolic names for GameBoy registers.  This defines a mapping from
-// register name to register number.
-//
+} // end namespace llvm
+
 #define GET_REGINFO_ENUM
-#include "GameBoyRegisterInfo.inc"
+#include "GameBoyGenRegisterInfo.inc"
 
-// Defines symbolic names for the GameBoy instructions.
-//
 #define GET_INSTRINFO_ENUM
-#include "GameBoyInstrInfo.inc"
+#include "GameBoyGenInstrInfo.inc"
 
-// #define GET_SUBTARGETINFO_ENUM
-// #include "GameBoySubtargetInfo.inc"
+#define GET_SUBTARGETINFO_ENUM
+#include "GameBoyGenSubtargetInfo.inc"
 
-#endif
+#endif // LLVM_GameBoy_MCTARGET_DESC_H

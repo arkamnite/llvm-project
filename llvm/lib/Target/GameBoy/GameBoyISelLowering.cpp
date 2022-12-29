@@ -57,8 +57,8 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setOperationAction(ISD::LOAD, MVT::i16, Custom);
   setOperationAction(ISD::STORE, MVT::i16, Custom);
   // setOperationAction(ISD::CopyToReg, MVT::i16, Custom);
-  setOperationAction(ISD::CopyFromReg, MVT::i8, Custom);
-  setOperationAction(ISD::CopyFromReg, MVT::i16, Custom);
+  // setOperationAction(ISD::CopyFromReg, MVT::i8, Custom);
+  // setOperationAction(ISD::CopyFromReg, MVT::i16, Custom);
 
   setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
   setOperationAction(ISD::BlockAddress, MVT::i16, Custom);
@@ -853,29 +853,15 @@ SDValue GameBoyTargetLowering::LowerVASTART(SDValue Op, SelectionDAG &DAG) const
                       MachinePointerInfo(SV));
 }
 
-SDValue GameBoyTargetLowering::LowerCopyToReg(SDValue Op, SelectionDAG &DAG) const {
-  dbgs() << "Lowering copy to register\n";
-  // When lowering a copy to a register, we need to split the value up into two 8-bit
-  // values and then copy these invidually.
-  // This should only be happening with i16, but we will sanity check anyways.
-  assert(Op.getValueType() != MVT::i16 && "Attempted to expand non-i16 CopyToReg");
-  SDLoc DL(Op);
-  // Extract values
-  SDValue Lo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, MVT::i8, Op, DAG.getIntPtrConstant(0, DL));
-  // Copy to the correct register
-  Lo = DAG.getNode(ISD::CopyToReg, DL, MVT::i8, Lo);
-  SDValue High = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, MVT::i8, Op, DAG.getIntPtrConstant(1, DL));
-  High = DAG.getNode(ISD::CopyToReg, DL, MVT::i8, High);
-  return High;
-}
-
 SDValue GameBoyTargetLowering::LowerCopyFromReg(SDValue Op, SelectionDAG &DAG) const {
-  // dbgs() << "Lowering copy from register " << Op.getNumOperands() << "\n";
+  dbgs() << "Lowering copy from register " << Op.getNumOperands() << "\n";
   auto type = Op.getValueType();
-  if (type == MVT::i8) {}
-    // dbgs() << "Found i8 operand" << "\n";
-  else if (type == MVT::i16) {}
-    // dbgs() << "Found i16 operand" << "\n";
+  if (type == MVT::i8) {
+    dbgs() << "Found i8 operand" << "\n";
+  }
+  else if (type == MVT::i16) {
+    dbgs() << "Found i16 operand" << "\n";
+  }
   // dbgs() << "OP2: " << Op.getOperand(1).getSimpleValueType().getStr << "\n";
   return SDValue();
 }
@@ -892,11 +878,8 @@ SDValue GameBoyTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) con
   default:
     llvm_unreachable("Don't know how to custom lower this!");
   // case ISD::LOAD:
-
-  // case ISD::CopyToReg:
-  //   return LowerCopyToReg(Op, DAG);
-  case ISD::CopyFromReg:
-    return LowerCopyFromReg(Op, DAG);
+  // case ISD::CopyFromReg:
+    // return LowerCopyFromReg(Op, DAG);
   // case ISD::LOAD:
     // return LowerLoad(Op, DAG);
   case ISD::SHL:

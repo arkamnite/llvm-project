@@ -245,6 +245,7 @@ void GameBoyAsmPrinter::emitXXStructor(const DataLayout &DL, const Constant *CV)
 }
 
 bool GameBoyAsmPrinter::doFinalization(Module &M) {
+  /*
   MCSymbol *DoCopyData = OutContext.getOrCreateSymbol("__do_copy_data");
   MCSymbol *DoClearBss = OutContext.getOrCreateSymbol("__do_clear_bss");
 
@@ -260,6 +261,7 @@ bool GameBoyAsmPrinter::doFinalization(Module &M) {
       " Declaring this symbol tells the CRT that it should");
   OutStreamer->emitRawComment("clear the zeroed data section on startup");
   OutStreamer->emitSymbolAttribute(DoClearBss, MCSA_Global);
+  */
 
   return AsmPrinter::doFinalization(M);
 }
@@ -269,7 +271,7 @@ void GameBoyAsmPrinter::emitStartOfAsmFile(Module &M) {
   const GameBoySubtarget *SubTM = (const GameBoySubtarget *)TM.getSubtargetImpl();
   if (!SubTM)
     return;
-
+  /*
   // Emit __tmp_reg__.
   OutStreamer->emitAssignment(
       MMI->getContext().getOrCreateSymbol(StringRef("__tmp_reg__")),
@@ -301,6 +303,7 @@ void GameBoyAsmPrinter::emitStartOfAsmFile(Module &M) {
     OutStreamer->emitAssignment(
         MMI->getContext().getOrCreateSymbol(StringRef("__RAMPZ__")),
         MCConstantExpr::create(SubTM->getIORegRAMPZ(), MMI->getContext()));
+  */
 }
 
 } // end of namespace llvm

@@ -7,6 +7,9 @@
 //===----------------------------------------------------------------------===//
 //
 // This file provides GameBoy specific target streamer methods.
+// 
+// The GameBoyTargetAsmStreamer class, which is used to produce .s files 
+// which are compatible with RGBASM.
 //
 //===----------------------------------------------------------------------===//
 

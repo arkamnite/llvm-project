@@ -44,7 +44,7 @@ public:
   GameBoyAsmPrinter(TargetMachine &TM, std::unique_ptr<MCStreamer> Streamer)
       : AsmPrinter(TM, std::move(Streamer)), MRI(*TM.getMCRegisterInfo()) {}
 
-  StringRef getPassName() const override { return "GameBoy Assembly Printer"; }
+  StringRef getPassName() const override { return "Game Boy Assembly Printer"; }
 
   void printOperand(const MachineInstr *MI, unsigned OpNo, raw_ostream &O);
 

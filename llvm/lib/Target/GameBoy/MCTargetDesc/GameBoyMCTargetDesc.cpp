@@ -114,6 +114,7 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeGameBoyTargetMC() {
   // Register the obj streamer
   TargetRegistry::RegisterELFStreamer(getTheGameBoyTarget(), createMCStreamer);
 
+
   // Register the obj target streamer.
   TargetRegistry::RegisterObjectTargetStreamer(getTheGameBoyTarget(),
                                                createGameBoyObjectTargetStreamer);

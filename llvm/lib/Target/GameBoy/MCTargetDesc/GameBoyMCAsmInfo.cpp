@@ -22,8 +22,17 @@ GameBoyMCAsmInfo::GameBoyMCAsmInfo(const Triple &TT, const MCTargetOptions &Opti
   CommentString = ";";
   PrivateGlobalPrefix = ".L";
   PrivateLabelPrefix = ".L";
-  UsesELFSectionDirectiveForBSS = true;
+  UsesELFSectionDirectiveForBSS = false;
   SupportsDebugInformation = true;
+
+  // Remove the .file directive
+  HasSingleParameterDotFile = false;
+
+  // RGBASM does not allow multiple instructions on the same line.
+  SeparatorString = "\n";
+
+  // RGBASM uses the ".ds" directive similarly to .space in GNU.
+  ZeroDirective = "ds";
 }
 
 } // end of namespace llvm

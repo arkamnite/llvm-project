@@ -19,6 +19,7 @@ class MCStreamer;
 class GameBoyTargetStreamer : public MCTargetStreamer {
 public:
   explicit GameBoyTargetStreamer(MCStreamer &S);
+  
 };
 
 /// A target streamer for textual GameBoy assembly code.

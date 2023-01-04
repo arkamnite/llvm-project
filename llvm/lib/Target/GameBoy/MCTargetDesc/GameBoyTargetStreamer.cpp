@@ -16,6 +16,7 @@
 #include "GameBoyTargetStreamer.h"
 
 #include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCStreamer.h"
 
 namespace llvm {
 

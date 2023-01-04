@@ -10,6 +10,7 @@
 #define LLVM_GameBoy_TARGET_STREAMER_H
 
 #include "llvm/MC/MCELFStreamer.h"
+#include "llvm/MC/MCStreamer.h"
 
 namespace llvm {
 class MCStreamer;

@@ -66,6 +66,8 @@ public:
 
   void emitStartOfAsmFile(Module &M) override;
 
+  // void emitFunctionEntryLabel() override {}
+
 private:
   const MCRegisterInfo &MRI;
   bool EmittedStructorSymbolAttrs = false;
@@ -271,6 +273,17 @@ void GameBoyAsmPrinter::emitStartOfAsmFile(Module &M) {
   const GameBoySubtarget *SubTM = (const GameBoySubtarget *)TM.getSubtargetImpl();
   if (!SubTM)
     return;
+
+  // Always jump to init function
+  OutStreamer->emitRawText(StringRef("\tjp\tinit\n"));
+  // Emit enough space for the header.
+  OutStreamer->emitRawText(StringRef("\tds $150 - @, 0\n"));
+
+  // Get the first function
+  
+  // OutStreamer->emitAssignment(
+  //     MMI->getContext().getOrCreateSymbol(StringRef("test_definition")),
+  //     MCConstantExpr::create(SubTM->getIORegSPL(), MMI->getContext()));
   /*
   // Emit __tmp_reg__.
   OutStreamer->emitAssignment(
@@ -290,9 +303,6 @@ void GameBoyAsmPrinter::emitStartOfAsmFile(Module &M) {
         MMI->getContext().getOrCreateSymbol(StringRef("__SP_H__")),
         MCConstantExpr::create(SubTM->getIORegSPH(), MMI->getContext()));
   // Emit __SP_L__.
-  OutStreamer->emitAssignment(
-      MMI->getContext().getOrCreateSymbol(StringRef("__SP_L__")),
-      MCConstantExpr::create(SubTM->getIORegSPL(), MMI->getContext()));
   // Emit __EIND__ if available.
   if (SubTM->hasEIJMPCALL())
     OutStreamer->emitAssignment(

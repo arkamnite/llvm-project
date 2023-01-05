@@ -53,28 +53,24 @@ static void printName(raw_ostream &OS, StringRef Name) {
 void MCSectionELF::printSwitchToSection(const MCAsmInfo &MAI, const Triple &T,
                                         raw_ostream &OS,
                                         const MCExpr *Subsection) const {
-  if (shouldOmitSectionDirective(getName(), MAI)) {
+  
+  // RGBASM has very specific section descriptions.
+  if (T.getArch() == Triple::gameboy) {
     OS << "SECTION \"";
-    OS << getName();
-    if (Subsection) {
-      // OS << '\t';
-      Subsection->print(OS, &MAI);
-    }
-    OS << "\", ROM0\t";
-    OS << '\n';
+    printName(OS, getName());
+    OS << "\", ROM0[$100]\n";
     return;
   }
 
-  // OS << "\t.section\t";
-  OS << "\tSECTION \"\t";
-  printName(OS, getName());
-  OS << "\t\", ROM0\t";
-
-  Triple::ArchType Arch = T.getArch();
-
-  // Return early if we are in Game Boy, as a sanity check
-  if (Arch == Triple::gameboy)
+  if (shouldOmitSectionDirective(getName(), MAI)) {
+    OS << '\t' << getName();
+    if (Subsection) {
+      OS << '\t';
+      Subsection->print(OS, &MAI);
+    }
+    OS << '\n';
     return;
+  }
 
   // Handle the weird solaris syntax if desired.
   if (MAI.usesSunStyleELFSectionSwitchSyntax() &&
@@ -121,6 +117,7 @@ void MCSectionELF::printSwitchToSection(const MCAsmInfo &MAI, const Triple &T,
       OS << 'R';
 
   // If there are target-specific flags, print them.
+  Triple::ArchType Arch = T.getArch();
   
   if (Arch == Triple::xcore) {
     if (Flags & ELF::XCORE_SHF_CP_SECTION)

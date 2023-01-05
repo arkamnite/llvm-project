@@ -83,6 +83,9 @@ public:
   /// Target machine description.
   TargetMachine &TM;
 
+  /// Is this the Game Boy target?
+  bool isDMG;
+
   /// Target Asm Printer information.
   const MCAsmInfo *MAI;
 

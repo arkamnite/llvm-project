@@ -356,6 +356,7 @@ AsmPrinter::AsmPrinter(TargetMachine &tm, std::unique_ptr<MCStreamer> Streamer)
     : MachineFunctionPass(ID), TM(tm), MAI(tm.getMCAsmInfo()),
       OutContext(Streamer->getContext()), OutStreamer(std::move(Streamer)) {
   VerboseAsm = OutStreamer->isVerboseAsm();
+  isDMG = TM.getTargetTriple().getArch() == Triple::gameboy;
 }
 
 AsmPrinter::~AsmPrinter() {
@@ -881,14 +882,16 @@ void AsmPrinter::emitFunctionHeaderComment() {}
 /// function.
 void AsmPrinter::emitFunctionHeader() {
   const Function &F = MF->getFunction();
-
-  if (isVerbose())
+//  auto isDMG = TM.getTargetTriple().getArch() != Triple::gameboy;
+  if (isVerbose() && !isDMG) {
     OutStreamer->getCommentOS()
         << "-- Begin function "
         << GlobalValue::dropLLVMManglingEscape(F.getName()) << '\n';
+  }
 
   // Print out constants referenced by the function
-  emitConstantPool();
+  if (!isDMG)
+    emitConstantPool();
 
   // Print the 'header' of function.
   // If basic block sections are desired, explicitly request a unique section
@@ -905,7 +908,9 @@ void AsmPrinter::emitFunctionHeader() {
   if (MAI->needsFunctionDescriptors())
     emitLinkage(&F, CurrentFnDescSym);
 
-  emitLinkage(&F, CurrentFnSym);
+  if (!isDMG)
+    emitLinkage(&F, CurrentFnSym);
+
   if (MAI->hasFunctionAlignment())
     emitAlignment(MF->getAlignment(), &F);
 
@@ -915,7 +920,7 @@ void AsmPrinter::emitFunctionHeader() {
   if (F.hasFnAttribute(Attribute::Cold))
     OutStreamer->emitSymbolAttribute(CurrentFnSym, MCSA_Cold);
 
-  if (isVerbose()) {
+  if (isVerbose() && !isDMG) {
     F.printAsOperand(OutStreamer->getCommentOS(),
                      /*PrintType=*/false, F.getParent());
     emitFunctionHeaderComment();
@@ -923,7 +928,7 @@ void AsmPrinter::emitFunctionHeader() {
   }
 
   // Emit the prefix data.
-  if (F.hasPrefixData()) {
+  if (F.hasPrefixData() && !isDMG) {
     if (MAI->hasSubsectionsViaSymbols()) {
       // Preserving prefix data on platforms which use subsections-via-symbols
       // is a bit tricky. Here we introduce a symbol for the prefix data
@@ -1690,10 +1695,10 @@ void AsmPrinter::emitFunctionBody() {
 
   emitPatchableFunctionEntries();
 
-  if (isVerbose())
+  if (isVerbose() && !isDMG) {
     OutStreamer->getCommentOS() << "-- End function\n";
-
-  OutStreamer->addBlankLine();
+    OutStreamer->addBlankLine();
+  }
 }
 
 /// Compute the number of Global Variables that uses a Constant.
@@ -2649,6 +2654,11 @@ void AsmPrinter::emitLabelPlusOffset(const MCSymbol *Label, uint64_t Offset,
 // if required for correctness.
 void AsmPrinter::emitAlignment(Align Alignment, const GlobalObject *GV,
                                unsigned MaxBytesToEmit) const {
+
+  // RGBASM does not use this.
+  if (isDMG)
+    return;
+
   if (GV)
     Alignment = getGVAlignment(GV, GV->getParent()->getDataLayout(), Alignment);
 

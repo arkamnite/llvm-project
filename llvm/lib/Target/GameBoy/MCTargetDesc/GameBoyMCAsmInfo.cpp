@@ -33,6 +33,9 @@ GameBoyMCAsmInfo::GameBoyMCAsmInfo(const Triple &TT, const MCTargetOptions &Opti
 
   // RGBASM uses the ".ds" directive similarly to .space in GNU.
   ZeroDirective = "ds";
+
+  // Do not include the .size directive at the end of the function.
+  HasDotTypeDotSizeDirective = false;
 }
 
 } // end of namespace llvm

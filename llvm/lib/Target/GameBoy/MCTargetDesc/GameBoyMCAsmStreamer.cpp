@@ -674,7 +674,7 @@ void GameBoyMCAsmStreamer::emitAssignment(MCSymbol *Symbol, const MCExpr *Value)
   if (EmitSet) {
     OS << "DEF ";
     Symbol->print(OS, MAI);
-    OS << "SET ";
+    OS << "\tEQU\t";
     Value->print(OS, MAI);
 
     EmitEOL();

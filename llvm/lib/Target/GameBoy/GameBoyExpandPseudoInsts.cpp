@@ -504,6 +504,33 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpRdImm8>(Block &MBB, BlockIt MBBI) {
 // General purpose arithmetic operands and CPU control instructions
 //===----------------------------------------------------------------------===//
 template<>
+bool GameBoyExpandPseudo::expand<GameBoy::ZEXT>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  Register SrcReg = MI.getOperand(1).getReg();
+  // This will need to be split into HIGH and LOW.
+  Register DstReg = MI.getOperand(0).getReg();
+  bool SrcIsKill = MI.getOperand(1).isKill();
+  bool DstIsDead = MI.getOperand(0).isDead();
+  Register DstHi, DstLow;
+  // The Hi and Low are swapped here.
+  TRI->splitReg(DstReg, DstHi, DstLow);
+
+  // Store the low byte
+  buildMI(MBB, MBBI, GameBoy::LDRdRr)
+    .addReg(DstLow)
+    .addReg(SrcReg, getKillRegState(SrcIsKill));
+
+  // Store 0 in upper byte
+  buildMI(MBB, MBBI, GameBoy::LDRdImm8)
+    .addReg(DstHi)
+    .addImm(0);
+
+  // Remove old instruction
+  MI.removeFromParent();
+  return true;
+}
+
+template<>
 bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
   bool addDefines = false;
   MachineInstr &MI = *MBBI;
@@ -2618,7 +2645,6 @@ template <> bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt 
   MI.eraseFromParent();
   return true;
 }
-*/
 
 template <> bool GameBoyExpandPseudo::expand<GameBoy::ZEXT>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
@@ -2656,6 +2682,7 @@ template <> bool GameBoyExpandPseudo::expand<GameBoy::ZEXT>(Block &MBB, BlockIt 
   MI.eraseFromParent();
   return true;
 }
+*/
 
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::SPREAD>(Block &MBB, BlockIt MBBI) {
@@ -2744,6 +2771,8 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::XorRdImm8);
     EXPAND(GameBoy::CpRdRr);
     EXPAND(GameBoy::CpRdImm8);
+    EXPAND(GameBoy::SEXT);
+    EXPAND(GameBoy::ZEXT);
     // AVR
     EXPAND(GameBoy::ADDWRdRr);
     EXPAND(GameBoy::ADCWRdRr);
@@ -2805,8 +2834,6 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::LSLBNRd);
     EXPAND(GameBoy::LSRBNRd);
     EXPAND(GameBoy::ASRBNRd);
-    EXPAND(GameBoy::SEXT);
-    EXPAND(GameBoy::ZEXT);
     EXPAND(GameBoy::SPREAD);
     EXPAND(GameBoy::SPWRITE);
   }

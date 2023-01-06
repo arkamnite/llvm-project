@@ -977,11 +977,25 @@ let isTerminator = 1, isReturn = 1, isBarrier = 1 in {
 
 // Creating SEXT and ZEXT instructions as these are probably needed at the moment.
 // The best way of conducting a SEXT is to load the lower byte of a register pair
-// with the value, 
+// with the value,
+
+// SEXT and ZEXT are needed to extend out values from 8-bit to 16-bit registers.
+
+// ZEXT is as simple as storing the low byte, and then setting the high byte to 0.
+def ZEXT : Pseudo<(outs GPRPair : $dst),
+                  (ins GPR : $src),
+                  "zext\t$dst, $src",
+                  [(set i16 : $dst, (zext i8 : $src))]>;
+
+// SEXT is more complex; the lower byte is stored as always, but we use add and sbc
+// to push the sign into the carry. We then use the arithmetic R - R - C = -C to store
+// the upper bit in the upper byte.
+let Uses = [RA] in {
 def SEXT : Pseudo<(outs GPRPair : $dst),
                   (ins GPR : $src),
                   "sext\t$dst, $src",
                   [(set i16 : $dst, (sext i8 : $src))]>;
+}
 // DAA A
 // CPL A
 // NOP
@@ -2879,7 +2893,6 @@ def SEXT
                         : $dst, (sext i8
                                  : $src)),
                        (implicit SREG)]>;
-*/
 
 def ZEXT
     : ExtensionPseudo<(outs DREGS
@@ -2891,6 +2904,7 @@ def ZEXT
                         : $dst, (zext i8
                                  : $src)),
                        (implicit SREG)]>;
+*/
 
 // This pseudo gets expanded into a movw+adiw thus it clobbers SREG.
 let Defs = [SREG],

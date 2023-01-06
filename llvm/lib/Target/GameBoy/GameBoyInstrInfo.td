@@ -939,6 +939,13 @@ def DECPair : GBFPair<0b00, 0b1011,
 //===----------------------------------------------------------------------===//
 
 // JP Imm16
+let isBarrier = 1, isBranch = 1, isTerminator = 1 in {
+  def JP : GBF0<0b11000011,
+                (outs),
+                (ins call_target : $k),
+                "jp\t$k",
+                []>; // Handled by LLVM insertIndirectBranch
+}
 // JP cc, Imm16
 // JP (HL)
 

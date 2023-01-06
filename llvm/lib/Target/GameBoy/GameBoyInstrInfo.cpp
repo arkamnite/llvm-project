@@ -597,7 +597,7 @@ void GameBoyInstrInfo::insertIndirectBranch(MachineBasicBlock &MBB,
   // insertBranch or some hypothetical "insertDirectBranch".
   // See lib/CodeGen/RegisterRelaxation.cpp for details.
   // We end up here when a jump is too long for a RJMP instruction.
-  BuildMI(&MBB, DL, get(GameBoy::JMPk)).addMBB(&NewDestBB);
+  BuildMI(&MBB, DL, get(GameBoy::JP)).addMBB(&NewDestBB);
 }
 
 } // end of namespace llvm

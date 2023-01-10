@@ -702,6 +702,9 @@ void GameBoyMCAsmStreamer::emitWeakReference(MCSymbol *Alias, const MCSymbol *Sy
 
 bool GameBoyMCAsmStreamer::emitSymbolAttribute(MCSymbol *Symbol,
                                         MCSymbolAttr Attribute) {
+  // RGBASM does not emit symbol attributes.
+  return false;
+
   switch (Attribute) {
   case MCSA_Invalid: llvm_unreachable("Invalid symbol attribute");
   case MCSA_ELF_TypeFunction:    /// .type _foo, STT_FUNC  # aka @function

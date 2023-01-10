@@ -32,7 +32,14 @@ GameBoyMCAsmInfo::GameBoyMCAsmInfo(const Triple &TT, const MCTargetOptions &Opti
   SeparatorString = "\n";
 
   // RGBASM uses the ".ds" directive similarly to .space in GNU.
-  ZeroDirective = "ds";
+  ZeroDirective = "ds ";
+
+  // Data directives in RGBASM are limited to 8-bit (a single byte)
+  // only. It is possible to emit multiple bytes in series, such as
+  // to emit a number of bytes at a time.
+  Data8bitsDirective = "db ";
+
+  Data16bitsDirective = "dbb ";
 
   // Do not include the .size directive at the end of the function.
   HasDotTypeDotSizeDirective = false;

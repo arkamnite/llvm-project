@@ -19,11 +19,13 @@
 #include "llvm/MC/MCSymbolELF.h"
 #include "llvm/MC/SectionKind.h"
 
+
 namespace llvm {
 
 /// This represents a section on linux, lots of unix variants and some bare
 /// metal systems.
 class MCSectionELF final : public MCSection {
+
   /// This is the sh_type field of a section, drawn from the enums below.
   unsigned Type;
 
@@ -47,6 +49,7 @@ class MCSectionELF final : public MCSection {
 
 private:
   friend class MCContext;
+
 
   // The storage of Name is owned by MCContext's ELFUniquingMap.
   MCSectionELF(StringRef Name, unsigned type, unsigned flags, SectionKind K,

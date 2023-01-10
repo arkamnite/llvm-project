@@ -13,9 +13,13 @@
 #include "llvm/MC/MCExpr.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
+#include <iostream>
 #include <cassert>
 
 using namespace llvm;
+
+/// Used to determine if this has a LOAD block which must be terminated.
+bool openLoadBlock;
 
 // Decides whether a '.section' directive
 // should be printed before the section name.
@@ -56,9 +60,63 @@ void MCSectionELF::printSwitchToSection(const MCAsmInfo &MAI, const Triple &T,
   
   // RGBASM has very specific section descriptions.
   if (T.getArch() == Triple::gameboy) {
-    OS << "SECTION \"";
-    printName(OS, getName());
-    OS << "\", ROM0[$100]\n";
+
+    // It isn't possible to create a SECTION in RAM. The only
+    // way to do this is to use a LOAD block to move the code
+    // and data into the W/RAM banks. This is included in a
+    // ROM/ROMX section, so don't emit a new SECTION directive
+    // unless necessary.
+
+    // We need to handle printing of various data sections
+    // manually. For RGBASM, this means that there are four
+    // destinations for data.
+    //
+    // .text -> ROM0[$100]
+    // .data -> WRAM0/WRAMX
+    // .rodata -> ROM0/ROMX
+    // .bss -> WRAM0/WRAMX
+    //
+    // This can be implemented via a switch on the name;
+    // anything else can go into ROM0, and will be
+    // concatenated to the section.
+
+    // std::string rombankStr;
+    auto sectionName = getName().str();
+    // std::cout << sectionName << std::endl;
+
+    // If we have an open LOAD block, then it must be closed before creating a new section
+    if (openLoadBlock) {
+      OS << "\tENDL\n";
+      openLoadBlock = false;
+    }
+
+    if (sectionName.compare(".data") == 0 || sectionName.compare(".bss") == 0) {
+      // Create a label for this
+      OS << sectionName << ":\n";
+      // Place the LOAD block on a new line.
+      OS << "\tLOAD \"";
+      printName(OS, getName());
+      OS << "\", ";
+      OS << "WRAM0";
+      openLoadBlock = true;
+      // rombankStr = std::string("WRAM0");
+    }
+    else {
+      OS << "SECTION \"";
+      printName(OS, getName());
+      OS << "\", ";
+      OS << "ROM0";
+    }
+      // rombankStr = std::string("ROM0");
+
+    // OS << rombankStr;    
+    // Check if this is the .text section, and if so, place it
+    // at address [$100] in ROM0
+    if (!(sectionName.compare(".text")))
+      OS << "[$100]";
+
+    // OS << "\", ROM0[$100]\n";
+    OS << "\n";
     return;
   }
 

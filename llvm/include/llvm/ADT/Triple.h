@@ -896,6 +896,11 @@ public:
     return getArch() == Triple::wasm32 || getArch() == Triple::wasm64;
   }
 
+  /// Tests whether the target is Game Boy
+  bool isGameBoy() const {
+    return getArch() == Triple::gameboy;
+  }
+
   // Tests whether the target is CSKY
   bool isCSKY() const {
     return getArch() == Triple::csky;

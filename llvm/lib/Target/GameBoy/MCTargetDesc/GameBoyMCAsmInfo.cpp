@@ -38,8 +38,8 @@ GameBoyMCAsmInfo::GameBoyMCAsmInfo(const Triple &TT, const MCTargetOptions &Opti
   // only. It is possible to emit multiple bytes in series, such as
   // to emit a number of bytes at a time.
   Data8bitsDirective = "db ";
-
-  Data16bitsDirective = "dbb ";
+  Data16bitsDirective = "dw ";
+  Data32bitsDirective = "dl ";
 
   // Do not include the .size directive at the end of the function.
   HasDotTypeDotSizeDirective = false;

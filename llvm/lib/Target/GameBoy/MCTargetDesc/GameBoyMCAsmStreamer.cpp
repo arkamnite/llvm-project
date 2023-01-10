@@ -1251,6 +1251,41 @@ void GameBoyMCAsmStreamer::emitValueImpl(const MCExpr *Value, unsigned Size,
   case 8: Directive = MAI->getData64bitsDirective(); break;
   }
 
+  // We need to split up values larger than 8 bits
+  /*
+  if (getContext().getTargetTriple().isGameBoy() && Size > 1) {
+    // We do not know exactly how large the value is yet;
+    // RGBASM supports emitting any number of bytes in series.
+    // Assume for now that we are emitting at most 64-bits, since
+    // it is not possible to have a variable larger than 64-bits.
+    int64_t IntValue;
+    if (!Value->evaluateAsAbsolute(IntValue))
+      report_fatal_error("Don't know how to emit this value.");
+
+    // Emit the start of the RGBASM data directive
+    OS << "db ";
+
+    // Only the DW directive emits values in little-endian. When
+    // using DB, we emit bytes one by one.
+    for (unsigned i = 1; i <= Size; i++) {
+      if (i > 1)
+        OS << ", ";
+      // xxxxxxxx - yyyyyyyy - zzzzzzzz - aaaaaaaa
+      // size = 4
+      // aaaaaaaa = X << 3 >> 3
+      // zzzzzzzz = X << 2 >> 3
+      // Shift X left by Size - 1 - i, and shift right by Size - 1
+      auto emitValue = (IntValue << (Size - 1 - i)) >> (Size - 1);
+
+      OS << emitValue;
+      if (i != Size)
+        OS << ", ";
+    }
+    OS << "\n";
+    return;
+  }
+  */
+
   if (!Directive) {
     int64_t IntValue;
     if (!Value->evaluateAsAbsolute(IntValue))

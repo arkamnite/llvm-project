@@ -86,7 +86,7 @@ void MCSectionELF::printSwitchToSection(const MCAsmInfo &MAI, const Triple &T,
 
     // If we have an open LOAD block, then it must be closed before creating a new section
     if (openLoadBlock) {
-      OS << "\tENDL\n";
+      OS << "\tENDL\n\n";
       openLoadBlock = false;
     }
 

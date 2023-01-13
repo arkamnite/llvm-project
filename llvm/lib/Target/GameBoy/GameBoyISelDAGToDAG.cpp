@@ -631,8 +631,8 @@ bool GameBoyDAGToDAGISel::trySelect(SDNode *N) {
 
   switch (Opcode) {
   // Nodes we fully handle.
-  case ISD::CopyFromReg:
-    return select<ISD::CopyFromReg>(N);
+  // case ISD::CopyFromReg:
+    // return select<ISD::CopyFromReg>(N);
   case ISD::FrameIndex:
     return select<ISD::FrameIndex>(N);
   case ISD::BRIND:

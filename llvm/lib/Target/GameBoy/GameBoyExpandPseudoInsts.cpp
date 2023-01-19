@@ -591,6 +591,32 @@ bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
   return true;
 }
 
+//===----------------------------------------------------------------------===//
+// Jump instructions
+//===----------------------------------------------------------------------===//
+template <>
+bool GameBoyExpandPseudo::expand<GameBoy::JREQk>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete JREQk");
+  return true; 
+}
+
+template <>
+bool GameBoyExpandPseudo::expand<GameBoy::JRNEk>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete JRNEk");
+  return true; 
+}
+
+template <>
+bool GameBoyExpandPseudo::expand<GameBoy::JRGTEk>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete JRGTEk");
+  return true; 
+}
+
+template <>
+bool GameBoyExpandPseudo::expand<GameBoy::JRLTk>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete JRLTk");
+  return true; 
+}
 
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
@@ -2773,6 +2799,10 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::CpRdImm8);
     EXPAND(GameBoy::SEXT);
     EXPAND(GameBoy::ZEXT);
+    EXPAND(GameBoy::JREQk);
+    EXPAND(GameBoy::JRNEk);
+    EXPAND(GameBoy::JRGTEk);
+    EXPAND(GameBoy::JRLTk);
     // AVR
     EXPAND(GameBoy::ADDWRdRr);
     EXPAND(GameBoy::ADCWRdRr);

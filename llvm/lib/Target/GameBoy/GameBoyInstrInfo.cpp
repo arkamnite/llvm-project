@@ -225,21 +225,22 @@ const MCInstrDesc &GameBoyInstrInfo::getBrCond(GameBoyCC::CondCodes CC) const {
   default:
     llvm_unreachable("Unknown condition code!");
   case GameBoyCC::COND_EQ:
-    return get(GameBoy::BREQk);
+    return get(GameBoy::JREQk);
+    // return get(GameBoy::BREQk);
   case GameBoyCC::COND_NE:
-    return get(GameBoy::BRNEk);
+    return get(GameBoy::JRNEk);
   case GameBoyCC::COND_GE:
-    return get(GameBoy::BRGEk);
+    return get(GameBoy::JRGTEk);
   case GameBoyCC::COND_LT:
-    return get(GameBoy::BRLTk);
-  case GameBoyCC::COND_SH:
-    return get(GameBoy::BRSHk);
-  case GameBoyCC::COND_LO:
-    return get(GameBoy::BRLOk);
-  case GameBoyCC::COND_MI:
-    return get(GameBoy::BRMIk);
-  case GameBoyCC::COND_PL:
-    return get(GameBoy::BRPLk);
+    return get(GameBoy::JRLTk);
+  // case GameBoyCC::COND_SH:
+    // return get(GameBoy::BRSHk);
+  // case GameBoyCC::COND_LO:
+    // return get(GameBoy::BRLOk);
+  // case GameBoyCC::COND_MI:
+    // return get(GameBoy::BRMIk);
+  // case GameBoyCC::COND_PL:
+    // return get(GameBoy::BRPLk);
   }
 }
 
@@ -247,21 +248,21 @@ GameBoyCC::CondCodes GameBoyInstrInfo::getCondFromBranchOpc(unsigned Opc) const 
   switch (Opc) {
   default:
     return GameBoyCC::COND_INVALID;
-  case GameBoy::BREQk:
+  case GameBoy::JREQk:
     return GameBoyCC::COND_EQ;
-  case GameBoy::BRNEk:
+  case GameBoy::JRNEk:
     return GameBoyCC::COND_NE;
-  case GameBoy::BRSHk:
-    return GameBoyCC::COND_SH;
-  case GameBoy::BRLOk:
-    return GameBoyCC::COND_LO;
-  case GameBoy::BRMIk:
-    return GameBoyCC::COND_MI;
-  case GameBoy::BRPLk:
-    return GameBoyCC::COND_PL;
-  case GameBoy::BRGEk:
+  // case GameBoy::BRSHk:
+  //   return GameBoyCC::COND_SH;
+  // case GameBoy::BRLOk:
+  //   return GameBoyCC::COND_LO;
+  // case GameBoy::BRMIk:
+  //   return GameBoyCC::COND_MI;
+  // case GameBoy::BRPLk:
+  //   return GameBoyCC::COND_PL;
+  case GameBoy::JRGTEk:
     return GameBoyCC::COND_GE;
-  case GameBoy::BRLTk:
+  case GameBoy::JRLTk:
     return GameBoyCC::COND_LT;
   }
 }
@@ -541,14 +542,14 @@ GameBoyInstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
   case GameBoy::CALLk:
   case GameBoy::RCALLk:
   case GameBoy::RJMPk:
-  case GameBoy::BREQk:
-  case GameBoy::BRNEk:
-  case GameBoy::BRSHk:
-  case GameBoy::BRLOk:
-  case GameBoy::BRMIk:
-  case GameBoy::BRPLk:
-  case GameBoy::BRGEk:
-  case GameBoy::BRLTk:
+  case GameBoy::JRNEk:
+  case GameBoy::JREQk:
+  // case GameBoy::JRSHk:
+  // case GameBoy::JRLOk:
+  // case GameBoy::JRMIk:
+  // case GameBoy::JRPLk:
+  case GameBoy::JRGTEk:
+  case GameBoy::JRLTk:
     return MI.getOperand(0).getMBB();
   case GameBoy::BRBSsk:
   case GameBoy::BRBCsk:
@@ -575,14 +576,14 @@ bool GameBoyInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
     return isIntN(13, BrOffset);
   case GameBoy::BRBSsk:
   case GameBoy::BRBCsk:
-  case GameBoy::BREQk:
-  case GameBoy::BRNEk:
-  case GameBoy::BRSHk:
-  case GameBoy::BRLOk:
-  case GameBoy::BRMIk:
-  case GameBoy::BRPLk:
-  case GameBoy::BRGEk:
-  case GameBoy::BRLTk:
+  case GameBoy::JREQk:
+  case GameBoy::JRNEk:
+  // case GameBoy::JRSHk:
+  // case GameBoy::JRLOk:
+  // case GameBoy::JRMIk:
+  // case GameBoy::JRPLk:
+  case GameBoy::JRGTEk:
+  case GameBoy::JRLTk:
     return isIntN(7, BrOffset);
   }
 }

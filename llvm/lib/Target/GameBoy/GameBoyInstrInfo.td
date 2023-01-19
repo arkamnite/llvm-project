@@ -347,17 +347,17 @@ def GameBoy_COND_PL : PatLeaf<(i8 7)>;
 
 // Game Boy condition codes
 // Zero / Not Zero
-def GameBoy_Condition_Z : PatLeaf<(i8 0)>;
-def GameBoy_Condition_NZ : PatLeaf<(i8 0)>;
-// Subtraction / Not Subtraction
-def GameBoy_Condition_N : PatLeaf<(i8 0)>;
-def GameBoy_Condition_NN : PatLeaf<(i8 0)>;
-// Half Carry / No Half Carry
-def GameBoy_Condition_H : PatLeaf<(i8 0)>;
-def GameBoy_Condition_NH : PatLeaf<(i8 0)>;
+def GameBoy_COND_Z : PatLeaf<(i8 8)>;
+def GameBoy_COND_NZ : PatLeaf<(i8 9)>;
 // Carry / Not Carry
-def GameBoy_Condition_C : PatLeaf<(i8 0)>;
-def GameBoy_Condition_NC : PatLeaf<(i8 0)>;
+def GameBoy_COND_C : PatLeaf<(i8 10)>;
+def GameBoy_COND_NC : PatLeaf<(i8 11)>;
+// Subtraction / Not Subtraction
+// def GameBoy_COND_N : PatLeaf<(i8 10)>;
+// def GameBoy_COND_NN : PatLeaf<(i8 11)>;
+// Half Carry / No Half Carry
+// def GameBoy_COND_H : PatLeaf<(i8 12)>;
+// def GameBoy_COND_NH : PatLeaf<(i8 13)>;
 
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
@@ -950,7 +950,59 @@ let isBarrier = 1, isBranch = 1, isTerminator = 1 in {
 // JP (HL)
 
 // JR s8 (-2)
+
 // JR cc, s8 (-2)
+let isBranch = 1, isTerminator = 1, Uses = [RF] in {
+  def JRNZk : GBF0<0b11000010,
+                  (outs),
+                  (ins relbrtarget_7 : $target),
+                  "jp\tnz, $target",
+                  [(GameBoybrcond bb : $target, GameBoy_COND_NZ)]>;
+
+  def JRZk : GBF0<0b11001010,
+                  (outs),
+                  (ins relbrtarget_7 : $target),
+                  "jp\tz, $target",
+                  [(GameBoybrcond bb : $target, GameBoy_COND_Z)]>;
+  
+  def JRNCk : GBF0< 0b11010010,
+                    (outs),
+                    (ins relbrtarget_7 : $target),
+                    "jp\tnc, $target",
+                    [(GameBoybrcond bb : $target, GameBoy_COND_NC)]>;
+  
+  def JRCk : GBF0<0b11011010,
+                  (outs),
+                  (ins relbrtarget_7 : $target),
+                  "jp\tc, $target",
+                  [(GameBoybrcond bb : $target, GameBoy_COND_C)]>;
+
+  // Pseudo instructions that are composed of the existing
+  // jump instructions
+  // Equal
+  def JREQk : Pseudo< (outs),
+                      (ins relbrtarget_7 : $target),
+                      "jp\teq, $target",
+                      [(GameBoybrcond bb : $target, GameBoy_COND_EQ)]>;
+
+  // Not equal
+  def JRNEk : Pseudo< (outs),
+                      (ins relbrtarget_7 : $target),
+                      "brne\t$target", 
+                      [(GameBoybrcond bb : $target, GameBoy_COND_NE)]>;
+
+  // Greater than
+  def JRGTEk : Pseudo<(outs),
+                      (ins relbrtarget_7 : $target),
+                      "brge\t$target", 
+                      [(GameBoybrcond bb : $target, GameBoy_COND_GE)]>;
+
+  // Less than
+  def JRLTk : Pseudo< (outs),
+                      (ins relbrtarget_7 : $target),
+                      "brlt\t$target", 
+                      [(GameBoybrcond bb : $target, GameBoy_COND_LT)]>;
+}
 
 //===----------------------------------------------------------------------===//
 // Call and return instructions
@@ -1865,50 +1917,66 @@ let isBranch = 1, isTerminator = 1, Uses = [SREG] in {
   def BREQk : FBRsk<0, 0b001, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "breq\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_EQ)]>;
+                    "breq\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_EQ)]>;
 
   def BRNEk : FBRsk<1, 0b001, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "brne\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_NE)]>;
+                    "brne\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_NE)]>;
 
   def BRSHk : FBRsk<1, 0b000, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "brsh\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_SH)]>;
+                    "brsh\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_SH)]>;
 
   def BRLOk : FBRsk<0, 0b000, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "brlo\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_LO)]>;
+                    "brlo\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_LO)]>;
 
   def BRMIk : FBRsk<0, 0b010, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "brmi\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_MI)]>;
+                    "brmi\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_MI)]>;
 
   def BRPLk : FBRsk<1, 0b010, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "brpl\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_PL)]>;
+                    "brpl\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_PL)]>;
 
   def BRGEk : FBRsk<1, 0b100, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "brge\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_GE)]>;
+                    "brge\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_GE)]>;
 
   def BRLTk : FBRsk<0, 0b100, (outs),
                     (ins relbrtarget_7
                      : $target),
-                    "brlt\t$target", [(GameBoybrcond bb
-                                       : $target, GameBoy_COND_LT)]>;
+                    "brlt\t$target", 
+                    []>;
+                    // [(GameBoybrcond bb
+                    //                    : $target, GameBoy_COND_LT)]>;
 }
 
 //===----------------------------------------------------------------------===//

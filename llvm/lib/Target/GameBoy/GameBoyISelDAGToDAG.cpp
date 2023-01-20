@@ -147,7 +147,8 @@ bool GameBoyDAGToDAGISel::selectIndexedLoad(SDNode *N) {
       return false;
     }
 
-    Opcode = (isPre) ? GameBoy::LDRdPtrPd : GameBoy::LDRdPtrPi;
+    llvm_unreachable("Unimplemented increment load (byte)!");
+    // Opcode = (isPre) ? GameBoy::LDRdPtrPd : GameBoy::LDRdPtrPi;
     break;
   }
   case MVT::i16: {
@@ -155,7 +156,8 @@ bool GameBoyDAGToDAGISel::selectIndexedLoad(SDNode *N) {
       return false;
     }
 
-    Opcode = (isPre) ? GameBoy::LDWRdPtrPd : GameBoy::LDWRdPtrPi;
+    llvm_unreachable("Unimplemented increment load (word)!");
+    // Opcode = (isPre) ? GameBoy::LDWRdPtrPd : GameBoy::LDWRdPtrPi;
     break;
   }
   default:
@@ -188,11 +190,13 @@ unsigned GameBoyDAGToDAGISel::selectIndexedProgMemLoad(const LoadSDNode *LD, MVT
   switch (VT.SimpleTy) {
   case MVT::i8:
     if (Offs == 1)
-      Opcode = Bank > 0 ? GameBoy::ELPMBRdZPi : GameBoy::LPMRdZPi;
+      llvm_unreachable("Unimplemented indexed program load! (byte)");
+      // Opcode = Bank > 0 ? GameBoy::ELPMBRdZPi : GameBoy::LPMRdZPi;
     break;
   case MVT::i16:
     if (Offs == 2)
-      Opcode = Bank > 0 ? GameBoy::ELPMWRdZPi : GameBoy::LPMWRdZPi;
+      llvm_unreachable("Unimplemented indexed program load! (byte)");
+      // Opcode = Bank > 0 ? GameBoy::ELPMWRdZPi : GameBoy::LPMWRdZPi;
     break;
   default:
     break;

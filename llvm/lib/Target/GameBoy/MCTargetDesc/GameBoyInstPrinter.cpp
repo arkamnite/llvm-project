@@ -61,43 +61,6 @@ void GameBoyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
     O << "], ";
     printOperand(MI, 1, O);
     break;
-  // Original instructions go here
-  case GameBoy::LDRdPtr:
-  case GameBoy::LDRdPtrPi:
-  case GameBoy::LDRdPtrPd:
-    O << "\tld\t";
-    printOperand(MI, 0, O);
-    O << ", ";
-
-    if (Opcode == GameBoy::LDRdPtrPd)
-      O << '-';
-
-    printOperand(MI, 1, O);
-
-    if (Opcode == GameBoy::LDRdPtrPi)
-      O << '+';
-    break;
-  case GameBoy::STPtrRr:
-    O << "\tst\t";
-    printOperand(MI, 0, O);
-    O << ", ";
-    printOperand(MI, 1, O);
-    break;
-  case GameBoy::STPtrPiRr:
-  case GameBoy::STPtrPdRr:
-    O << "\tst\t";
-
-    if (Opcode == GameBoy::STPtrPdRr)
-      O << '-';
-
-    printOperand(MI, 1, O);
-
-    if (Opcode == GameBoy::STPtrPiRr)
-      O << '+';
-
-    O << ", ";
-    printOperand(MI, 2, O);
-    break;
   default:
     if (!printAliasInstr(MI, Address, O))
       printInstruction(MI, Address, O);

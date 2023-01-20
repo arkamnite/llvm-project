@@ -175,6 +175,9 @@ void GameBoyFrameLowering::emitPrologue(MachineFunction &MF,
       .setMIFlag(MachineInstr::FrameSetup);
 }
 */
+
+// TODO: Currently does not do anything. Probably want to use a POP AF instruction
+// here.
 static void restoreStatusRegister(MachineFunction &MF, MachineBasicBlock &MBB) {
   const GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
 
@@ -186,13 +189,13 @@ static void restoreStatusRegister(MachineFunction &MF, MachineBasicBlock &MBB) {
 
   // Emit special epilogue code to restore R1, R0 and SREG in interrupt/signal
   // handlers at the very end of the function, just before reti.
-  if (AFI->isInterruptOrSignalHandler()) {
-    BuildMI(MBB, MBBI, DL, TII.get(GameBoy::POPRd), GameBoy::R0);
-    BuildMI(MBB, MBBI, DL, TII.get(GameBoy::OUTARr))
-        .addImm(STI.getIORegSREG())
-        .addReg(GameBoy::R0, RegState::Kill);
-    BuildMI(MBB, MBBI, DL, TII.get(GameBoy::POPWRd), GameBoy::R1R0);
-  }
+  // if (AFI->isInterruptOrSignalHandler()) {
+  //   BuildMI(MBB, MBBI, DL, TII.get(GameBoy::POPRd), GameBoy::R0);
+  //   BuildMI(MBB, MBBI, DL, TII.get(GameBoy::OUTARr))
+  //       .addImm(STI.getIORegSREG())
+  //       .addReg(GameBoy::R0, RegState::Kill);
+  //   BuildMI(MBB, MBBI, DL, TII.get(GameBoy::POPWRd), GameBoy::R1R0);
+  // }
 }
 
 /// @brief Emit the function epilogue code. Due to the lack of a frame
@@ -372,25 +375,30 @@ static void fixStackStores(MachineBasicBlock &MBB,
   // Iterate through the BB until we hit a call instruction or we reach the end.
   for (MachineInstr &MI :
        llvm::make_early_inc_range(llvm::make_range(StartMI, MBB.end()))) {
+    llvm_unreachable("Unimplemented fixStackStores!");
     if (MI.isCall())
       break;
 
     unsigned Opcode = MI.getOpcode();
 
+    /*
     // Only care of pseudo store instructions where SP is the base pointer.
     if (Opcode != GameBoy::STDSPQRr && Opcode != GameBoy::STDWSPQRr)
       continue;
+    */
 
     assert(MI.getOperand(0).getReg() == GameBoy::SP &&
            "SP is expected as base pointer");
 
     // Replace this instruction with a regular store. Use Y as the base
     // pointer since it is guaranteed to contain a copy of SP.
+    /*
     unsigned STOpc =
         (Opcode == GameBoy::STDWSPQRr) ? GameBoy::STDWPtrQRr : GameBoy::STDPtrQRr;
 
     MI.setDesc(TII.get(STOpc));
     MI.getOperand(0).setReg(GameBoy::R31R30);
+    */
   }
 }
 
@@ -413,7 +421,8 @@ MachineBasicBlock::iterator GameBoyFrameLowering::eliminateCallFramePseudoInstr(
   }
 
   assert(getStackAlign() == Align(1) && "Unsupported stack alignment");
-
+  llvm_unreachable("Unimplemented eliminate call frame pseudo instruction!");
+  /*
   if (Opcode == TII.getCallFrameSetupOpcode()) {
     // Update the stack pointer.
     // In many cases this can be done far more efficiently by pushing the
@@ -461,6 +470,7 @@ MachineBasicBlock::iterator GameBoyFrameLowering::eliminateCallFramePseudoInstr(
     BuildMI(MBB, MI, DL, TII.get(GameBoy::SPWRITE), GameBoy::SP)
         .addReg(GameBoy::R31R30, RegState::Kill);
   }
+  */
 
   return MBB.erase(MI);
 }
@@ -515,11 +525,11 @@ struct GameBoyFrameAnalyzer : public MachineFunctionPass {
     for (const MachineBasicBlock &BB : MF) {
       for (const MachineInstr &MI : BB) {
         int Opcode = MI.getOpcode();
-
-        if ((Opcode != GameBoy::LDDRdPtrQ) && (Opcode != GameBoy::LDDWRdPtrQ) &&
-            (Opcode != GameBoy::STDPtrQRr) && (Opcode != GameBoy::STDWPtrQRr)) {
-          continue;
-        }
+        llvm_unreachable("Unimplemented function scanning for fixed frame indices!");
+        // if ((Opcode != GameBoy::LDDRdPtrQ) && (Opcode != GameBoy::LDDWRdPtrQ) &&
+        //     (Opcode != GameBoy::STDPtrQRr) && (Opcode != GameBoy::STDWPtrQRr)) {
+        //   continue;
+        // }
 
         for (const MachineOperand &MO : MI.operands()) {
           if (!MO.isFI()) {

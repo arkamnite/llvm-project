@@ -351,12 +351,14 @@ static DecodeStatus decodeLoadStore(MCInst &Inst, unsigned Insn,
     unsigned RegBase = (Insn & 0x8) ? GameBoy::R29R28 : GameBoy::R31R30;
     unsigned Offset = Insn & 7; // We need not consider offset > 7.
     if ((Insn & 0x200) == 0) { // Decode LDD.
-      Inst.setOpcode(GameBoy::LDDRdPtrQ);
+      llvm_unreachable("Unimplemented disassembler for LDDRdPtrQ");
+      // Inst.setOpcode(GameBoy::LDDRdPtrQ);
       Inst.addOperand(MCOperand::createReg(RegVal));
       Inst.addOperand(MCOperand::createReg(RegBase));
       Inst.addOperand(MCOperand::createImm(Offset));
     } else { // Decode STD.
-      Inst.setOpcode(GameBoy::STDPtrQRr);
+      llvm_unreachable("Unimplemented disassembler for STDPtrQRr");
+      // Inst.setOpcode(GameBoy::STDPtrQRr);
       Inst.addOperand(MCOperand::createReg(RegBase));
       Inst.addOperand(MCOperand::createImm(Offset));
       Inst.addOperand(MCOperand::createReg(RegVal));
@@ -403,28 +405,28 @@ static DecodeStatus decodeLoadStore(MCInst &Inst, unsigned Insn,
 
   // Set the opcode.
   switch (Insn & 0x203) {
-  case 0x200:
-    Inst.setOpcode(GameBoy::STPtrRr);
-    Inst.addOperand(MCOperand::createReg(RegBase));
-    Inst.addOperand(MCOperand::createReg(RegVal));
-    return MCDisassembler::Success;
-  case 0x201:
-    Inst.setOpcode(GameBoy::STPtrPiRr);
-    break;
-  case 0x202:
-    Inst.setOpcode(GameBoy::STPtrPdRr);
-    break;
-  case 0:
-    Inst.setOpcode(GameBoy::LDRdPtr);
-    Inst.addOperand(MCOperand::createReg(RegVal));
-    Inst.addOperand(MCOperand::createReg(RegBase));
-    return MCDisassembler::Success;
-  case 1:
-    Inst.setOpcode(GameBoy::LDRdPtrPi);
-    break;
-  case 2:
-    Inst.setOpcode(GameBoy::LDRdPtrPd);
-    break;
+  // case 0x200:
+  //   Inst.setOpcode(GameBoy::STPtrRr);
+  //   Inst.addOperand(MCOperand::createReg(RegBase));
+  //   Inst.addOperand(MCOperand::createReg(RegVal));
+  //   return MCDisassembler::Success;
+  // case 0x201:
+  //   Inst.setOpcode(GameBoy::STPtrPiRr);
+  //   break;
+  // case 0x202:
+  //   Inst.setOpcode(GameBoy::STPtrPdRr);
+  //   break;
+  // case 0:
+  //   Inst.setOpcode(GameBoy::LDRdPtr);
+  //   Inst.addOperand(MCOperand::createReg(RegVal));
+  //   Inst.addOperand(MCOperand::createReg(RegBase));
+  //   return MCDisassembler::Success;
+  // case 1:
+  //   Inst.setOpcode(GameBoy::LDRdPtrPi);
+  //   break;
+  // case 2:
+  //   Inst.setOpcode(GameBoy::LDRdPtrPd);
+  //   break;
   default:
     return MCDisassembler::Fail;
   }
@@ -476,12 +478,14 @@ static DecodeStatus readInstruction32(ArrayRef<uint8_t> Bytes, uint64_t Address,
 static const uint8_t *getDecoderTable(uint64_t Size) {
 
   switch (Size) {
-  case 2:
-    return DecoderTable16;
-  case 4:
-    return DecoderTable32;
+  case 1:
+    return DecoderTable8;
+  // case 2:
+  //   return DecoderTable16;
+  // case 4:
+  //   return DecoderTable32;
   default:
-    llvm_unreachable("instructions must be 16 or 32-bits");
+    llvm_unreachable("instructions are only 8-bit");
   }
 }
 

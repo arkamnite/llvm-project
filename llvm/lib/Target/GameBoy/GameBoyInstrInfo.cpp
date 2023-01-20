@@ -119,15 +119,15 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
 unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
                                            int &FrameIndex) const {
   switch (MI.getOpcode()) {
-  case GameBoy::LDDRdPtrQ:
-  case GameBoy::LDDWRdYQ: { //: FIXME: remove this once PR13375 gets fixed
-    if (MI.getOperand(1).isFI() && MI.getOperand(2).isImm() &&
-        MI.getOperand(2).getImm() == 0) {
-      FrameIndex = MI.getOperand(1).getIndex();
-      return MI.getOperand(0).getReg();
-    }
-    break;
-  }
+  // case GameBoy::LDDRdPtrQ:
+  // case GameBoy::LDDWRdYQ: { //: FIXME: remove this once PR13375 gets fixed
+  //   if (MI.getOperand(1).isFI() && MI.getOperand(2).isImm() &&
+  //       MI.getOperand(2).getImm() == 0) {
+  //     FrameIndex = MI.getOperand(1).getIndex();
+  //     return MI.getOperand(0).getReg();
+  //   }
+  //   break;
+  // }
   default:
     break;
   }
@@ -138,15 +138,15 @@ unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
 unsigned GameBoyInstrInfo::isStoreToStackSlot(const MachineInstr &MI,
                                           int &FrameIndex) const {
   switch (MI.getOpcode()) {
-  case GameBoy::STDPtrQRr:
-  case GameBoy::STDWPtrQRr: {
-    if (MI.getOperand(0).isFI() && MI.getOperand(1).isImm() &&
-        MI.getOperand(1).getImm() == 0) {
-      FrameIndex = MI.getOperand(0).getIndex();
-      return MI.getOperand(2).getReg();
-    }
-    break;
-  }
+  // case GameBoy::STDPtrQRr:
+  // case GameBoy::STDWPtrQRr: {
+  //   if (MI.getOperand(0).isFI() && MI.getOperand(1).isImm() &&
+  //       MI.getOperand(1).getImm() == 0) {
+  //     FrameIndex = MI.getOperand(0).getIndex();
+  //     return MI.getOperand(2).getReg();
+  //   }
+  //   break;
+  // }
   default:
     break;
   }
@@ -163,6 +163,8 @@ void GameBoyInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
   MachineFunction &MF = *MBB.getParent();
   GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
 
+  llvm_unreachable("Unimplemented storeRegToStackSlot");
+  /*
   AFI->setHasSpills(true);
 
   DebugLoc DL;
@@ -191,6 +193,7 @@ void GameBoyInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
       .addImm(0)
       .addReg(SrcReg, getKillRegState(isKill))
       .addMemOperand(MMO);
+  */
 }
 
 void GameBoyInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
@@ -198,6 +201,9 @@ void GameBoyInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
                                         Register DestReg, int FrameIndex,
                                         const TargetRegisterClass *RC,
                                         const TargetRegisterInfo *TRI) const {
+  
+  llvm_unreachable("Unimplemented loadRegFromStackSlot");
+  /*
   DebugLoc DL;
   if (MI != MBB.end()) {
     DL = MI->getDebugLoc();
@@ -226,6 +232,7 @@ void GameBoyInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
       .addFrameIndex(FrameIndex)
       .addImm(0)
       .addMemOperand(MMO);
+  */
 }
 
 const MCInstrDesc &GameBoyInstrInfo::getBrCond(GameBoyCC::CondCodes CC) const {
@@ -551,10 +558,11 @@ GameBoyInstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
   switch (MI.getOpcode()) {
   default:
     llvm_unreachable("unexpected opcode!");
-  case GameBoy::JMPk:
-  case GameBoy::CALLk:
-  case GameBoy::RCALLk:
-  case GameBoy::RJMPk:
+  case GameBoy::JP:
+  // case GameBoy::JMPk:
+  // case GameBoy::CALLk:
+  // case GameBoy::RCALLk:
+  // case GameBoy::RJMPk:
   case GameBoy::JRNEk:
   case GameBoy::JREQk:
   // case GameBoy::JRSHk:
@@ -565,14 +573,14 @@ GameBoyInstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
   case GameBoy::JRLTk:
   case GameBoy::JRk:
     return MI.getOperand(0).getMBB();
-  case GameBoy::BRBSsk:
-  case GameBoy::BRBCsk:
-    return MI.getOperand(1).getMBB();
-  case GameBoy::SBRCRrB:
-  case GameBoy::SBRSRrB:
-  case GameBoy::SBICAb:
-  case GameBoy::SBISAb:
-    llvm_unreachable("unimplemented branch instructions");
+  // case GameBoy::BRBSsk:
+  // case GameBoy::BRBCsk:
+  //   return MI.getOperand(1).getMBB();
+  // case GameBoy::SBRCRrB:
+  // case GameBoy::SBRSRrB:
+  // case GameBoy::SBICAb:
+  // case GameBoy::SBISAb:
+    // llvm_unreachable("unimplemented branch instructions");
   }
 }
 
@@ -582,20 +590,21 @@ bool GameBoyInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
   switch (BranchOp) {
   default:
     llvm_unreachable("unexpected opcode!");
-  case GameBoy::JMPk:
-  case GameBoy::CALLk:
+  case GameBoy::JP:
+  // case GameBoy::JMPk:
+  // case GameBoy::CALLk:
     return true;
-  case GameBoy::RCALLk:
-  case GameBoy::RJMPk:
-    return isIntN(13, BrOffset);
-  case GameBoy::BRBSsk:
-  case GameBoy::BRBCsk:
-  case GameBoy::JREQk:
-  case GameBoy::JRNEk:
+  // case GameBoy::RCALLk:
+  // case GameBoy::RJMPk:
+  //   return isIntN(13, BrOffset);
+  // case GameBoy::BRBSsk:
+  // case GameBoy::BRBCsk:
   // case GameBoy::JRSHk:
   // case GameBoy::JRLOk:
   // case GameBoy::JRMIk:
   // case GameBoy::JRPLk:
+  case GameBoy::JREQk:
+  case GameBoy::JRNEk:
   case GameBoy::JRk:
   case GameBoy::JRGTEk:
   case GameBoy::JRLTk:

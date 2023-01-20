@@ -131,6 +131,8 @@ GameBoyRegisterInfo::getLargestLegalSuperClass(const TargetRegisterClass *RC,
 /// Fold a frame offset shared between two add instructions into a single one.
 static void foldFrameOffset(MachineBasicBlock::iterator &II, int &Offset,
                             Register DstReg) {
+  llvm_unreachable("Unimplemented foldFrameOffset");
+  /*
   MachineInstr &MI = *II;
   int Opcode = MI.getOpcode();
 
@@ -158,13 +160,16 @@ static void foldFrameOffset(MachineBasicBlock::iterator &II, int &Offset,
   // Finally remove the instruction.
   II++;
   MI.eraseFromParent();
+  */
 }
 
 void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                                           int SPAdj, unsigned FIOperandNum,
                                           RegScavenger *RS) const {
-  assert(SPAdj == 0 && "Unexpected SPAdj value");
 
+  llvm_unreachable("Unimplemented eliminateFrameIndex");
+  /*
+  assert(SPAdj == 0 && "Unexpected SPAdj value");
   MachineInstr &MI = *II;
   DebugLoc dl = MI.getDebugLoc();
   MachineBasicBlock &MBB = *MI.getParent();
@@ -281,6 +286,7 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   MI.getOperand(FIOperandNum).ChangeToRegister(GameBoy::R29R28, false);
   assert(isUInt<6>(Offset) && "Offset is out of range");
   MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset);
+  */
 }
 
 Register GameBoyRegisterInfo::getFrameRegister(const MachineFunction &MF) const {

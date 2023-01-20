@@ -77,6 +77,14 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     if (GameBoy::GPRRegClass.contains(SrcReg, SrcReg)) {
       // Split the register pair in half.
       Register DestLo, DestHi;
+      if (GameBoy::GPRRegClass.contains(DestReg, DestReg))
+        dbgs() << "Attempting to split an 8-bit destination register\n";
+      if (GameBoy::GPRPairRegClass.contains(DestReg, DestReg))
+        dbgs() << "Attempting to split a 16-bit destination register\n";
+      if (GameBoy::GPR8RegClass.contains(DestReg, DestReg))
+        dbgs() << "Attempting to split AVR 8-bit register\n";
+
+      dbgs() << "Splitting register " << DestReg.id() << "\n";
       TRI.splitReg(DestReg, DestLo, DestHi);
       // Load an immediate 0 into the upper half.
       BuildMI(MBB, MI, DL, get(GameBoy::LDRdImm8), DestHi).addImm(0);
@@ -320,7 +328,8 @@ bool GameBoyInstrInfo::analyzeBranch(MachineBasicBlock &MBB,
 
     // Handle unconditional branches.
     //: TODO: add here jmp
-    if (I->getOpcode() == GameBoy::RJMPk) {
+    // if (I->getOpcode() == GameBoy::RJMPk) {
+    if (I->getOpcode() == GameBoy::JRk) {
       UnCondBrIter = I;
 
       if (!AllowModify) {
@@ -382,7 +391,8 @@ bool GameBoyInstrInfo::analyzeBranch(MachineBasicBlock &MBB,
 
         BuildMI(MBB, UnCondBrIter, MBB.findDebugLoc(I), get(JNCC))
             .addMBB(UnCondBrIter->getOperand(0).getMBB());
-        BuildMI(MBB, UnCondBrIter, MBB.findDebugLoc(I), get(GameBoy::RJMPk))
+        // BuildMI(MBB, UnCondBrIter, MBB.findDebugLoc(I), get(GameBoy::RJMPk))
+        BuildMI(MBB, UnCondBrIter, MBB.findDebugLoc(I), get(GameBoy::JRk))
             .addMBB(TargetBB);
 
         OldInst->eraseFromParent();
@@ -438,7 +448,8 @@ unsigned GameBoyInstrInfo::insertBranch(MachineBasicBlock &MBB,
 
   if (Cond.empty()) {
     assert(!FBB && "Unconditional branch with multiple successors!");
-    auto &MI = *BuildMI(&MBB, DL, get(GameBoy::RJMPk)).addMBB(TBB);
+    // auto &MI = *BuildMI(&MBB, DL, get(GameBoy::RJMPk)).addMBB(TBB);
+    auto &MI = *BuildMI(&MBB, DL, get(GameBoy::JRk)).addMBB(TBB);
     if (BytesAdded)
       *BytesAdded += getInstSizeInBytes(MI);
     return 1;
@@ -455,7 +466,8 @@ unsigned GameBoyInstrInfo::insertBranch(MachineBasicBlock &MBB,
 
   if (FBB) {
     // Two-way Conditional branch. Insert the second branch.
-    auto &MI = *BuildMI(&MBB, DL, get(GameBoy::RJMPk)).addMBB(FBB);
+    // auto &MI = *BuildMI(&MBB, DL, get(GameBoy::RJMPk)).addMBB(FBB);
+    auto &MI = *BuildMI(&MBB, DL, get(GameBoy::JRk)).addMBB(FBB);
     if (BytesAdded)
       *BytesAdded += getInstSizeInBytes(MI);
     ++Count;
@@ -479,7 +491,8 @@ unsigned GameBoyInstrInfo::removeBranch(MachineBasicBlock &MBB,
     }
     //: TODO: add here the missing jmp instructions once they are implemented
     // like jmp, {e}ijmp, and other cond branches, ...
-    if (I->getOpcode() != GameBoy::RJMPk &&
+    // if (I->getOpcode() != GameBoy::RJMPk &&
+    if (I->getOpcode() != GameBoy::JRk &&
         getCondFromBranchOpc(I->getOpcode()) == GameBoyCC::COND_INVALID) {
       break;
     }
@@ -550,6 +563,7 @@ GameBoyInstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
   // case GameBoy::JRPLk:
   case GameBoy::JRGTEk:
   case GameBoy::JRLTk:
+  case GameBoy::JRk:
     return MI.getOperand(0).getMBB();
   case GameBoy::BRBSsk:
   case GameBoy::BRBCsk:
@@ -582,6 +596,7 @@ bool GameBoyInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
   // case GameBoy::JRLOk:
   // case GameBoy::JRMIk:
   // case GameBoy::JRPLk:
+  case GameBoy::JRk:
   case GameBoy::JRGTEk:
   case GameBoy::JRLTk:
     return isIntN(7, BrOffset);

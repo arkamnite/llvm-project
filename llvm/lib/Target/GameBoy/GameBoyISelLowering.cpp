@@ -1723,7 +1723,8 @@ MachineBasicBlock *GameBoyTargetLowering::insertShift(MachineInstr &MI,
 
   // BB:
   // rjmp CheckBB
-  BuildMI(BB, dl, TII.get(GameBoy::RJMPk)).addMBB(CheckBB);
+  // BuildMI(BB, dl, TII.get(GameBoy::RJMPk)).addMBB(CheckBB);
+  BuildMI(BB, dl, TII.get(GameBoy::JRk)).addMBB(CheckBB);
 
   // LoopBB:
   // ShiftReg2 = shift ShiftReg
@@ -1922,7 +1923,8 @@ GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
   // we must insert an unconditional branch to the fallthrough destination
   // if we are to insert basic blocks at the prior fallthrough point.
   if (FallThrough != nullptr) {
-    BuildMI(MBB, dl, TII.get(GameBoy::RJMPk)).addMBB(FallThrough);
+    // BuildMI(MBB, dl, TII.get(GameBoy::RJMPk)).addMBB(FallThrough);
+    BuildMI(MBB, dl, TII.get(GameBoy::JRk)).addMBB(FallThrough);
   }
 
   MachineBasicBlock *trueMBB = MF->CreateMachineBasicBlock(LLVM_BB);
@@ -1945,12 +1947,14 @@ GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
 
   GameBoyCC::CondCodes CC = (GameBoyCC::CondCodes)MI.getOperand(3).getImm();
   BuildMI(MBB, dl, TII.getBrCond(CC)).addMBB(trueMBB);
-  BuildMI(MBB, dl, TII.get(GameBoy::RJMPk)).addMBB(falseMBB);
+  // BuildMI(MBB, dl, TII.get(GameBoy::RJMPk)).addMBB(falseMBB);
+  BuildMI(MBB, dl, TII.get(GameBoy::JRk)).addMBB(falseMBB);
   MBB->addSuccessor(falseMBB);
   MBB->addSuccessor(trueMBB);
 
   // Unconditionally flow back to the true block
-  BuildMI(falseMBB, dl, TII.get(GameBoy::RJMPk)).addMBB(trueMBB);
+  // BuildMI(falseMBB, dl, TII.get(GameBoy::RJMPk)).addMBB(trueMBB);
+  BuildMI(falseMBB, dl, TII.get(GameBoy::JRk)).addMBB(trueMBB);
   falseMBB->addSuccessor(trueMBB);
 
   // Set up the Phi node to determine where we came from

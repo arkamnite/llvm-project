@@ -495,8 +495,20 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpRdRr>(Block &MBB, BlockIt MBBI) {
 }
 
 template<>
+bool GameBoyExpandPseudo::expand<GameBoy::CpWRdRr>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete CpWRdRr");
+  return true;
+}
+
+template<>
 bool GameBoyExpandPseudo::expand<GameBoy::CpRdImm8>(Block &MBB, BlockIt MBBI) {
   llvm_unreachable("Incomplete CpRdImm8");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::CpRdImm16>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete CpRdImm16");
   return true;
 }
 

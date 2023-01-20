@@ -745,16 +745,32 @@ def XorRdImm8 : Pseudo< (outs GPR : $rd),
                         [(set i8 : $rd, (xor i8 : $src, i8 : $n))]>;
 }
 
+let Defs = [RF] in {
 // CP Rd, Rr
 def CpRdRr : Pseudo<(outs),
                     (ins GPR : $rd, GPR : $rr),
                     "cp\t$rd, $rr",
-                    [(GameBoycmp i8 : $rd, i8 : $rr)]>;
+                    [(GameBoycmp i8 : $rd, i8 : $rr), (implicit RF)]>;
+
+// CPW Rd, Rr
+def CpWRdRr : Pseudo< (outs),
+                      (ins GPRPair : $rd, GPRPair : $rr),
+                      "cp\t$rd, $rr",
+                      [(GameBoycmp i16 : $rd, i16 : $rr), (implicit RF)]>;
+
 // CP Rd, Imm8
 def CpRdImm8 : Pseudo<(outs),
                     (ins GPR : $rd, i8imm : $n),
                     "cp\t$rd, $n",
-                    [(GameBoycmp i8 : $rd, i8 : $n)]>;
+                    [(GameBoycmp i8 : $rd, i8 : $n), (implicit RF)]>;
+
+// CP Rd, Imm16
+def CpRdImm16 : Pseudo<
+                    (outs),
+                    (ins GPRPair : $rd, i16imm : $n),
+                    "cp\t$rd, $n",
+                    [(GameBoycmp i16 : $rd, i16 : $n), (implicit RF)]>;
+}
 
 // Original instructions are as follows
 let Constraints = "$src = $rd" in {
@@ -949,32 +965,38 @@ let isBarrier = 1, isBranch = 1, isTerminator = 1 in {
 // JP cc, Imm16
 // JP (HL)
 
+let isBarrier = 1, isBranch = 1, isTerminator = 1 in {
 // JR s8 (-2)
-
+  def JRk : GBF0< 0b00011000,
+                  (outs),
+                  (ins relbrtarget_7 : $target),
+                  "jr\t$target",
+                  [(br bb : $target)]>;
+}
 // JR cc, s8 (-2)
 let isBranch = 1, isTerminator = 1, Uses = [RF] in {
   def JRNZk : GBF0<0b11000010,
                   (outs),
                   (ins relbrtarget_7 : $target),
-                  "jp\tnz, $target",
+                  "jr\tnz, $target",
                   [(GameBoybrcond bb : $target, GameBoy_COND_NZ)]>;
 
   def JRZk : GBF0<0b11001010,
                   (outs),
                   (ins relbrtarget_7 : $target),
-                  "jp\tz, $target",
+                  "jr\tz, $target",
                   [(GameBoybrcond bb : $target, GameBoy_COND_Z)]>;
   
   def JRNCk : GBF0< 0b11010010,
                     (outs),
                     (ins relbrtarget_7 : $target),
-                    "jp\tnc, $target",
+                    "jr\tnc, $target",
                     [(GameBoybrcond bb : $target, GameBoy_COND_NC)]>;
   
   def JRCk : GBF0<0b11011010,
                   (outs),
                   (ins relbrtarget_7 : $target),
-                  "jp\tc, $target",
+                  "jr\tc, $target",
                   [(GameBoybrcond bb : $target, GameBoy_COND_C)]>;
 
   // Pseudo instructions that are composed of the existing
@@ -982,25 +1004,25 @@ let isBranch = 1, isTerminator = 1, Uses = [RF] in {
   // Equal
   def JREQk : Pseudo< (outs),
                       (ins relbrtarget_7 : $target),
-                      "jp\teq, $target",
+                      "jr\teq, $target",
                       [(GameBoybrcond bb : $target, GameBoy_COND_EQ)]>;
 
   // Not equal
   def JRNEk : Pseudo< (outs),
                       (ins relbrtarget_7 : $target),
-                      "brne\t$target", 
+                      "jr\tne, $target", 
                       [(GameBoybrcond bb : $target, GameBoy_COND_NE)]>;
 
   // Greater than
   def JRGTEk : Pseudo<(outs),
                       (ins relbrtarget_7 : $target),
-                      "brge\t$target", 
+                      "jr\tgt, $target", 
                       [(GameBoybrcond bb : $target, GameBoy_COND_GE)]>;
 
   // Less than
   def JRLTk : Pseudo< (outs),
                       (ins relbrtarget_7 : $target),
-                      "brlt\t$target", 
+                      "jr\tlt, $target", 
                       [(GameBoybrcond bb : $target, GameBoy_COND_LT)]>;
 }
 
@@ -1757,10 +1779,12 @@ let Defs = [SREG] in {
               (ins GPR8
                : $rd, GPR8
                : $rr),
-              "cp\t$rd, $rr", [(GameBoycmp i8
-                                : $rd, i8
-                                : $rr),
-                               (implicit SREG)]>;
+              "cp\t$rd, $rr", 
+              []>;
+              // [(GameBoycmp i8
+              //                   : $rd, i8
+              //                   : $rr),
+              //                  (implicit SREG)]>;
 
   // CPW Rd+1:Rd, Rr+1:Rr
   //
@@ -1772,10 +1796,11 @@ let Defs = [SREG] in {
                         : $src, DREGS
                         : $src2),
                        "cpw\t$src, $src2",
-                       [(GameBoycmp i16
-                         : $src, i16
-                         : $src2),
-                        (implicit SREG)]>;
+                       []>;
+                      //  [(GameBoycmp i16
+                      //    : $src, i16
+                      //    : $src2),
+                      //   (implicit SREG)]>;
 
   let Uses = [SREG] in def CPCRdRr
       : FRdRr<0b0000, 0b01, (outs),
@@ -1810,10 +1835,12 @@ let Defs = [SREG] in {
              (ins LD8
               : $rd, imm_ldi8
               : $k),
-             "cpi\t$rd, $k", [(GameBoycmp i8
-                               : $rd, imm
-                               : $k),
-                              (implicit SREG)]>;
+             "cpi\t$rd, $k", 
+             []>;
+            //  [(GameBoycmp i8
+            //                    : $rd, imm
+            //                    : $k),
+            //                   (implicit SREG)]>;
 }
 
 //===----------------------------------------------------------------------===//

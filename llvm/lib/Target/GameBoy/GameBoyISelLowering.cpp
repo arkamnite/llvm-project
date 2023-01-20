@@ -1638,50 +1638,11 @@ MachineBasicBlock *GameBoyTargetLowering::insertShift(MachineInstr &MI,
   const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
   DebugLoc dl = MI.getDebugLoc();
 
+  llvm_unreachable("Unimplemented insertShift!");
+
   switch (MI.getOpcode()) {
   default:
     llvm_unreachable("Invalid shift opcode!");
-  case GameBoy::Lsl8:
-    Opc = GameBoy::ADDRdRr; // LSL is an alias of ADD Rd, Rd
-    RC = &GameBoy::GPR8RegClass;
-    HasRepeatedOperand = true;
-    break;
-  case GameBoy::Lsl16:
-    Opc = GameBoy::LSLWRd;
-    RC = &GameBoy::DREGSRegClass;
-    break;
-  case GameBoy::Asr8:
-    Opc = GameBoy::ASRRd;
-    RC = &GameBoy::GPR8RegClass;
-    break;
-  case GameBoy::Asr16:
-    Opc = GameBoy::ASRWRd;
-    RC = &GameBoy::DREGSRegClass;
-    break;
-  case GameBoy::Lsr8:
-    Opc = GameBoy::LSRRd;
-    RC = &GameBoy::GPR8RegClass;
-    break;
-  case GameBoy::Lsr16:
-    Opc = GameBoy::LSRWRd;
-    RC = &GameBoy::DREGSRegClass;
-    break;
-  case GameBoy::Rol8:
-    Opc = GameBoy::ROLBRd;
-    RC = &GameBoy::GPR8RegClass;
-    break;
-  case GameBoy::Rol16:
-    Opc = GameBoy::ROLWRd;
-    RC = &GameBoy::DREGSRegClass;
-    break;
-  case GameBoy::Ror8:
-    Opc = GameBoy::RORBRd;
-    RC = &GameBoy::GPR8RegClass;
-    break;
-  case GameBoy::Ror16:
-    Opc = GameBoy::RORWRd;
-    RC = &GameBoy::DREGSRegClass;
-    break;
   }
 
   const BasicBlock *LLVM_BB = BB->getBasicBlock();
@@ -1755,7 +1716,7 @@ MachineBasicBlock *GameBoyTargetLowering::insertShift(MachineInstr &MI,
       .addMBB(LoopBB);
 
   BuildMI(CheckBB, dl, TII.get(GameBoy::DECRd), ShiftAmtReg2).addReg(ShiftAmtReg);
-  BuildMI(CheckBB, dl, TII.get(GameBoy::BRPLk)).addMBB(LoopBB);
+  // BuildMI(CheckBB, dl, TII.get(GameBoy::BRPLk)).addMBB(LoopBB);
 
   MI.eraseFromParent(); // The pseudo instruction is gone now.
   return RemBB;
@@ -1775,6 +1736,8 @@ static bool isCopyMulResult(MachineBasicBlock::iterator const &I) {
 // it, but it works for now.
 MachineBasicBlock *GameBoyTargetLowering::insertMul(MachineInstr &MI,
                                                 MachineBasicBlock *BB) const {
+
+  llvm_unreachable("Unimplemented insertMul");
   const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
   MachineBasicBlock::iterator I(MI);
   ++I; // in any case insert *after* the mul instruction
@@ -1782,9 +1745,9 @@ MachineBasicBlock *GameBoyTargetLowering::insertMul(MachineInstr &MI,
     ++I;
   if (isCopyMulResult(I))
     ++I;
-  BuildMI(*BB, I, MI.getDebugLoc(), TII.get(GameBoy::EORRdRr), GameBoy::R1)
-      .addReg(GameBoy::R1)
-      .addReg(GameBoy::R1);
+  // BuildMI(*BB, I, MI.getDebugLoc(), TII.get(GameBoy::EORRdRr), GameBoy::R1)
+  //     .addReg(GameBoy::R1)
+  //     .addReg(GameBoy::R1);
   return BB;
 }
 
@@ -1810,6 +1773,8 @@ MachineBasicBlock *GameBoyTargetLowering::insertAtomicArithmeticOp(
   const Register SCRATCH_REGISTER = GameBoy::R0;
   DebugLoc dl = MI.getDebugLoc();
 
+  llvm_unreachable("Unimplemented insertArithmeticOp");
+
   // Example instruction sequence, for an atomic 8-bit add:
   //   ldi r25, 5
   //   in r0, SREG
@@ -1818,7 +1783,7 @@ MachineBasicBlock *GameBoyTargetLowering::insertAtomicArithmeticOp(
   //   add r25, r24
   //   st X, r25
   //   out SREG, r0
-
+  /*
   const TargetRegisterClass *RC =
       (Width == 8) ? &GameBoy::GPR8RegClass : &GameBoy::DREGSRegClass;
   unsigned LoadOpcode = (Width == 8) ? GameBoy::LDRdPtr : GameBoy::LDWRdPtr;
@@ -1851,6 +1816,7 @@ MachineBasicBlock *GameBoyTargetLowering::insertAtomicArithmeticOp(
 
   // Remove the pseudo instruction.
   MI.eraseFromParent();
+  */
   return BB;
 }
 
@@ -1861,6 +1827,7 @@ GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
 
   // Pseudo shift instructions with a non constant shift amount are expanded
   // into a loop.
+  /*
   switch (Opc) {
   case GameBoy::Lsl8:
   case GameBoy::Lsl16:
@@ -1902,6 +1869,7 @@ GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
 
   assert((Opc == GameBoy::Select16 || Opc == GameBoy::Select8) &&
          "Unexpected instr type to insert");
+  */
 
   const GameBoyInstrInfo &TII = (const GameBoyInstrInfo &)*MI.getParent()
                                 ->getParent()

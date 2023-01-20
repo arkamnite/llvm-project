@@ -77,6 +77,8 @@ GameBoyMCCodeEmitter::loadStorePostEncoder(const MCInst &MI, unsigned EncodedVal
   bool IsRegX = MI.getOperand(0).getReg() == GameBoy::R27R26 ||
                 MI.getOperand(1).getReg() == GameBoy::R27R26;
 
+  llvm_unreachable("Unimplemented loadStorePostEncoder");
+  /* TODO: Check if this is needed in final code.
   bool IsPredec = Opcode == GameBoy::LDRdPtrPd || Opcode == GameBoy::STPtrPdRr;
   bool IsPostinc = Opcode == GameBoy::LDRdPtrPi || Opcode == GameBoy::STPtrPiRr;
 
@@ -84,6 +86,7 @@ GameBoyMCCodeEmitter::loadStorePostEncoder(const MCInst &MI, unsigned EncodedVal
   if (IsRegX || IsPredec || IsPostinc) {
     EncodedValue |= (1 << 12);
   }
+  */
 
   return EncodedValue;
 }

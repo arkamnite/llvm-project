@@ -634,6 +634,7 @@ bool GameBoyAsmParser::ParseInstruction(ParseInstructionInfo &Info,
                                     OperandVector &Operands) {
   Operands.push_back(GameBoyOperand::CreateToken(Mnemonic, NameLoc));
 
+  // llvm_unreachable("Unimplemented ParseInstruction");
   bool first = true;
   while (getLexer().isNot(AsmToken::EndOfStatement)) {
     if (!first)
@@ -641,8 +642,9 @@ bool GameBoyAsmParser::ParseInstruction(ParseInstructionInfo &Info,
 
     first = false;
 
-    auto MatchResult = MatchOperandParserImpl(Operands, Mnemonic);
-
+    unsigned MatchResult;
+    // auto MatchResult = MatchOperandParserImpl(Operands, Mnemonic);
+    // TODO: Check that this is working okay!
     if (MatchResult == MatchOperand_Success) {
       continue;
     }

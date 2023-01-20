@@ -147,7 +147,8 @@ bool GameBoyDAGToDAGISel::selectIndexedLoad(SDNode *N) {
       return false;
     }
 
-    Opcode = (isPre) ? GameBoy::LDRdPtrPd : GameBoy::LDRdPtrPi;
+    llvm_unreachable("Unimplemented increment load (byte)!");
+    // Opcode = (isPre) ? GameBoy::LDRdPtrPd : GameBoy::LDRdPtrPi;
     break;
   }
   case MVT::i16: {
@@ -155,7 +156,8 @@ bool GameBoyDAGToDAGISel::selectIndexedLoad(SDNode *N) {
       return false;
     }
 
-    Opcode = (isPre) ? GameBoy::LDWRdPtrPd : GameBoy::LDWRdPtrPi;
+    llvm_unreachable("Unimplemented increment load (word)!");
+    // Opcode = (isPre) ? GameBoy::LDWRdPtrPd : GameBoy::LDWRdPtrPi;
     break;
   }
   default:
@@ -188,11 +190,13 @@ unsigned GameBoyDAGToDAGISel::selectIndexedProgMemLoad(const LoadSDNode *LD, MVT
   switch (VT.SimpleTy) {
   case MVT::i8:
     if (Offs == 1)
-      Opcode = Bank > 0 ? GameBoy::ELPMBRdZPi : GameBoy::LPMRdZPi;
+      llvm_unreachable("Unimplemented indexed program load! (byte)");
+      // Opcode = Bank > 0 ? GameBoy::ELPMBRdZPi : GameBoy::LPMRdZPi;
     break;
   case MVT::i16:
     if (Offs == 2)
-      Opcode = Bank > 0 ? GameBoy::ELPMWRdZPi : GameBoy::LPMWRdZPi;
+      llvm_unreachable("Unimplemented indexed program load! (byte)");
+      // Opcode = Bank > 0 ? GameBoy::ELPMWRdZPi : GameBoy::LPMWRdZPi;
     break;
   default:
     break;
@@ -304,310 +308,6 @@ bool GameBoyDAGToDAGISel::SelectInlineAsmMemoryOperand(
   return false;
 }
 
-template <> bool GameBoyDAGToDAGISel::select<ISD::FrameIndex>(SDNode *N) {
-  auto DL = CurDAG->getDataLayout();
-
-  // Convert the frameindex into a temp instruction that will hold the
-  // effective address of the final stack slot.
-  int FI = cast<FrameIndexSDNode>(N)->getIndex();
-  SDValue TFI =
-      CurDAG->getTargetFrameIndex(FI, getTargetLowering()->getPointerTy(DL));
-
-  CurDAG->SelectNodeTo(N, GameBoy::FRMIDX, getTargetLowering()->getPointerTy(DL),
-                       TFI, CurDAG->getTargetConstant(0, SDLoc(N), MVT::i16));
-  return true;
-}
-
-template <> bool GameBoyDAGToDAGISel::select<ISD::STORE>(SDNode *N) {
-  // Use the STD{W}SPQRr pseudo instruction when passing arguments through
-  // the stack on function calls for further expansion during the PEI phase.
-  const StoreSDNode *ST = cast<StoreSDNode>(N);
-  SDValue BasePtr = ST->getBasePtr();
-
-  // Early exit when the base pointer is a frame index node or a constant.
-  if (isa<FrameIndexSDNode>(BasePtr) || isa<ConstantSDNode>(BasePtr) ||
-      BasePtr.isUndef()) {
-    return false;
-  }
-
-  const RegisterSDNode *RN = dyn_cast<RegisterSDNode>(BasePtr.getOperand(0));
-  // Only stores where SP is the base pointer are valid.
-  if (!RN || (RN->getReg() != GameBoy::SP)) {
-    return false;
-  }
-
-  int CST = (int)cast<ConstantSDNode>(BasePtr.getOperand(1))->getZExtValue();
-  SDValue Chain = ST->getChain();
-  EVT VT = ST->getValue().getValueType();
-  SDLoc DL(N);
-  SDValue Offset = CurDAG->getTargetConstant(CST, DL, MVT::i16);
-  SDValue Ops[] = {BasePtr.getOperand(0), Offset, ST->getValue(), Chain};
-  unsigned Opc = (VT == MVT::i16) ? GameBoy::STDWSPQRr : GameBoy::STDSPQRr;
-
-  SDNode *ResNode = CurDAG->getMachineNode(Opc, DL, MVT::Other, Ops);
-
-  // Transfer memory operands.
-  CurDAG->setNodeMemRefs(cast<MachineSDNode>(ResNode), {ST->getMemOperand()});
-
-  ReplaceUses(SDValue(N, 0), SDValue(ResNode, 0));
-  CurDAG->RemoveDeadNode(N);
-
-  return true;
-}
-
-template <> bool GameBoyDAGToDAGISel::select<ISD::CopyFromReg>(SDNode *N) {
-  // Use this to specify a load into A or BC or DE.
-  // This should not conflict, as only HL is call-saved so even nested
-  // function calls will have BC and DE clobbered.
-
-}
-
-/*
-template <> bool GameBoyDAGToDAGISel::select<ISD::LOAD>(SDNode *N) {
-  // The purpose of this is to select an appropriate GameBoy LOAD instruction
-  // based on the input DAG.
-  // Game Boy supports a fairly small range of loading instructions- because we 
-  // are targeting RGBASM a lot of the banked access may be able to be
-  // extracted away.
-
-  const LoadSDNode *LD = cast<LoadSDNode>(N);
-  // Handle indexed loads later. This will incorporate the use of LD A, (HL+) and
-  // similar; this occurs when a program memory access happens and is hence different
-  // to how AVR handles this.
-
-  // If this is a program memory load, then it will attempt to access an address in
-  // a bank. This must be handled accordingly.
-
-  MVT VT = LD->getMemoryVT().getSimpleVT();
-  SDValue Chain = LD->getChain();
-  SDValue Ptr = LD->getBasePtr();
-  SDNode *ResNode;
-  SDLoc DL(N); 
-
-  // Game Boy will load from a memory bank. The only guaranteed bank is ROM0;
-  // RGBLINK will see $0000 - $3FFF as the minimum range, or $0000 - $7FFF if
-  // tinyROM mode is enabled in the Linker. This can most likely be implemented
-  // via the Subtarget. Since Game Boy does not focus on those complex loads, 
-  // we only need to handle this series of loads (in order of rough commonality):
-  //
-  // Load Immediate (Majority of LOAD instructions, not transfer instructions)
-  switch (VT.SimpleTy) {
-    case MVT::i8:
-      // Simple i8 immediate load into a register.
-      // Only allow Program Memory Bank 0 at the moment.
-      SDValue NC = CurDAG->getTargetConstant(0, DL, MVT::i8);
-      // Create a simple load, do not do anything else to it.
-      ResNode = CurDAG->getMachineNode(GameBoy::LDRdImm8, DL, MVT::i8, NC);
-      break;
-    case MVT::i16:
-      break;
-  }
-  // Load Register Direct - Examples include LD A, (rr) or LD r, (rr)
-  // Load Address (Pointer) - This is only found in LD A, (a16) and LDH A, (a8)
-  // Load Register Indirect - LD A, (C) is actually LD A, (FF00 + C)
-  // Load Register Indexed - Handled above.
-
-
-  // Replace the SDAG LOAD node with the one we've selected.
-  CurDAG->setNodeMemRefs(cast<MachineSDNode>(ResNode), {LD->getMemOperand()});
-
-  ReplaceUses(SDValue(N, 0), SDValue(ResNode, 0));
-  ReplaceUses(SDValue(N, 1), SDValue(ResNode, 1));
-  CurDAG->RemoveDeadNode(N);
-
-  return true;
-}
-*/
-/*
-
-template <> bool GameBoyDAGToDAGISel::select<ISD::LOAD>(SDNode *N) {
-  const LoadSDNode *LD = cast<LoadSDNode>(N);
-  if (!GameBoy::isProgramMemoryAccess(LD)) {
-    // Check if the opcode can be converted into an indexed load.
-    return selectIndexedLoad(N);
-  }
-
-  if (!Subtarget->hasLPM())
-    report_fatal_error("cannot load from program memory on this mcu");
-
-  int ProgMemBank = GameBoy::getProgramMemoryBank(LD);
-  if (ProgMemBank < 0 || ProgMemBank > 5)
-    report_fatal_error("unexpected program memory bank");
-
-  // This is a flash memory load, move the pointer into R31R30 and emit
-  // the lpm instruction.
-  MVT VT = LD->getMemoryVT().getSimpleVT();
-  SDValue Chain = LD->getChain();
-  SDValue Ptr = LD->getBasePtr();
-  SDNode *ResNode;
-  SDLoc DL(N);
-
-  Chain = CurDAG->getCopyToReg(Chain, DL, GameBoy::R31R30, Ptr, SDValue());
-  Ptr = CurDAG->getCopyFromReg(Chain, DL, GameBoy::R31R30, MVT::i16,
-                               Chain.getValue(1));
-
-  // Check if the opcode can be converted into an indexed load.
-  if (unsigned LPMOpc = selectIndexedProgMemLoad(LD, VT, ProgMemBank)) {
-    // It is legal to fold the load into an indexed load.
-    if (ProgMemBank == 0) {
-      ResNode =
-          CurDAG->getMachineNode(LPMOpc, DL, VT, MVT::i16, MVT::Other, Ptr);
-    } else {
-      // Do not combine the LDI instruction into the ELPM pseudo instruction,
-      // since it may be reused by other ELPM pseudo instructions.
-      SDValue NC = CurDAG->getTargetConstant(ProgMemBank, DL, MVT::i8);
-      auto *NP = CurDAG->getMachineNode(GameBoy::LDRdImm8, DL, MVT::i8, NC);
-      // auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
-      ResNode = CurDAG->getMachineNode(LPMOpc, DL, VT, MVT::i16, MVT::Other,
-                                       Ptr, SDValue(NP, 0));
-    }
-  } else {
-    // Selecting an indexed load is not legal, fallback to a normal load.
-    switch (VT.SimpleTy) {
-    case MVT::i8:
-      if (ProgMemBank == 0) {
-        ResNode =
-            CurDAG->getMachineNode(GameBoy::LPMRdZ, DL, MVT::i8, MVT::Other, Ptr);
-      } else {
-        // Do not combine the LDI instruction into the ELPM pseudo instruction,
-        // since it may be reused by other ELPM pseudo instructions.
-        SDValue NC = CurDAG->getTargetConstant(ProgMemBank, DL, MVT::i8);
-        // auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
-        auto *NP = CurDAG->getMachineNode(GameBoy::LDRdImm8, DL, MVT::i8, NC);
-        ResNode = CurDAG->getMachineNode(GameBoy::ELPMBRdZ, DL, MVT::i8, MVT::Other,
-                                         Ptr, SDValue(NP, 0));
-      }
-      break;
-    case MVT::i16:
-      if (ProgMemBank == 0) {
-        ResNode =
-            CurDAG->getMachineNode(GameBoy::LPMWRdZ, DL, MVT::i16, MVT::Other, Ptr);
-      } else {
-        // Do not combine the LDI instruction into the ELPM pseudo instruction,
-        // since LDI requires the destination register in range R16~R31.
-        SDValue NC = CurDAG->getTargetConstant(ProgMemBank, DL, MVT::i8);
-        // auto *NP = CurDAG->getMachineNode(GameBoy::LDIRdK, DL, MVT::i8, NC);
-        auto *NP = CurDAG->getMachineNode(GameBoy::LDRdImm8, DL, MVT::i8, NC);
-        ResNode = CurDAG->getMachineNode(GameBoy::ELPMWRdZ, DL, MVT::i16,
-                                         MVT::Other, Ptr, SDValue(NP, 0));
-      }
-      break;
-    default:
-      llvm_unreachable("Unsupported VT!");
-    }
-  }
-
-  // Transfer memory operands.
-  CurDAG->setNodeMemRefs(cast<MachineSDNode>(ResNode), {LD->getMemOperand()});
-
-  ReplaceUses(SDValue(N, 0), SDValue(ResNode, 0));
-  ReplaceUses(SDValue(N, 1), SDValue(ResNode, 1));
-  CurDAG->RemoveDeadNode(N);
-
-  return true;
-}
-*/
-
-template <> bool GameBoyDAGToDAGISel::select<GameBoyISD::CALL>(SDNode *N) {
-  SDValue InFlag;
-  SDValue Chain = N->getOperand(0);
-  SDValue Callee = N->getOperand(1);
-  unsigned LastOpNum = N->getNumOperands() - 1;
-
-  // Direct calls are autogenerated.
-  unsigned Op = Callee.getOpcode();
-  if (Op == ISD::TargetGlobalAddress || Op == ISD::TargetExternalSymbol) {
-    return false;
-  }
-
-  // Skip the incoming flag if present
-  if (N->getOperand(LastOpNum).getValueType() == MVT::Glue) {
-    --LastOpNum;
-  }
-
-  SDLoc DL(N);
-  Chain = CurDAG->getCopyToReg(Chain, DL, GameBoy::R31R30, Callee, InFlag);
-  SmallVector<SDValue, 8> Ops;
-  Ops.push_back(CurDAG->getRegister(GameBoy::R31R30, MVT::i16));
-
-  // Map all operands into the new node.
-  for (unsigned i = 2, e = LastOpNum + 1; i != e; ++i) {
-    Ops.push_back(N->getOperand(i));
-  }
-
-  Ops.push_back(Chain);
-  Ops.push_back(Chain.getValue(1));
-
-  SDNode *ResNode =
-      CurDAG->getMachineNode(GameBoy::ICALL, DL, MVT::Other, MVT::Glue, Ops);
-
-  ReplaceUses(SDValue(N, 0), SDValue(ResNode, 0));
-  ReplaceUses(SDValue(N, 1), SDValue(ResNode, 1));
-  CurDAG->RemoveDeadNode(N);
-
-  return true;
-}
-
-template <> bool GameBoyDAGToDAGISel::select<ISD::BRIND>(SDNode *N) {
-  SDValue Chain = N->getOperand(0);
-  SDValue JmpAddr = N->getOperand(1);
-
-  SDLoc DL(N);
-  // Move the destination address of the indirect branch into R31R30.
-  Chain = CurDAG->getCopyToReg(Chain, DL, GameBoy::R31R30, JmpAddr);
-  SDNode *ResNode = CurDAG->getMachineNode(GameBoy::IJMP, DL, MVT::Other, Chain);
-
-  ReplaceUses(SDValue(N, 0), SDValue(ResNode, 0));
-  CurDAG->RemoveDeadNode(N);
-
-  return true;
-}
-
-bool GameBoyDAGToDAGISel::selectMultiplication(llvm::SDNode *N) {
-  SDLoc DL(N);
-  MVT Type = N->getSimpleValueType(0);
-
-  assert(Type == MVT::i8 && "unexpected value type");
-
-  bool isSigned = N->getOpcode() == ISD::SMUL_LOHI;
-  unsigned MachineOp = isSigned ? GameBoy::MULSRdRr : GameBoy::MULRdRr;
-
-  SDValue Lhs = N->getOperand(0);
-  SDValue Rhs = N->getOperand(1);
-  SDNode *Mul = CurDAG->getMachineNode(MachineOp, DL, MVT::Glue, Lhs, Rhs);
-  SDValue InChain = CurDAG->getEntryNode();
-  SDValue InGlue = SDValue(Mul, 0);
-
-  // Copy the low half of the result, if it is needed.
-  if (N->hasAnyUseOfValue(0)) {
-    SDValue CopyFromLo =
-        CurDAG->getCopyFromReg(InChain, DL, GameBoy::R0, Type, InGlue);
-
-    ReplaceUses(SDValue(N, 0), CopyFromLo);
-
-    InChain = CopyFromLo.getValue(1);
-    InGlue = CopyFromLo.getValue(2);
-  }
-
-  // Copy the high half of the result, if it is needed.
-  if (N->hasAnyUseOfValue(1)) {
-    SDValue CopyFromHi =
-        CurDAG->getCopyFromReg(InChain, DL, GameBoy::R1, Type, InGlue);
-
-    ReplaceUses(SDValue(N, 1), CopyFromHi);
-
-    InChain = CopyFromHi.getValue(1);
-    InGlue = CopyFromHi.getValue(2);
-  }
-
-  CurDAG->RemoveDeadNode(N);
-
-  // We need to clear R1. This is currently done (dirtily)
-  // using a custom inserter.
-
-  return true;
-}
-
 void GameBoyDAGToDAGISel::Select(SDNode *N) {
   // If we have a custom node, we already have selected!
   if (N->isMachineOpcode()) {
@@ -631,23 +331,7 @@ bool GameBoyDAGToDAGISel::trySelect(SDNode *N) {
 
   switch (Opcode) {
   // Nodes we fully handle.
-  // case ISD::CopyFromReg:
-    // return select<ISD::CopyFromReg>(N);
-  case ISD::FrameIndex:
-    return select<ISD::FrameIndex>(N);
-  case ISD::BRIND:
-    return select<ISD::BRIND>(N);
-  case ISD::UMUL_LOHI:
-  case ISD::SMUL_LOHI:
-    return selectMultiplication(N);
-
-  // Nodes we handle partially. Other cases are autogenerated
-  case ISD::STORE:
-    return select<ISD::STORE>(N);
-  // case ISD::LOAD:
-  //   return select<ISD::LOAD>(N);
-  case GameBoyISD::CALL:
-    return select<GameBoyISD::CALL>(N);
+  // case ___:
   default:
     return false;
   }

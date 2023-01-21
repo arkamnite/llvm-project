@@ -642,8 +642,8 @@ bool GameBoyAsmParser::ParseInstruction(ParseInstructionInfo &Info,
 
     first = false;
 
-    unsigned MatchResult;
-    // auto MatchResult = MatchOperandParserImpl(Operands, Mnemonic);
+    // unsigned MatchResult;
+    auto MatchResult = MatchOperandParserImpl(Operands, Mnemonic);
     // TODO: Check that this is working okay!
     if (MatchResult == MatchOperand_Success) {
       continue;

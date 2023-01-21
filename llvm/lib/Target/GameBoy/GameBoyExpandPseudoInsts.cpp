@@ -366,15 +366,15 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdRr>(Block &MBB, BlockIt MBBI) {
   bool DstIsDead = MI.getOperand(1).isDead();
 
   if (SrcReg.id() == DstReg.id()) {  
-    dbgs() << "Expanding AddRdRr into Add A Rr\n";
-    printAllOperands(MI);
+    // dbgs() << "Expanding AddRdRr into Add A Rr\n";
+    // printAllOperands(MI);
     // ADD A, Rr
     buildMI(MBB, MBBI, GameBoy::AddARr)
       .addReg(GameBoy::RA, RegState::Define)
       .addReg(SrcReg, getKillRegState(SrcIsKill));
   } else {
-    dbgs() << "Expanding AddRd(" << DstReg.id() << ") Rr(" << SrcReg.id() << ")\n";
-    printAllOperands(MI);
+    // dbgs() << "Expanding AddRd(" << DstReg.id() << ") Rr(" << SrcReg.id() << ")\n";
+    // printAllOperands(MI);
     // LD A, Rr
     buildMI(MBB, MBBI, GameBoy::LDRdRr)
       .addReg(GameBoy::RA, RegState::Define)
@@ -400,7 +400,7 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
-  dbgs() << "Expanding AddRdImm8\n";
+  // dbgs() << "Expanding AddRdImm8\n";
   auto Val = MI.getOperand(1).getImm();
   // ADD A, Imm8
   buildMI(MBB, MBBI, GameBoy::AddAImm8, GameBoy::RA).addImm(Val);
@@ -419,6 +419,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt M
   MachineInstr &MI = *MBBI;
   // Register DstReg = MI.getOperand(0).getReg();
   auto v = MI.getNumOperands();
+  llvm_unreachable("Incomplete AddRdPairRrPair");
   dbgs() << "INCOMPLETE Expanding AddRdPairRrPair, found " << v << " operands in original function\n";
   for (unsigned int i = 0; i < v; i++) {
     dbgs() << MI.getOperand(i) << "\n";
@@ -430,7 +431,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt M
 // TODO: Investigate optimisation using A and HIGH(n) LOW(n) from RGBASM.
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI) {
-  dbgs() << "Expanding AddRpdImm16\n";
+  // dbgs() << "Expanding AddRpdImm16\n";
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(2).getReg();
@@ -490,7 +491,30 @@ bool GameBoyExpandPseudo::expand<GameBoy::XorRdImm8>(Block &MBB, BlockIt MBBI) {
 
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::CpRdRr>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete CpRdRr");
+  // CP Rd, Rr
+  // The GB can only make comparisons to the A register.
+  // This means that if Rd is not in A, then it must be moved there and
+  // restored afterwards back to Rd if a move was necessary.
+  // Most 8-bit comparisons will have either Rd or Rr in A.
+
+  // Collect all necessary information
+  MachineInstr &MI = *MBBI;
+  Register DstReg = MI.getOperand(0).getReg();
+  Register SrcReg = MI.getOperand(1).getReg();
+  auto SrcIsKill = MI.getOperand(1).isKill();
+  // Check whether the DstReg is A
+  auto needsMove = !GameBoy::GPRLoadRegClass.contains(DstReg);
+  
+  if (needsMove)
+    llvm_unreachable("Incomplete CpRdRr");
+
+  // Perform a comparison between A and whatever register is needed here.
+  buildMI(MBB, MBBI, GameBoy::CPARr)
+    .addReg(DstReg)
+    .addReg(SrcReg, getKillRegState(SrcIsKill));
+
+  // Remove the old instruction
+  MI.removeFromParent();
   return true;
 }
 

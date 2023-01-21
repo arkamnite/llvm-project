@@ -979,13 +979,13 @@ let isBranch = 1, isTerminator = 1, Uses = [RF] in {
                   (outs),
                   (ins relbrtarget_7 : $target),
                   "jr\tnz, $target",
-                  [(GameBoybrcond bb : $target, GameBoy_COND_NZ)]>;
+                  [(GameBoybrcond bb : $target, GameBoy_COND_NE)]>;
 
   def JRZk : GBF0<0b11001010,
                   (outs),
                   (ins relbrtarget_7 : $target),
                   "jr\tz, $target",
-                  [(GameBoybrcond bb : $target, GameBoy_COND_Z)]>;
+                  [(GameBoybrcond bb : $target, GameBoy_COND_EQ)]>;
   
   def JRNCk : GBF0< 0b11010010,
                     (outs),
@@ -1005,13 +1005,15 @@ let isBranch = 1, isTerminator = 1, Uses = [RF] in {
   def JREQk : Pseudo< (outs),
                       (ins relbrtarget_7 : $target),
                       "jr\teq, $target",
-                      [(GameBoybrcond bb : $target, GameBoy_COND_EQ)]>;
+                      []>;
+                      // [(GameBoybrcond bb : $target, GameBoy_COND_EQ)]>;
 
   // Not equal
   def JRNEk : Pseudo< (outs),
                       (ins relbrtarget_7 : $target),
                       "jr\tne, $target", 
-                      [(GameBoybrcond bb : $target, GameBoy_COND_NE)]>;
+                      []>;
+                      // [(GameBoybrcond bb : $target, GameBoy_COND_NE)]>;
 
   // Greater than
   def JRGTEk : Pseudo<(outs),
@@ -3172,7 +3174,8 @@ def Asr16 : ShiftPseudo<(outs DREGS
 
 // lowered to a copy from R1, which contains the value zero.
 let usesCustomInserter=1 in
-def CopyR1 : Pseudo<(outs GPR8:$rd), (ins), "clrz\t$rd", [(set i8:$rd, 0)]>;
+// def CopyR1 : Pseudo<(outs GPR8:$rd), (ins), "clrz\t$rd", [(set i8:$rd, 0)]>;
+def CopyR1 : Pseudo<(outs GPR8:$rd), (ins), "clrz\t$rd", []>;
 
 //===----------------------------------------------------------------------===//
 // Non-Instruction Patterns

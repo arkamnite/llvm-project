@@ -240,10 +240,11 @@ const MCInstrDesc &GameBoyInstrInfo::getBrCond(GameBoyCC::CondCodes CC) const {
   default:
     llvm_unreachable("Unknown condition code!");
   case GameBoyCC::COND_EQ:
-    return get(GameBoy::JREQk);
+    return get(GameBoy::JRZk);
+    // return get(GameBoy::JREQk);
     // return get(GameBoy::BREQk);
   case GameBoyCC::COND_NE:
-    return get(GameBoy::JRNEk);
+    return get(GameBoy::JRNZk);
   case GameBoyCC::COND_GE:
     return get(GameBoy::JRGTEk);
   case GameBoyCC::COND_LT:
@@ -264,8 +265,10 @@ GameBoyCC::CondCodes GameBoyInstrInfo::getCondFromBranchOpc(unsigned Opc) const 
   default:
     return GameBoyCC::COND_INVALID;
   case GameBoy::JREQk:
+  case GameBoy::JRZk:
     return GameBoyCC::COND_EQ;
   case GameBoy::JRNEk:
+  case GameBoy::JRNZk:
     return GameBoyCC::COND_NE;
   // case GameBoy::BRSHk:
   //   return GameBoyCC::COND_SH;
@@ -565,6 +568,8 @@ GameBoyInstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
   // case GameBoy::RJMPk:
   case GameBoy::JRNEk:
   case GameBoy::JREQk:
+  case GameBoy::JRZk:
+  case GameBoy::JRNZk:
   // case GameBoy::JRSHk:
   // case GameBoy::JRLOk:
   // case GameBoy::JRMIk:
@@ -605,6 +610,8 @@ bool GameBoyInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
   // case GameBoy::JRPLk:
   case GameBoy::JREQk:
   case GameBoy::JRNEk:
+  case GameBoy::JRZk:
+  case GameBoy::JRNZk:
   case GameBoy::JRk:
   case GameBoy::JRGTEk:
   case GameBoy::JRLTk:

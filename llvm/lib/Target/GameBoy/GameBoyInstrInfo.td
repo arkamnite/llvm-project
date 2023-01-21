@@ -1080,6 +1080,30 @@ def SEXT : Pseudo<(outs GPRPair : $dst),
 // HALT
 // STOP
 
+def Select8 : SelectPseudo<(outs GPR
+                            : $dst),
+                           (ins GPR
+                            : $src, GPR
+                            : $src2, i8imm
+                            : $cc),
+                           "# Select8 PSEUDO", [(set i8
+                                                 : $dst, (GameBoyselectcc i8
+                                                          : $src, i8
+                                                          : $src2, imm
+                                                          : $cc))]>;
+
+def Select16 : SelectPseudo<(outs GPRPair
+                             : $dst),
+                            (ins GPRPair
+                             : $src, GPRPair
+                             : $src2, i8imm
+                             : $cc),
+                            "# Select16 PSEUDO", [(set i16
+                                                   : $dst, (GameBoyselectcc i16
+                                                            : $src, i16
+                                                            : $src2, imm
+                                                            : $cc))]>;
+
 //===----------------------------------------------------------------------===//
 //===----------------------------------------------------------------------===//
 // AVR Instruction list
@@ -3045,29 +3069,6 @@ let hasSideEffects = 0 in {
                                           "spwrite\t$dst, $src", []>;
 }
 
-def Select8 : SelectPseudo<(outs GPR8
-                            : $dst),
-                           (ins GPR8
-                            : $src, GPR8
-                            : $src2, i8imm
-                            : $cc),
-                           "# Select8 PSEUDO", [(set i8
-                                                 : $dst, (GameBoyselectcc i8
-                                                          : $src, i8
-                                                          : $src2, imm
-                                                          : $cc))]>;
-
-def Select16 : SelectPseudo<(outs DREGS
-                             : $dst),
-                            (ins DREGS
-                             : $src, DREGS
-                             : $src2, i8imm
-                             : $cc),
-                            "# Select16 PSEUDO", [(set i16
-                                                   : $dst, (GameBoyselectcc i16
-                                                            : $src, i16
-                                                            : $src2, imm
-                                                            : $cc))]>;
 
 def Lsl8 : ShiftPseudo<(outs GPR8
                         : $dst),

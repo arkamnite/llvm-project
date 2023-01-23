@@ -654,6 +654,18 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRLTk>(Block &MBB, BlockIt MBBI) {
   return true; 
 }
 
+template <>
+bool GameBoyExpandPseudo::expand<GameBoy::JRSHk>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete JRSHk");
+  return true; 
+}
+
+template <>
+bool GameBoyExpandPseudo::expand<GameBoy::JRLOk>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete JRLOk");
+  return true; 
+}
+
 bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   int Opcode = MBBI->getOpcode();
@@ -684,6 +696,8 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::JRNEk);
     EXPAND(GameBoy::JRGTEk);
     EXPAND(GameBoy::JRLTk);
+    EXPAND(GameBoy::JRSHk);
+    EXPAND(GameBoy::JRLOk);
   }
 #undef EXPAND
   return false;

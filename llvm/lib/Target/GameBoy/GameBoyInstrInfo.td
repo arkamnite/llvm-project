@@ -1015,7 +1015,7 @@ let isBranch = 1, isTerminator = 1, Uses = [RF] in {
                       []>;
                       // [(GameBoybrcond bb : $target, GameBoy_COND_NE)]>;
 
-  // Greater than
+  // Greater than or equal to
   def JRGTEk : Pseudo<(outs),
                       (ins relbrtarget_7 : $target),
                       "jr\tgt, $target", 
@@ -1026,6 +1026,19 @@ let isBranch = 1, isTerminator = 1, Uses = [RF] in {
                       (ins relbrtarget_7 : $target),
                       "jr\tlt, $target", 
                       [(GameBoybrcond bb : $target, GameBoy_COND_LT)]>;
+
+  // Same or higher (unsigned greater than or equal to)
+  def JRSHk : Pseudo< (outs),
+                      (ins relbrtarget_7 : $target),
+                      "jr\tsh, $target",
+                      [(GameBoybrcond bb : $target, GameBoy_COND_SH)]>;
+  
+  // Lower than (unsigned less than)
+  def JRLOk : Pseudo< (outs),
+                      (ins relbrtarget_7 : $target),
+                      "jr\tlo, $target",
+                      [(GameBoybrcond bb : $target, GameBoy_COND_LO)]>;
+
 }
 
 //===----------------------------------------------------------------------===//

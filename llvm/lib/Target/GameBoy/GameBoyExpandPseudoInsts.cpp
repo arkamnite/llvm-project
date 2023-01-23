@@ -656,13 +656,25 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRLTk>(Block &MBB, BlockIt MBBI) {
 
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::JRSHk>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete JRSHk");
+  // Same as X >= Y
+  // Comparison has already been made, so we only need to include the jumps here.
+  // What are the operands of the instruction?
+  MachineInstr &MI = *MBBI;
+  auto branch = MI.getOperand(0).getMBB();
+
+  // Check if the operand is equal.
+  buildMI(MBB, MBBI, GameBoy::JRZk).addMBB(branch);
+  // Check if the operand is greater than X
+  buildMI(MBB, MBBI, GameBoy::JRCk).addMBB(branch);
+  // Remove the old instruction.
+  MI.removeFromParent();
+  // llvm_unreachable("Incomplete JRSHk");
   return true; 
 }
 
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::JRLOk>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete JRLOk");
+  // llvm_unreachable("Incomplete JRLOk");
   return true; 
 }
 

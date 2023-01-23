@@ -745,12 +745,12 @@ def XorRdImm8 : Pseudo< (outs GPR : $rd),
                         [(set i8 : $rd, (xor i8 : $src, i8 : $n))]>;
 }
 
-let Defs = [RF] in {
+let Defs = [RF, RA], Uses = [RA] in {
 // CP Rd, Rr
 def CpRdRr : Pseudo<(outs),
                     (ins GPR : $rd, GPR : $rr),
                     "cp\t$rd, $rr",
-                    [(GameBoycmp i8 : $rd, i8 : $rr), (implicit RF)]>;
+                    [(GameBoycmp i8 : $rd, i8 : $rr), (implicit RF, RA)]>;
 
 // CPW Rd, Rr
 def CpWRdRr : Pseudo< (outs),

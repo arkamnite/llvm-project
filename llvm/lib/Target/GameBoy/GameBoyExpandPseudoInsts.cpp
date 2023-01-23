@@ -506,11 +506,12 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpRdRr>(Block &MBB, BlockIt MBBI) {
   auto needsMove = !GameBoy::GPRLoadRegClass.contains(DstReg);
   
   if (needsMove)
-    llvm_unreachable("Incomplete CpRdRr");
+    buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(GameBoy::RA, RegState::Define).addReg(DstReg);
+    // llvm_unreachable("Incomplete CpRdRr");
 
   // Perform a comparison between A and whatever register is needed here.
   buildMI(MBB, MBBI, GameBoy::CPARr)
-    .addReg(DstReg)
+    .addReg(GameBoy::RA)
     .addReg(SrcReg, getKillRegState(SrcIsKill));
 
   // Remove the old instruction

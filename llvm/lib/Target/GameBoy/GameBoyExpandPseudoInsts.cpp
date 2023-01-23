@@ -502,12 +502,12 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpRdRr>(Block &MBB, BlockIt MBBI) {
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(1).getReg();
   auto SrcIsKill = MI.getOperand(1).isKill();
+  
   // Check whether the DstReg is A
   auto needsMove = !GameBoy::GPRLoadRegClass.contains(DstReg);
   
   if (needsMove)
     buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(GameBoy::RA, RegState::Define).addReg(DstReg);
-    // llvm_unreachable("Incomplete CpRdRr");
 
   // Perform a comparison between A and whatever register is needed here.
   buildMI(MBB, MBBI, GameBoy::CPARr)
@@ -651,7 +651,23 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRGTEk>(Block &MBB, BlockIt MBBI) {
 
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::JRLTk>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete JRLTk");
+  // Signed comparison for A > X
+  // The backend will change this to A >= X + 1
+  // Bit testing is not implemented yet, so we must emit a warning.
+  dbgs() << "WARNING: Unimplemented bit-set for JRLTk\n";
+  MachineInstr &MI = *MBBI;
+
+  // The false branch
+  auto branch = MI.getOperand(0).getMBB();
+
+  // First we must set the bits accordingly.
+
+  // We will jump to the false branch if A < X + 1
+  buildMI(MBB, MBBI, GameBoy::JRCk).addMBB(branch);
+
+  // Remove the old instruction.
+  MI.removeFromParent();
+  // llvm_unreachable("Incomplete JRLTk");
   return true; 
 }
 
@@ -663,8 +679,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRSHk>(Block &MBB, BlockIt MBBI) {
   // Comparison has already been made, so we only need to include the jumps here.
   MachineInstr &MI = *MBBI;
 
-  // The false branch. We jump to here if we find that
-  // the 
+  // The false branch.
   auto branch = MI.getOperand(0).getMBB();
 
   // Check if the operand is equal.
@@ -675,7 +690,6 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRSHk>(Block &MBB, BlockIt MBBI) {
   buildMI(MBB, MBBI, GameBoy::JRNCk).addMBB(branch);
   // Remove the old instruction.
   MI.removeFromParent();
-  // llvm_unreachable("Incomplete JRSHk");
   return true; 
 }
 

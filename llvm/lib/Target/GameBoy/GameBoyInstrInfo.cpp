@@ -249,13 +249,17 @@ const MCInstrDesc &GameBoyInstrInfo::getBrCond(GameBoyCC::CondCodes CC) const {
     return get(GameBoy::JRGTEk);
   case GameBoyCC::COND_LT:
     return get(GameBoy::JRLTk);
-  // case GameBoyCC::COND_SH:
-    // return get(GameBoy::BRSHk);
-  // case GameBoyCC::COND_LO:
-    // return get(GameBoy::BRLOk);
-  // case GameBoyCC::COND_MI:
+  case GameBoyCC::COND_SH:
+    // llvm_unreachable("Unknown condition code 0!");
+    return get(GameBoy::JRSHk);
+  case GameBoyCC::COND_LO:
+    // llvm_unreachable("Unknown condition code 1!");
+    return get(GameBoy::JRLOk);
+  case GameBoyCC::COND_MI:
+    llvm_unreachable("Unknown condition code 2!");
     // return get(GameBoy::BRMIk);
-  // case GameBoyCC::COND_PL:
+  case GameBoyCC::COND_PL:
+    llvm_unreachable("Unknown condition code 3!");
     // return get(GameBoy::BRPLk);
   }
 }
@@ -270,10 +274,10 @@ GameBoyCC::CondCodes GameBoyInstrInfo::getCondFromBranchOpc(unsigned Opc) const 
   case GameBoy::JRNEk:
   case GameBoy::JRNZk:
     return GameBoyCC::COND_NE;
-  // case GameBoy::BRSHk:
-  //   return GameBoyCC::COND_SH;
-  // case GameBoy::BRLOk:
-  //   return GameBoyCC::COND_LO;
+  case GameBoy::JRSHk:
+    return GameBoyCC::COND_SH;
+  case GameBoy::JRLOk:
+    return GameBoyCC::COND_LO;
   // case GameBoy::BRMIk:
   //   return GameBoyCC::COND_MI;
   // case GameBoy::BRPLk:
@@ -378,6 +382,7 @@ bool GameBoyInstrInfo::analyzeBranch(MachineBasicBlock &MBB,
       MachineBasicBlock *TargetBB = I->getOperand(0).getMBB();
       if (AllowModify && UnCondBrIter != MBB.end() &&
           MBB.isLayoutSuccessor(TargetBB)) {
+        continue;
         // If we can modify the code and it ends in something like:
         //
         //     jCC L1
@@ -570,8 +575,8 @@ GameBoyInstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
   case GameBoy::JREQk:
   case GameBoy::JRZk:
   case GameBoy::JRNZk:
-  // case GameBoy::JRSHk:
-  // case GameBoy::JRLOk:
+  case GameBoy::JRSHk:
+  case GameBoy::JRLOk:
   // case GameBoy::JRMIk:
   // case GameBoy::JRPLk:
   case GameBoy::JRGTEk:
@@ -604,10 +609,10 @@ bool GameBoyInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
   //   return isIntN(13, BrOffset);
   // case GameBoy::BRBSsk:
   // case GameBoy::BRBCsk:
-  // case GameBoy::JRSHk:
-  // case GameBoy::JRLOk:
   // case GameBoy::JRMIk:
   // case GameBoy::JRPLk:
+  case GameBoy::JRSHk:
+  case GameBoy::JRLOk:
   case GameBoy::JREQk:
   case GameBoy::JRNEk:
   case GameBoy::JRZk:

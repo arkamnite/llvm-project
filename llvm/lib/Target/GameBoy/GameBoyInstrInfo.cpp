@@ -582,6 +582,8 @@ GameBoyInstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
   case GameBoy::JRGTEk:
   case GameBoy::JRLTk:
   case GameBoy::JRk:
+  case GameBoy::JRCk:
+  case GameBoy::JRNCk:
     return MI.getOperand(0).getMBB();
   // case GameBoy::BRBSsk:
   // case GameBoy::BRBCsk:
@@ -620,6 +622,8 @@ bool GameBoyInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
   case GameBoy::JRk:
   case GameBoy::JRGTEk:
   case GameBoy::JRLTk:
+  case GameBoy::JRCk:
+  case GameBoy::JRNCk:
     return isIntN(7, BrOffset);
   }
 }

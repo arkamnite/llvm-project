@@ -656,16 +656,22 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRLTk>(Block &MBB, BlockIt MBBI) {
 
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::JRSHk>(Block &MBB, BlockIt MBBI) {
-  // Same as X >= Y
+  // Same as A <= X
+  // This is first transformed to TRUE = A < X + 1
+  // Then it is transformed to JUMP FALSE = A >= X + 1
   // Comparison has already been made, so we only need to include the jumps here.
-  // What are the operands of the instruction?
   MachineInstr &MI = *MBBI;
+
+  // The false branch. We jump to here if we find that
+  // the 
   auto branch = MI.getOperand(0).getMBB();
 
   // Check if the operand is equal.
+  // JR A = X, False
   buildMI(MBB, MBBI, GameBoy::JRZk).addMBB(branch);
   // Check if the operand is greater than X
-  buildMI(MBB, MBBI, GameBoy::JRCk).addMBB(branch);
+  // JR A > X, False
+  buildMI(MBB, MBBI, GameBoy::JRNCk).addMBB(branch);
   // Remove the old instruction.
   MI.removeFromParent();
   // llvm_unreachable("Incomplete JRSHk");
@@ -675,6 +681,15 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRSHk>(Block &MBB, BlockIt MBBI) {
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::JRLOk>(Block &MBB, BlockIt MBBI) {
   // llvm_unreachable("Incomplete JRLOk");
+  // Same as A > X
+  // This gets flipped to JUMP FALSE = A <= X?
+  MachineInstr &MI = *MBBI;
+  // The false branch
+  auto branch = MI.getOperand(0).getMBB();
+  // Use basic less-than comparison
+  buildMI(MBB, MBBI, GameBoy::JRCk).addMBB(branch);
+  // Remove old instruction
+  MI.removeFromParent();
   return true; 
 }
 

@@ -645,7 +645,29 @@ bool GameBoyExpandPseudo::expand<GameBoy::JRNEk>(Block &MBB, BlockIt MBBI) {
 
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::JRGTEk>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete JRGTEk");
+  // Signed comparison for A <= X
+  // This is first transformed to A < X + 1
+  // Then, the backend produces a FALSE branch and
+  // jumps to this if A >= X + 1
+
+  MachineInstr &MI = *MBBI;
+
+  // The false branch
+  auto branch = MI.getOperand(0).getMBB();
+
+  // Bit setting is required to convert a signed comparison
+  // to an unsigned comparison. This is not yet implemented.
+  dbgs() << "WARNING: Unimplemented bit-set for JRGTEk\n";
+
+  // We will jump to the false branch if A >= X + 1
+  // First jump if A = X + 1
+  buildMI(MBB, MBBI, GameBoy::JRZk).addMBB(branch);
+  // Jump is A > X + 1
+  buildMI(MBB, MBBI, GameBoy::JRNCk).addMBB(branch);
+
+  // Remove the old instruction
+  MI.removeFromParent();
+  // llvm_unreachable("Incomplete JRGTEk");
   return true; 
 }
 
@@ -653,14 +675,14 @@ template <>
 bool GameBoyExpandPseudo::expand<GameBoy::JRLTk>(Block &MBB, BlockIt MBBI) {
   // Signed comparison for A > X
   // The backend will change this to A >= X + 1
-  // Bit testing is not implemented yet, so we must emit a warning.
-  dbgs() << "WARNING: Unimplemented bit-set for JRLTk\n";
   MachineInstr &MI = *MBBI;
 
   // The false branch
   auto branch = MI.getOperand(0).getMBB();
 
   // First we must set the bits accordingly.
+  // Bit testing is not implemented yet, so we must emit a warning.
+  dbgs() << "WARNING: Unimplemented bit-set for JRLTk\n";
 
   // We will jump to the false branch if A < X + 1
   buildMI(MBB, MBBI, GameBoy::JRCk).addMBB(branch);

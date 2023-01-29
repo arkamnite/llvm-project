@@ -99,16 +99,8 @@ void GameBoyInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     return;
   }
 
-  if (OpNo > MI->size()) {
-    // Not all operands are correctly disassembled at the moment. This means
-    // that some machine instructions won't have all the necessary operands
-    // set.
-    // To avoid asserting, print <unknown> instead until the necessary support
-    // has been implemented.
-    
-    O << OpNo << " <unknown> " << MI->size();
-    return;
-  } else if (OpNo == MI->size()) {
+  // See if we can skip over this non-printable operand.
+  if (OpNo >= MI->size()) {
     // We need to be able to disassemble the operand `def $reg` 
     // See if it is possible to skip over this operand. This is useful for scenarios where 
     // we are printing a definition-operand in the same instruction.
@@ -143,7 +135,7 @@ void GameBoyInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
 /// being encoded as a pc-relative value.
 void GameBoyInstPrinter::printPCRelImm(const MCInst *MI, unsigned OpNo,
                                    raw_ostream &O) {
-  if (OpNo >= MI->size()) {
+  if (OpNo > MI->size()) {
     // Not all operands are correctly disassembled at the moment. This means
     // that some machine instructions won't have all the necessary operands
     // set.
@@ -151,6 +143,9 @@ void GameBoyInstPrinter::printPCRelImm(const MCInst *MI, unsigned OpNo,
     // has been implemented.
     O << "<unknown>";
     return;
+  } else if (OpNo == MI->size()) {
+    // See if the next operand is printable
+    return printPCRelImm(MI, --OpNo, O);
   }
 
   const MCOperand &Op = MI->getOperand(OpNo);

@@ -591,6 +591,8 @@ SDValue GameBoyTargetLowering::getGameBoyCmp(SDValue LHS, SDValue RHS,
 
   SDValue Cmp;
 
+  Cmp = DAG.getNode(GameBoyISD::CMP, DL, MVT::Glue, LHS, RHS);
+  /*
   if (LHS.getSimpleValueType() == MVT::i16 && isa<ConstantSDNode>(RHS)) {
     // Generate a CPI/CPC pair if RHS is a 16-bit constant.
     SDValue LHSlo = DAG.getNode(ISD::EXTRACT_ELEMENT, DL, MVT::i8, LHS,
@@ -607,7 +609,7 @@ SDValue GameBoyTargetLowering::getGameBoyCmp(SDValue LHS, SDValue RHS,
     // Generate ordinary 16-bit comparison.
     Cmp = DAG.getNode(GameBoyISD::CMP, DL, MVT::Glue, LHS, RHS);
   }
-
+  */
   return Cmp;
 }
 

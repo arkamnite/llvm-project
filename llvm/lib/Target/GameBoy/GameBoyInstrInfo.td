@@ -1226,24 +1226,6 @@ let isCommutable = 1, Constraints = "$src = $rd", Defs = [SREG] in {
                                                         : $rr)),
                                                (implicit SREG)
                                              ]>;
-
-  // AIDW Rd, k
-  // Adds an immediate 6-bit value K to Rd, placing the result in Rd.
-  // def ADIWRdK
-  //     : FWRdK<0b0,
-  //             (outs GPRPair
-  //              : $rd),
-  //             (ins GPRPair
-  //              : $src, imm_arith6
-  //              : $k),
-  //             "adiw\t$rd, $k",
-  //             // []>,
-  //             [(set i16
-  //               : $rd, (add i16
-  //                       : $src, uimm6
-  //                       : $k)),
-  //              (implicit SREG)]>,
-  //       Requires<[HasADDSUBIW]>;
 }
 
 //===----------------------------------------------------------------------===//

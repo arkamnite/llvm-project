@@ -417,33 +417,19 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  // Register DstReg = MI.getOperand(0).getReg();
-  auto v = MI.getNumOperands();
-  llvm_unreachable("Incomplete AddRdPairRrPair");
-  dbgs() << "INCOMPLETE Expanding AddRdPairRrPair, found " << v << " operands in original function\n";
-  for (unsigned int i = 0; i < v; i++) {
-    dbgs() << MI.getOperand(i) << "\n";
-  }
-
-  return true;
-}
-// Will expand ADD Rpd, Imm16 
-// TODO: Investigate optimisation using A and HIGH(n) LOW(n) from RGBASM.
-template<>
-bool GameBoyExpandPseudo::expand<GameBoy::AddRpdImm16>(Block &MBB, BlockIt MBBI) {
-  // dbgs() << "Expanding AddRpdImm16\n";
-  MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(2).getReg();
+  auto SrcIsKill = MI.getOperand(2).isKill();
+  auto DstIsDead = MI.getOperand(0).isDead();
+  printAllOperands(MI);
   // LD HL, Rpd
-  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, RegState::Define);
+  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, getDeadRegState(DstIsDead));
   // LD Src, Imm16 happens implicitly.
   // ADD HL, Src
-  buildMI(MBB, MBBI, GameBoy::ADDHLPair).addReg(GameBoy::RHRL).addReg(SrcReg, RegState::Define);
+  buildMI(MBB, MBBI, GameBoy::ADDHLPair, GameBoy::RHRL).addReg(SrcReg, getKillRegState(SrcIsKill));
   // LD Rpd, HL
-  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair).addReg(DstReg).addReg(GameBoy::RHRL);
+  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair).addReg(DstReg).addReg(GameBoy::RHRL, RegState::Define);
   MI.eraseFromParent();
-  return true;
 }
 
 //===----------------------------------------------------------------------===//
@@ -745,7 +731,6 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::AddRdRr);
     EXPAND(GameBoy::AddRdImm8);
     EXPAND(GameBoy::AddRdPairRrPair);
-    EXPAND(GameBoy::AddRpdImm16);
     EXPAND(GameBoy::AndRdRr);
     EXPAND(GameBoy::AndRdImm8);
     EXPAND(GameBoy::OrRdRr);

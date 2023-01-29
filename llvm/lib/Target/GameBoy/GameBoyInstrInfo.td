@@ -858,13 +858,8 @@ def DECRd : GBFRd<0b00, 0b101,
 // Uses HL as a temporary.
 // the expand will PUSH and POP HL from the stack accordingly.
 // let Constraints = "$src = $rd", Uses = [RHRL] in {
-let Defs = [RHRL], Uses = [RHRL], Constraints = "$src = $rd" in {
-// let Constraints = "$src = $rd" in {
-def AddRpdImm16 : Pseudo< (outs GPRPair : $rd),
-                          (ins GPRPair : $src, i16imm : $n),
-                          "add\t$rd, $n",
-                          [(set i16 : $rd, (add i16 : $src, i16 : $n))]>;
-
+// let Defs = [RHRL], Uses = [RHRL], Constraints = "$src = $rd" in {
+let Constraints = "$src = $rd" in {
 // ADD RdPair, RrPair
 // Uses HL as a temporary; the expand will PUSH and POP HL from the
 // stack accordingly.
@@ -872,6 +867,7 @@ def AddRdPairRrPair : Pseudo< (outs GPRPair : $rd),
                               (ins GPRPair : $src, GPRPair : $rr),
                               "add\t$rd, $rr",
                               [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
+
 }
 
 
@@ -1233,20 +1229,21 @@ let isCommutable = 1, Constraints = "$src = $rd", Defs = [SREG] in {
 
   // AIDW Rd, k
   // Adds an immediate 6-bit value K to Rd, placing the result in Rd.
-  def ADIWRdK
-      : FWRdK<0b0,
-              (outs IWREGS
-               : $rd),
-              (ins IWREGS
-               : $src, imm_arith6
-               : $k),
-              "adiw\t$rd, $k",
-              [(set i16
-                : $rd, (add i16
-                        : $src, uimm6
-                        : $k)),
-               (implicit SREG)]>,
-        Requires<[HasADDSUBIW]>;
+  // def ADIWRdK
+  //     : FWRdK<0b0,
+  //             (outs GPRPair
+  //              : $rd),
+  //             (ins GPRPair
+  //              : $src, imm_arith6
+  //              : $k),
+  //             "adiw\t$rd, $k",
+  //             // []>,
+  //             [(set i16
+  //               : $rd, (add i16
+  //                       : $src, uimm6
+  //                       : $k)),
+  //              (implicit SREG)]>,
+  //       Requires<[HasADDSUBIW]>;
 }
 
 //===----------------------------------------------------------------------===//

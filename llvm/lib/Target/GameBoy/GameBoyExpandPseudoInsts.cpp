@@ -399,18 +399,24 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  unsigned lastOp = MI.getNumOperands() - 1;
   Register DstReg = MI.getOperand(0).getReg();
-  Register SrcReg = MI.getOperand(2).getReg();
-  auto SrcIsKill = MI.getOperand(2).isKill();
+  Register SrcReg = MI.getOperand(lastOp).getReg();
+  auto SrcIsKill = MI.getOperand(lastOp).isKill();
   auto DstIsDead = MI.getOperand(0).isDead();
   // LD HL, Rpd
-  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg, getDeadRegState(DstIsDead));
+  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL)
+    .addReg(DstReg, getDeadRegState(DstIsDead));
   // LD Src, Imm16 happens implicitly.
   // ADD HL, Src
-  buildMI(MBB, MBBI, GameBoy::ADDHLPair, GameBoy::RHRL).addReg(SrcReg, getKillRegState(SrcIsKill));
+  buildMI(MBB, MBBI, GameBoy::ADDHLPair, GameBoy::RHRL)
+    .addReg(SrcReg, getKillRegState(SrcIsKill));
   // LD Rpd, HL
   // Shouldn't we keep the result here?
-  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair).addReg(DstReg).addReg(GameBoy::RHRL, RegState::Define);
+  buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair)
+    .addReg(DstReg, RegState::Define | getDeadRegState(DstIsDead))
+    .addReg(GameBoy::RHRL, RegState::Define);
   MI.eraseFromParent();
   return true;
 }
@@ -490,7 +496,33 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpRdRr>(Block &MBB, BlockIt MBBI) {
 
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::CpWRdRr>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete CpWRdRr");
+  MachineInstr &MI = *MBBI;
+  // Split registers
+  Register RdLoReg, RdHiReg, RrLoReg, RrHiReg;
+  Register RdReg = MI.getOperand(0).getReg();
+  Register RrReg = MI.getOperand(1).getReg();
+  bool DstIsDead = MI.getOperand(0).isDead();
+  bool SrcIsKill = MI.getOperand(1).isKill();
+  TRI->splitReg(RdReg, RdLoReg, RdHiReg);
+  TRI->splitReg(RrReg, RrLoReg, RrHiReg);
+  // OR A, A ; Clear the carry flag.
+  buildMI(MBB, MBBI, GameBoy::OrARr, GameBoy::RA);
+  // SUB LhsLow, RhsLow ; subtract on the lower byte
+  /// LD A, LhsLow <! Clobbering, so we perform the load ourselves
+  buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(RdLoReg, RegState::Define);
+  /// SUB A, RhsLow
+  buildMI(MBB, MBBI, GameBoy::SubARr, RdLoReg).addReg(RrLoReg, RegState::Define);
+  // SBC LhsHi, RhsHi ; Subtract with carry on the upper byte
+  /// LD A, LhsHi
+  buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(RdHiReg, RegState::Define);
+  /// SBC A, RhsHi
+  buildMI(MBB, MBBI, GameBoy::SbcARr, GameBoy::RA).addReg(RrHiReg, RegState::Define);
+  // ADD LHS, RHS ; Restore the value
+  buildMI(MBB, MBBI, GameBoy::AddRdPairRrPair)
+    .addReg(RdReg, RegState::Define | getDeadRegState(DstIsDead))
+    .addReg(RrReg, getKillRegState(SrcIsKill));
+  // Remove the old instruction
+  MI.removeFromParent();
   return true;
 }
 
@@ -722,6 +754,7 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::XorRdImm8);
     EXPAND(GameBoy::CpRdRr);
     EXPAND(GameBoy::CpRdImm8);
+    EXPAND(GameBoy::CpWRdRr);
     EXPAND(GameBoy::SEXT);
     EXPAND(GameBoy::ZEXT);
     EXPAND(GameBoy::JREQk);

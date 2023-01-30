@@ -399,7 +399,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  printAllOperands(MI);
+  // printAllOperands(MI);
   unsigned lastOp = MI.getNumOperands() - 1;
   Register DstReg = MI.getOperand(0).getReg();
   Register SrcReg = MI.getOperand(lastOp).getReg();

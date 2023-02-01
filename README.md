@@ -1,22 +1,18 @@
 # LLVM-DMG: An LLVM Backend for the Nintendo Game Boy
 
-This repository is a fork of the LLVM repository, and has not been kept
-up to date. The fork was made roughly just before the release of LLVM 16.
-This is an interim solution- eventually, at a convenient point in time,
-a new repository will be created to hold the relevant files for the Game Boy
-backend to avoid any fork related issues.
-
 ## Overview
-This repository contains code for the Game Boy backend for LLVM. It currently only
-supports Clang, and does not have official documentation at the moment. I am
-writing this project as my dissertation for my BSc in Computer Science, and hence
-cannot accept any PRs or code contributions until the assessment is complete
-(roughly August 2023).
+LLVM-DMG is a fork of LLVM 15 which provides a backend for the Nintendo Game Boy family of devices. This project forms the basis of my BSc Computer Science dissertation at the University of Warwick, and is the first project of its kind to successfully compile programs for the Game Boy using an LLVM frontend (Clang). The project is not affiliated with LLVM.
 
-The backend currently targets RGBASM. See below for a list of supported and unsupported features.
+Due to the nature of the assignment, I cannot accept any pull requests for the time being. Please feel free to open any issues however and I will use this
+as an additional guide on which features need to be implemented as a matter of priority. Many aspects of a typical compiler toolchain will not be supported
+at this early stage, and this is an ongoing project which will hopefully grow with and around the community.
+
+### Compatibility
+Assembly files produced by the backend are compatible with the RGBDS suite of tools. The calling convention is also broadly compatible with SDCC, although as of February 2023, stack usage for function arguments and return values are unsupported. This is a goal in the project roadmap.
 
 ## Usage instructions
 ### Building the LLVM suite
+The `instructions` branch will typically contain the most progress; they are merged to `main` once they are tested and verified.
 The repository can be built by cloning all the code here and following these steps:
 
 1. Set up your build system. I have chosen to use Ninja in this example, and am also compiling in Debug mode. You will need to compile in Debug if you want to generate DAG diagrams using `llc`.
@@ -39,6 +35,31 @@ $ cmake -G "Ninja" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_TARGETS_TO_BUILD="AVR" 
 $ ninja
 ```
 
-## Features
-### What this project is _not_
-This is not a finished project. My dissertation has specific requirements which means that there are various optimisations and QOL features that I would prefer to be here that aren't. There are also likely to be a few unsupported features for the Game Boy which should be implemented by any mature compiler toolchain; the goal is to complete as many of these as possible, but the priority is to provide a broad starting point for a continuously developed project.
+### Prerequisites for building ROM files
+Once you have built the backend, you will need the following tools to run your ROM files:
+- RGBDS installation
+- Game Boy emulator of choice
+- LLVM IR frontend of your choice (Clang provided)
+
+In order to use the backend, you will need to use your frontend of choice to produce LLVM IR. The Clang build provided here uses 8-bit and 16-bit data types only for integers and you need to ensure your frontend does the same; 32-bit operations are likely to be unsupported across most of the backend.
+
+The following commands can be used to build a ROM file.
+
+```
+# Produce LLVM IR using the provided Clang build.
+$ llvm-project/build/bin/clang -O2 -emit-llvm -c file.c -o file.bc --target=gameboy
+
+# Disassemble the LLVM IR for debugging purposes.
+$ llvm-project/build/bin/llvm-dis file.bc
+
+# Produce the assembly file
+$ llvm-project/build/bin/llc -march="Game Boy" -O2 filetype=asm file.bc -o file.asm
+
+# Produce executable using RGBDS
+$ rgbasm file.asm -o file.o
+$ rgblink -o file.gb file.o
+$ rgbfix -v -p 0xFF file.gb
+```
+
+## Acknowledgements
+Many thanks to the gbdev and LLVM communities on Discord for their invaluable support throughout this project.

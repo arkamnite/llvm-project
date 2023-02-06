@@ -301,18 +301,8 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRd8Ptr>(Block &MBB, BlockIt MBBI) {
 
   // If we are attempting to load a pointer into any other register than
   // RA, then we must first move the pointer to RA, then LD Rd, A
-
-  // Select now from HL, or BC/DE
-  auto rclass = getRegInfo(MBB).getRegClass(SrcReg);
-  if (rclass == &GameBoy::GPRPairPointerHLRegClass) {
-    MINew = buildMI(MBB, MBBI, GameBoy::LDRdHLPtr)
-      .addReg(GameBoy::RA, RegState::Define)
-      .addReg(GameBoy::RHRL, RegState::Define);
-  } else {
-    MINew = buildMI(MBB, MBBI, GameBoy::LDRd8Ptr)
-      .addReg(GameBoy::RA, RegState::Define)
-      .addReg(SrcReg);
-  }    
+  // Load the value found at address (Rr) into A
+  MINew = buildMI(MBB, MBBI, GameBoy::LDAPtr, GameBoy::RA).addReg(SrcReg);
 
   // Add LD Rd, A if needed
   if (DstReg != GameBoy::RA) {

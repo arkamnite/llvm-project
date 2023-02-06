@@ -382,7 +382,7 @@ def LDRdRrReg : Operand<i16> {
 // 8-bit transfer and input/output pseudo instructions
 //===----------------------------------------------------------------------===//
 
-let mayLoad = 1 in {
+let mayLoad = 1, Defs = [RA], Uses = [RA] in {
 // Pseudo instruction needed to lower LD Rd8, &Ptr
 // LD Rd, (RR)
 def LDRd8Ptr : Pseudo< (outs GPR : $rd),

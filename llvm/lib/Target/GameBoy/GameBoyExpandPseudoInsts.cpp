@@ -289,6 +289,7 @@ void printAllOperands(MachineInstr &MI) {
 //===----------------------------------------------------------------------===//
 // Loading
 //===----------------------------------------------------------------------===//
+// LD Rd, (Rr)
 template <>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRd8Ptr>(Block &MBB, BlockIt MBBI) {
   // LD Rd (RR) where RR is a register pair.
@@ -331,6 +332,14 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairRrPair>(Block &MBB, BlockIt MB
   ld.setMemRefs(MI.memoperands());
   MI.removeFromParent();
   return true;
+}
+
+// LD Rd, (Imm8)
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtrImm8>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented expand LDRdPtrImm8!");
 }
 
 //===----------------------------------------------------------------------===//
@@ -409,6 +418,20 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt M
     .addReg(GameBoy::RHRL, RegState::Define);
   MI.eraseFromParent();
   return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::SubRdPairRrPair>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented expand SubRdPairRrPair!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::SbcRdPairRrPair>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented expand SbcRdPairRrPair!");
 }
 
 //===----------------------------------------------------------------------===//
@@ -733,9 +756,12 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     // Game Boy
     EXPAND(GameBoy::LDRd8Ptr);
     EXPAND(GameBoy::LDRdPairRrPair);
+    EXPAND(GameBoy::LDRdPtrImm8);
     EXPAND(GameBoy::AddRdRr);
     EXPAND(GameBoy::AddRdImm8);
     EXPAND(GameBoy::AddRdPairRrPair);
+    EXPAND(GameBoy::SubRdPairRrPair);
+    EXPAND(GameBoy::SbcRdPairRrPair);
     EXPAND(GameBoy::AndRdRr);
     EXPAND(GameBoy::AndRdImm8);
     EXPAND(GameBoy::OrRdRr);

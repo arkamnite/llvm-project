@@ -543,10 +543,14 @@ SDValue GameBoyTargetLowering::LowerGlobalAddress(SDValue Op,
 
   const GlobalValue *GV = cast<GlobalAddressSDNode>(Op)->getGlobal();
   int64_t Offset = cast<GlobalAddressSDNode>(Op)->getOffset();
+  auto OffsetVal = DAG.getConstant(Offset, SDLoc(Op), getPointerTy(DL));
 
   // Create the TargetGlobalAddress node, folding in the constant offset.
-  SDValue Result =
-      DAG.getTargetGlobalAddress(GV, SDLoc(Op), getPointerTy(DL), Offset);
+  // SDValue Result =
+      // DAG.getTargetGlobalAddress(GV, SDLoc(Op), getPointerTy(DL), Offset);
+  
+  SDValue Address = DAG.getTargetGlobalAddress(GV, SDLoc(Op), getPointerTy(DL), 0);
+  SDValue Result = DAG.getNode(ISD::ADD, SDLoc(Op), getPointerTy(DL), OffsetVal, Address);
   return DAG.getNode(GameBoyISD::WRAPPER, SDLoc(Op), getPointerTy(DL), Result);
 }
 

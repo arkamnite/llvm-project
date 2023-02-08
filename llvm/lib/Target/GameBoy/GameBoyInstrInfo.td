@@ -389,6 +389,18 @@ def LDRd8Ptr : Pseudo< (outs GPR : $rd),
                   (ins GPRPair : $ptrreg),
                   "ld\t$rd, [ $ptrreg ]",
                   [(set GPR : $rd, (load i16 : $ptrreg))]>;
+
+// LD Rd, (Imm8)
+def LDRdPtrImm8 : Pseudo<(outs GPR : $rd),
+                          (ins i8imm : $imm),
+                          "ld\t$rd, [ $imm ]",
+                          [(set GPR : $rd, (load i8 : $imm))]>;
+
+// LD Rd, (Imm16)
+// def LDRdPtrImm16 : Pseudo<(outs GPR : $rd),
+//                           (ins i16imm : $imm),
+//                           "ld\t$rd, [ $imm ]",
+//                           [(set GPR : $rd, (load i16 : $imm))]>;
 }
 
 //===----------------------------------------------------------------------===//
@@ -858,8 +870,8 @@ def DECRd : GBFRd<0b00, 0b101,
 // Uses HL as a temporary.
 // the expand will PUSH and POP HL from the stack accordingly.
 // let Constraints = "$src = $rd", Uses = [RHRL] in {
-// let Defs = [RHRL], Uses = [RHRL], Constraints = "$src = $rd" in {
-let Constraints = "$src = $rd" in {
+// let Constraints = "$src = $rd" in {
+let Defs = [RHRL], Uses = [RHRL], Constraints = "$src = $rd" in {
 // ADD RdPair, RrPair
 // Uses HL as a temporary; the expand will PUSH and POP HL from the
 // stack accordingly.
@@ -868,6 +880,15 @@ def AddRdPairRrPair : Pseudo< (outs GPRPair : $rd),
                               "add\t$rd, $rr",
                               [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
 
+def SubRdPairRrPair : Pseudo< (outs GPRPair : $rd),
+                              (ins GPRPair : $src, GPRPair : $rr),
+                              "sub\t$rd, $rr",
+                              [(set i16 : $rd, (sub i16 : $src, i16 : $rr))]>;
+
+def SbcRdPairRrPair : Pseudo< (outs GPRPair : $rd),
+                              (ins GPRPair : $src, GPRPair : $rr),
+                              "sbc\t$rd, $rr",
+                              [(set i16 : $rd, (subc i16 : $src, i16 : $rr))]>;
 }
 
 
@@ -2095,9 +2116,12 @@ let canFoldAsLoad = 1, isReMaterializable = 1 in {
                         : $dst),
                        (ins i16imm
                         : $src),
-                       "ldsw\t$dst, $src", [(set i16
-                                             : $dst, (load imm
-                                                      : $src))]>,
+                       "ldsw\t$dst, $src", 
+                       []
+                      //  [(set i16
+                      //                        : $dst, (load imm
+                      //                                 : $src))]
+                                                      >,
                 Requires<[HasSRAM]>;
 }
 
@@ -2334,9 +2358,11 @@ def STWPtrRr : Pseudo<(outs),
                       (ins PTRDISPREGS
                        : $ptrreg, DREGS
                        : $reg),
-                      "stw\t$ptrreg, $reg", [(store i16
-                                              : $reg, i16
-                                              : $ptrreg)]>,
+                      "stw\t$ptrreg, $reg", []
+                      // [(store i16
+                      //                         : $reg, i16
+                      //                         : $ptrreg)]
+                                              >,
                Requires<[HasSRAM]>;
 
 // Indirect stores (with postincrement or predecrement).
@@ -3258,38 +3284,38 @@ def : Pat<(sext_inreg i16
 
 // GlobalAddress
 // def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDIWRdK tglobaladdr : $dst)>;
-def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDIWRdK tglobaladdr : $dst)>;
+def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDRdImm16 tglobaladdr : $dst)>;
 def : Pat<(add i16
            : $src, (GameBoyWrapper tglobaladdr
                     : $src2)),
-          (SUBIWRdK i16
+          (SbcRdPairRrPair i16
            : $src, tglobaladdr
            : $src2)>;
 def : Pat<(i8(load(GameBoyWrapper tglobaladdr
                    : $dst))),
-          (LDSRdK tglobaladdr
+          (LDRdPtrImm8 tglobaladdr
            : $dst)>;
-def : Pat<(i16(load(GameBoyWrapper tglobaladdr
-                    : $dst))),
-          (LDSWRdK tglobaladdr
-           : $dst)>;
-def : Pat<(store i8
-           : $src, (i16(GameBoyWrapper tglobaladdr
-                        : $dst))),
-          (STSKRr tglobaladdr
-           : $dst, i8
-           : $src)>;
-def : Pat<(store i16
-           : $src, (i16(GameBoyWrapper tglobaladdr
-                        : $dst))),
-          (STSWKRr tglobaladdr
-           : $dst, i16
-           : $src)>;
+// def : Pat<(i16(load(GameBoyWrapper tglobaladdr
+//                     : $dst))),
+//           (LDRd8Ptr tglobaladdr
+//            : $dst)>;
+// def : Pat<(store i8
+//            : $src, (i16(GameBoyWrapper tglobaladdr
+//                         : $dst))),
+//           (STSKRr tglobaladdr
+//            : $dst, i8
+//            : $src)>;
+// def : Pat<(store i16
+//            : $src, (i16(GameBoyWrapper tglobaladdr
+//                         : $dst))),
+//           (STSWKRr tglobaladdr
+//            : $dst, i16
+//            : $src)>;
 
 // BlockAddress
 def : Pat<(i16(GameBoyWrapper tblockaddress
                : $dst)),
-          (LDIWRdK tblockaddress
+          (LDRdImm16 tblockaddress
            : $dst)>;
 
 def : Pat<(i8(trunc(GameBoylsrwn DLDREGS

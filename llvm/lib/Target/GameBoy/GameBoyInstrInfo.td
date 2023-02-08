@@ -3288,7 +3288,7 @@ def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDRdImm16 tglobaladdr : $ds
 def : Pat<(add i16
            : $src, (GameBoyWrapper tglobaladdr
                     : $src2)),
-          (SbcRdPairRrPair i16
+          (AddRdPairRrPair i16
            : $src, tglobaladdr
            : $src2)>;
 def : Pat<(i8(load(GameBoyWrapper tglobaladdr

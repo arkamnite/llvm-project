@@ -338,10 +338,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairRrPair>(Block &MBB, BlockIt MB
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtrImm8>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  printAllOperands(MI);
   Register DstReg = MI.getOperand(0).getReg();
-
-  // How dahell do I get the right value or instruction?
   auto SrcImm = MI.getOperand(1).getGlobal();
 
   // Load the pointer into the A register first

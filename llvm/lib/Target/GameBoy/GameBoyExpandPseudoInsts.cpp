@@ -339,7 +339,22 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtrImm8>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
-  llvm_unreachable("Unimplemented expand LDRdPtrImm8!");
+  Register DstReg = MI.getOperand(0).getReg();
+
+  // How dahell do I get the right value or instruction?
+  auto SrcImm = MI.getOperand(1).getGlobal();
+
+  // Load the pointer into the A register first
+  MachineInstrBuilder MINew;
+  MINew = buildMI(MBB, MBBI, GameBoy::LDAImm16Addr, GameBoy::RA).addGlobalAddress(SrcImm);
+
+  // See if we need to LD Rd, A
+  if (DstReg != GameBoy::RA)
+    buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstReg).addReg(GameBoy::RA);
+
+  MINew.setMemRefs(MI.memoperands());
+  MI.eraseFromParent();
+  return true;
 }
 
 //===----------------------------------------------------------------------===//

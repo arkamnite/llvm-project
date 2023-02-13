@@ -21,6 +21,7 @@
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FormattedStream.h"
+#include "llvm/Support/Debug.h"
 
 #include <cstring>
 
@@ -46,6 +47,8 @@ void GameBoyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   case GameBoy::LDAPtr:
   case GameBoy::LDAImm8Addr:
   case GameBoy::LDAImm16Addr:
+  case GameBoy::LDRdPtr:
+  case GameBoy::LDRdPairPtr:
     O << "\tld\t";
     printOperand(MI, 0, O);
     O << ", [";
@@ -56,6 +59,16 @@ void GameBoyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   case GameBoy::LDPtrA:
   case GameBoy::LDHLAddrRr:
   case GameBoy::LDHLAddrImm8:
+  case GameBoy::LDPtrRd:
+  case GameBoy::LDPtrRdPair:
+    O << "\tld\t[";
+    printOperand(MI, 0, O);
+    O << "], ";
+    printOperand(MI, 1, O);
+    break;
+  case GameBoy::LDImm8AddrA:
+  case GameBoy::LDImm16AddrA:
+    dbgs() << "LDImm16AddrA has issues";
     O << "\tld\t[";
     printOperand(MI, 0, O);
     O << "], ";
@@ -105,14 +118,13 @@ void GameBoyInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     // See if it is possible to skip over this operand. This is useful for scenarios where 
     // we are printing a definition-operand in the same instruction.
     // If we exhaust the list then we move on to the next instruction.
+    dbgs() << "Skipping operand number " << OpNo << " for instruction number " << MI->getOpcode() << "\n";
     return printOperand(MI, --OpNo, O);
     // O << OpNo << " <unknown> " << MI->size();
     // return;
   }
 
   const MCOperand &Op = MI->getOperand(OpNo);
-
-
   if (Op.isReg()) {
     bool isPtrReg = (MOI.RegClass == GameBoy::PTRREGSRegClassID) ||
                     (MOI.RegClass == GameBoy::PTRDISPREGSRegClassID) ||

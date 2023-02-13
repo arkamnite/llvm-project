@@ -386,9 +386,10 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRd>(Block &MBB, BlockIt MBBI) {
   // See if the value is in A already
   // if (SrcReg != GameBoy::RA) {
   //   MINew = buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(SrcReg);
+    // Load the value in A to the address stored in HL
   // }
 
-  // Load the value in A to the address stored in HL
+  // We can use the LD (HL), Rr instruction to store the value instead.
   buildMI(MBB, MBBI, GameBoy::LDHLAddrRr).addReg(GameBoy::RHRL).addReg(SrcReg);
   // MINew = buildMI(MBB, MBBI, GameBoy::LDImm16AddrA).addGlobalAddress(DstImm);
   // MINew.setMemRefs(MI.memoperands());

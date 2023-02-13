@@ -403,6 +403,31 @@ def LDRdPtrImm8 : Pseudo<(outs GPR : $rd),
 //                           [(set GPR : $rd, (load i16 : $imm))]>;
 }
 
+// let canFoldAsLoad = 1, isReMaterializable = 1, Defs = [RC], Uses = [RC] in {
+let canFoldAsLoad = 1, isReMaterializable = 1, Defs = [RC] in {
+  let Constraints = "@earlyclobber $reg" in def LDRdPtr
+    : Pseudo< (outs GPR : $reg),
+              (ins imm16 : $k),
+              "ld\t$reg, [ $k ]",
+              [(set i8 : $reg, (load imm : $k)), (implicit RC)]>;
+  
+  let Constraints = "@earlyclobber $reg" in def LDRdPairPtr
+    : Pseudo< (outs GPRPair: $reg),
+              (ins i16imm : $k),
+              "ld\t$reg, [ $k ]",
+              [(set i16 : $reg, (load imm : $k)), (implicit RC)]>;
+}
+
+def LDPtrRd : Pseudo< (outs),
+                            (ins imm16 : $k, GPR : $reg),
+                            "ld\t[ $k ], $reg",
+                            [(store i8 : $reg, imm : $k)]>;
+
+def LDPtrRdPair : Pseudo< (outs),
+                                (ins i16imm : $dst, GPRPair : $reg),
+                                "ld\t[ $dst ], $reg",
+                                [(store i16 : $reg, imm : $dst)]>;
+
 //===----------------------------------------------------------------------===//
 // 8-bit transfer and input/output instructions
 //===----------------------------------------------------------------------===//
@@ -454,6 +479,7 @@ def LDAPtr : GBFLdAPtr< (outs GPRLoad : $rd),
 // LD A, (C)
 // Applies specifically to the range FF00 - FFFF
 
+
 // LD A, (Imm8) [ rules apply for (Imm8)]
 def LDAImm8Addr : GBF0< 0b11110000,
                         (outs GPRLoad : $rd),
@@ -470,9 +496,6 @@ def LDAImm16Addr : GBF0< 0b11111010,
 }
 
 let mayStore = 1 in {
-// Need a psuedo instruction for LD Ptr, Rr
-
-
 // LD (HL), Rr
 def LDHLAddrRr : GBFRd2<0b01110,
                         (outs),
@@ -487,6 +510,7 @@ def LDHLAddrImm8 : GBF0<0b00110110,
                             "ld\t[hl], $n",
                             [(store i8 : $n, GPRPairPointerHL : $ptrreg)]>;
 
+// FF00 rule applies here.
 // LD (C), A
 def LDCAddrA : GBF0<0b11100010,
                     (outs),
@@ -2127,7 +2151,7 @@ let canFoldAsLoad = 1, isReMaterializable = 1 in {
 
 // Indirect loads.
 let canFoldAsLoad = 1, isReMaterializable = 1 in {
-  def LDRdPtr : FSTLD<0, 0b00,
+  def LdRdPtr : FSTLD<0, 0b00,
                       (outs GPR8
                        : $reg),
                       (ins LDSTPtrReg
@@ -3283,7 +3307,98 @@ def : Pat<(sext_inreg i16
                    : $src, sub_lo)))>;
 
 // GlobalAddress
-// def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDIWRdK tglobaladdr : $dst)>;
+
+// def : Pat<(i16(AVRWrapper tglobaladdr : $dst)), (LDIWRdK tglobaladdr : $dst)>;
+// def : Pat<(add i16
+//            : $src, (AVRWrapper tglobaladdr
+//                     : $src2)),
+//           (SUBIWRdK i16
+//            : $src, tglobaladdr
+//            : $src2)>;
+// def : Pat<(i8(load(AVRWrapper tglobaladdr
+//                    : $dst))),
+//           (LDSRdK tglobaladdr
+//            : $dst)>;
+// def : Pat<(i16(load(AVRWrapper tglobaladdr
+//                     : $dst))),
+//           (LDSWRdK tglobaladdr
+//            : $dst)>;
+// def : Pat<(store i8
+//            : $src, (i16(AVRWrapper tglobaladdr
+//                         : $dst))),
+//           (STSKRr tglobaladdr
+//            : $dst, i8
+//            : $src)>;
+// def : Pat<(store i16
+//            : $src, (i16(AVRWrapper tglobaladdr
+//                         : $dst))),
+//           (STSWKRr tglobaladdr
+//            : $dst, i16
+//            : $src)>;
+
+/*
+AVR Instructions
+LDIRdK - Used to load an immediate 8-bit value into a register
+  set i8 : $rd, imm : $k
+  outs LD8
+  ins imm_ldi8
+LDIWRdK - Used to load an immediate 16-bit value into a register
+  set 16 : $rd, imm : $k
+  outs DLDREGS
+  ins i16imm
+LDSRdK - Used to load from data space into a register
+  set i8 : $rd, (load imm : $k)
+  outs GPR8
+  ins imm16
+LDSWRdK - Used to load from data space into a register
+  set i16 : $rd, (load imm : $k)
+  outs DREGS
+  ins i16imm
+STSKRr - Used to store indirectly from register to data space
+  store i8 : $rd, imm : $k
+  outs
+  ins imm16 : $k, GPR8 : $rd
+STSWKRr - Used to store indirectly from register to data space
+  store i16 : $rd, imm : $dst
+  outs
+  ins i16imm : $dst, DREGS : $rd
+LDRdPtr (NOT USED IN THESE PATTERNS) - Used for indirect loads
+  set GPR8 : $reg, (load i16 : $ptrreg)
+  outs GPR8
+  ins LDSTPtrReg
+LDWRdPtr (NOT USED IN THESE PATTERNS) - Used for indirect loads
+  set i16 : $reg, (load i16 : $ptrreg)
+  outs DREGS
+  ins PTRDISPREGS
+
+DMG Instructions (Equivalent)
+LDRdImm8
+  set i8 : $rd, imm : $imm8
+  outs GPR
+  ins i8imm
+LDRdImm16
+  set i16 : $rd, imm : $src
+  outs GPRPair
+  ins i16imm
+LDRdPtr
+  set i8 : $reg, (load addr : $memri)
+  outs GPR
+  ins memri
+LDRdPairPtr
+  set i16 : $reg, (load addr : $memri)
+  outs GPRPair
+  ins memri
+LDPtrRd
+  store i8 : $reg, addr : $memri
+  outs
+  ins memri : $memri, GPR : $reg
+LDPtrRdPair
+  store i16 : $reg, addr : $memri
+  outs
+  ins memri : $memri, GPRPair : $reg
+
+*/
+
 def : Pat<(i16(GameBoyWrapper tglobaladdr : $dst)), (LDRdImm16 tglobaladdr : $dst)>;
 def : Pat<(add i16
            : $src, (GameBoyWrapper tglobaladdr
@@ -3293,24 +3408,24 @@ def : Pat<(add i16
            : $src2)>;
 def : Pat<(i8(load(GameBoyWrapper tglobaladdr
                    : $dst))),
-          (LDRdPtrImm8 tglobaladdr
+          (LDRdPtr tglobaladdr
            : $dst)>;
-// def : Pat<(i16(load(GameBoyWrapper tglobaladdr
-//                     : $dst))),
-//           (LDRd8Ptr tglobaladdr
-//            : $dst)>;
-// def : Pat<(store i8
-//            : $src, (i16(GameBoyWrapper tglobaladdr
-//                         : $dst))),
-//           (STSKRr tglobaladdr
-//            : $dst, i8
-//            : $src)>;
-// def : Pat<(store i16
-//            : $src, (i16(GameBoyWrapper tglobaladdr
-//                         : $dst))),
-//           (STSWKRr tglobaladdr
-//            : $dst, i16
-//            : $src)>;
+def : Pat<(i16(load(GameBoyWrapper tglobaladdr
+                    : $dst))),
+          (LDRdPairPtr tglobaladdr
+           : $dst)>;
+def : Pat<(store i8
+           : $src, (i16(GameBoyWrapper tglobaladdr
+                        : $dst))),
+          (LDPtrRd tglobaladdr
+           : $dst, i8
+           : $src)>;
+def : Pat<(store i16
+           : $src, (i16(GameBoyWrapper tglobaladdr
+                        : $dst))),
+          (LDPtrRdPair tglobaladdr
+           : $dst, i16
+           : $src)>;
 
 // BlockAddress
 def : Pat<(i16(GameBoyWrapper tblockaddress

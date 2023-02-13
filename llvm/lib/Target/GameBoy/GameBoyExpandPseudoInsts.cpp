@@ -354,6 +354,34 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtrImm8>(Block &MBB, BlockIt MBBI)
   return true;
 }
 
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtr>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDRdPtr!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRd>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDPtrRd!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtr>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDRdPairPtr!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRdPair>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDPtrRdPair!");
+}
+
 //===----------------------------------------------------------------------===//
 // Arithmetic
 //===----------------------------------------------------------------------===//
@@ -769,6 +797,10 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::LDRd8Ptr);
     EXPAND(GameBoy::LDRdPairRrPair);
     EXPAND(GameBoy::LDRdPtrImm8);
+    EXPAND(GameBoy::LDRdPtr);
+    EXPAND(GameBoy::LDPtrRd);
+    EXPAND(GameBoy::LDRdPairPtr);
+    EXPAND(GameBoy::LDPtrRdPair);
     EXPAND(GameBoy::AddRdRr);
     EXPAND(GameBoy::AddRdImm8);
     EXPAND(GameBoy::AddRdPairRrPair);

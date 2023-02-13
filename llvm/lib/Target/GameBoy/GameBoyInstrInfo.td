@@ -418,10 +418,10 @@ let canFoldAsLoad = 1, isReMaterializable = 1, Defs = [RC] in {
               [(set i16 : $reg, (load imm : $k)), (implicit RC)]>;
 }
 
-def LDPtrRd : Pseudo< (outs),
+let Defs = [RHRL] in def LDPtrRd : Pseudo< (outs),
                             (ins imm16 : $k, GPR : $reg),
                             "ld\t[ $k ], $reg",
-                            [(store i8 : $reg, imm : $k)]>;
+                            [(store i8 : $reg, imm : $k), (implicit RHRL)]>;
 
 def LDPtrRdPair : Pseudo< (outs),
                                 (ins i16imm : $dst, GPRPair : $reg),

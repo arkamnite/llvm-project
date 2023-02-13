@@ -357,15 +357,43 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtrImm8>(Block &MBB, BlockIt MBBI)
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtr>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  printAllOperands(MI);
-  llvm_unreachable("Unimplemented LDRdPtr!");
+  Register DstReg = MI.getOperand(0).getReg();
+  auto SrcImm = MI.getOperand(1).getGlobal();
+
+  // Load the pointer into the A register first
+  MachineInstrBuilder MINew;
+  MINew = buildMI(MBB, MBBI, GameBoy::LDAImm16Addr, GameBoy::RA).addGlobalAddress(SrcImm);
+
+  // See if we need to LD Rd, A
+  if (DstReg != GameBoy::RA)
+    buildMI(MBB, MBBI, GameBoy::LDRdRr).addReg(DstReg).addReg(GameBoy::RA);
+
+  MINew.setMemRefs(MI.memoperands());
+  MI.eraseFromParent();
+  return true;
 }
 
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRd>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  printAllOperands(MI);
-  llvm_unreachable("Unimplemented LDPtrRd!");
+  auto DstImm = MI.getOperand(0).getGlobal();
+  Register SrcReg = MI.getOperand(1).getReg();
+
+  // Temporary workaround- use HL to hold the address.
+  MachineInstrBuilder MINew;
+  MINew = buildMI(MBB, MBBI, GameBoy::LDRdImm16, GameBoy::RHRL).addGlobalAddress(DstImm);  
+
+  // See if the value is in A already
+  // if (SrcReg != GameBoy::RA) {
+  //   MINew = buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(SrcReg);
+  // }
+
+  // Load the value in A to the address stored in HL
+  buildMI(MBB, MBBI, GameBoy::LDHLAddrRr).addReg(GameBoy::RHRL).addReg(SrcReg);
+  // MINew = buildMI(MBB, MBBI, GameBoy::LDImm16AddrA).addGlobalAddress(DstImm);
+  // MINew.setMemRefs(MI.memoperands());
+  MI.eraseFromParent();
+  return true;
 }
 
 template<>

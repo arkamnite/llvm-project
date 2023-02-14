@@ -118,7 +118,7 @@ void GameBoyInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     // See if it is possible to skip over this operand. This is useful for scenarios where 
     // we are printing a definition-operand in the same instruction.
     // If we exhaust the list then we move on to the next instruction.
-    dbgs() << "Skipping operand number " << OpNo << " for instruction number " << MI->getOpcode() << "\n";
+    LLVM_DEBUG(dbgs() << "Skipping operand number " << OpNo << " for instruction number " << MI->getOpcode());
     return printOperand(MI, --OpNo, O);
     // O << OpNo << " <unknown> " << MI->size();
     // return;

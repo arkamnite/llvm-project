@@ -1954,7 +1954,7 @@ GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
 GameBoyTargetLowering::ConstraintType
 GameBoyTargetLowering::getConstraintType(StringRef Constraint) const {
   if (Constraint.size() == 1) {
-    // See http://www.nongnu.org/GameBoy-libc/user-manual/inline_asm.html
+    // See http://www.nongnu.org/avr-libc/user-manual/inline_asm.html
     switch (Constraint[0]) {
     default:
       break;

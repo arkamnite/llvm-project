@@ -413,11 +413,12 @@ bool GameBoyAsmParser::tryParseRegisterOperand(OperandVector &Operands) {
   AsmToken const &T = Parser.getTok();
   Operands.push_back(GameBoyOperand::CreateReg(RegNo, T.getLoc(), T.getEndLoc()));
   Parser.Lex(); // Eat register token.
-
+  LLVM_DEBUG(dbgs() << "Parsed a register\n");
   return false;
 }
 
 bool GameBoyAsmParser::tryParseExpression(OperandVector &Operands) {
+  LLVM_DEBUG(dbgs() << "attempting to parse expression\n");
   SMLoc S = Parser.getTok().getLoc();
 
   if (!tryParseRelocExpression(Operands))
@@ -433,8 +434,12 @@ bool GameBoyAsmParser::tryParseExpression(OperandVector &Operands) {
 
   // Parse (potentially inner) expression
   MCExpr const *Expression;
-  if (getParser().parseExpression(Expression))
+  if (getParser().parseExpression(Expression)) {
+    LLVM_DEBUG(dbgs() << "Parsed an expression\n");
     return true;
+  } else {
+    LLVM_DEBUG(dbgs() << "Failed to parse an expression\n");
+  }
 
   SMLoc E = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
   Operands.push_back(GameBoyOperand::CreateImm(Expression, S, E));

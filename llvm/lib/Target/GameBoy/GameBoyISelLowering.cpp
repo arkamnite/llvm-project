@@ -95,6 +95,8 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setOperationAction(ISD::ADD, MVT::i32, Custom);
   setOperationAction(ISD::ADD, MVT::i64, Custom);
 
+
+
   // our shift instructions are only able to shift 1 bit at a time, so handle
   // this in a custom way.
   setOperationAction(ISD::SRA, MVT::i8, Custom);
@@ -111,6 +113,9 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setOperationAction(ISD::ROTL, MVT::i16, Expand);
   setOperationAction(ISD::ROTR, MVT::i8, Custom);
   setOperationAction(ISD::ROTR, MVT::i16, Expand);
+
+  setOperationAction(RTLIB::MEMSET, MVT::i8, Custom);
+  setOperationAction(RTLIB::MEMSET, MVT::i16, Custom);
 
   setOperationAction(ISD::BR_CC, MVT::i8, Custom);
   setOperationAction(ISD::BR_CC, MVT::i16, Custom);
@@ -276,6 +281,7 @@ const char *GameBoyTargetLowering::getTargetNodeName(unsigned Opcode) const {
     NODE(CMPC);
     NODE(TST);
     NODE(SELECT_CC);
+    NODE(MEMSETLOOP);
 #undef NODE
   }
 }
@@ -1638,6 +1644,13 @@ GameBoyTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
 //  Custom Inserters
 //===----------------------------------------------------------------------===//
 
+MachineBasicBlock *GameBoyTargetLowering::insertMemsetLoop(MachineInstr &MI,
+                                                          MachineBasicBlock *BB) const {
+
+  llvm_unreachable("Unimplemented insert Memset loop!");
+  return BB;
+}
+
 MachineBasicBlock *GameBoyTargetLowering::insertShift(MachineInstr &MI,
                                                   MachineBasicBlock *BB) const {
   unsigned Opc;
@@ -1834,6 +1847,10 @@ MachineBasicBlock *
 GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
                                                MachineBasicBlock *MBB) const {
   int Opc = MI.getOpcode();
+  switch(Opc) {
+    case GameBoy::MemsetLoop:
+      return insertMemsetLoop(MI, MBB);
+  }
 
   // Pseudo shift instructions with a non constant shift amount are expanded
   // into a loop.

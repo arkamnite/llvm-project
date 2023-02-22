@@ -13,6 +13,14 @@
 include "GameBoyInstrFormats.td"
 
 //===----------------------------------------------------------------------===//
+// Game Boy Type Profiles
+//===----------------------------------------------------------------------===//
+
+def SDT_GameBoyMemsetLoop : SDTypeProfile<0, 3, [ // Used for memset looping
+  SDTCisPtrTy<0>, SDTCisVT<1, i16>, SDTCisVT<2, i8>
+]>;
+
+//===----------------------------------------------------------------------===//
 // AVR Type Profiles
 //===----------------------------------------------------------------------===//
 
@@ -27,6 +35,13 @@ def SDT_GameBoyTst : SDTypeProfile<0, 1, [SDTCisInt<0>]>;
 def SDT_GameBoySelectCC
     : SDTypeProfile<1, 3,
                     [SDTCisSameAs<0, 1>, SDTCisSameAs<1, 2>, SDTCisVT<3, i8>]>;
+
+//===----------------------------------------------------------------------===//
+// Game Boy Specific Node Definitions
+//===----------------------------------------------------------------------===//
+
+def GameBoyMemsetLoop : SDNode<"GameBoyISD::MEMSETLOOP", SDT_GameBoyMemsetLoop,
+  [SDNPHasChain, SDNPMayStore, SDNPMayLoad]>;
 
 //===----------------------------------------------------------------------===//
 // AVR Specific Node Definitions
@@ -377,6 +392,12 @@ def LDRdRrReg : Operand<i16> {
   let EncoderMethod = "encodeLDRdRrReg";
   let ParserMatchClass = PtrRegAsmOperand;
 }
+
+
+def MemsetLoop : Pseudo<(outs),
+                        (ins GPRPair : $addr, GPRPair : $num, GPR : $val),
+                        "# MEMSET LOOP",
+                        [(GameBoyMemsetLoop i16 : $addr, i16 : $num, i8 : $val)]>;
 
 //===----------------------------------------------------------------------===//
 // 8-bit transfer and input/output pseudo instructions

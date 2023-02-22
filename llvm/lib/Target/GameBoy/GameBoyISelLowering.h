@@ -71,7 +71,9 @@ enum NodeType {
   SWAP,
   /// Operand 0 and operand 1 are selection variable, operand 2
   /// is condition code and operand 3 is flag operand.
-  SELECT_CC
+  SELECT_CC,
+  /// This is a loop which is used to implement MEMSET.
+  MEMSETLOOP
 };
 
 } // end of namespace GameBoyISD
@@ -190,6 +192,7 @@ protected:
   const GameBoySubtarget &Subtarget;
 
 private:
+  MachineBasicBlock *insertMemsetLoop(MachineInstr &MI, MachineBasicBlock *BB) const;
   MachineBasicBlock *insertShift(MachineInstr &MI, MachineBasicBlock *BB) const;
   MachineBasicBlock *insertMul(MachineInstr &MI, MachineBasicBlock *BB) const;
   MachineBasicBlock *insertCopyR1(MachineInstr &MI,

@@ -274,8 +274,8 @@ void GameBoyAsmPrinter::emitStartOfAsmFile(Module &M) {
   if (!SubTM)
     return;
 
-  // Always jump to init function
-  OutStreamer->emitRawText(StringRef("\tjp\tinit\n"));
+  // Always jump to main function
+  OutStreamer->emitRawText(StringRef("\tjp\tmain\n"));
   // Emit enough space for the header.
   OutStreamer->emitRawText(StringRef("\tds $150 - @, 0\n"));
 

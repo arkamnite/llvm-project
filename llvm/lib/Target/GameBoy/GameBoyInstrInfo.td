@@ -16,10 +16,6 @@ include "GameBoyInstrFormats.td"
 // Game Boy Type Profiles
 //===----------------------------------------------------------------------===//
 
-def SDT_GameBoyMemsetLoop : SDTypeProfile<0, 3, [ // Used for memset looping
-  SDTCisPtrTy<0>, SDTCisVT<1, i16>, SDTCisVT<2, i8>
-]>;
-
 //===----------------------------------------------------------------------===//
 // AVR Type Profiles
 //===----------------------------------------------------------------------===//
@@ -40,8 +36,7 @@ def SDT_GameBoySelectCC
 // Game Boy Specific Node Definitions
 //===----------------------------------------------------------------------===//
 
-def GameBoyMemsetLoop : SDNode<"GameBoyISD::MEMSETLOOP", SDT_GameBoyMemsetLoop,
-  [SDNPHasChain, SDNPMayStore, SDNPMayLoad]>;
+
 
 //===----------------------------------------------------------------------===//
 // AVR Specific Node Definitions
@@ -393,11 +388,19 @@ def LDRdRrReg : Operand<i16> {
   let ParserMatchClass = PtrRegAsmOperand;
 }
 
+def SDT_GameBoyMemsetLoop : SDTypeProfile<0, 3, [ // Used for memset looping
+  SDTCisPtrTy<0>, SDTCisVT<1, i16>, SDTCisVT<2, i8>
+]>;
 
-def MemsetLoop : Pseudo<(outs),
-                        (ins GPRPair : $addr, GPRPair : $num, GPR : $val),
-                        "# MEMSET LOOP",
-                        [(GameBoyMemsetLoop i16 : $addr, i16 : $num, i8 : $val)]>;
+def GameBoyMemsetLoop : SDNode<"GameBoyISD::MEMSETLOOP", SDT_GameBoyMemsetLoop,
+  [SDNPHasChain, SDNPMayStore, SDNPMayLoad]>;
+
+let usesCustomInserter = 1 in {
+  def MemsetLoop : Pseudo<(outs),
+                          (ins GPRPair : $addr, GPRPair : $num, GPR : $val),
+                          "# MEMSET LOOP",
+                          [(GameBoyMemsetLoop i16 : $addr, i16 : $num, i8 : $val)]>;
+}
 
 //===----------------------------------------------------------------------===//
 // 8-bit transfer and input/output pseudo instructions
@@ -1108,6 +1111,11 @@ let isBranch = 1, isTerminator = 1, Uses = [RF] in {
 //===----------------------------------------------------------------------===//
 
 // CALL Imm16
+def CALL : GBF0<0b11001101,
+                (outs),
+                (ins call_target : $k),
+                "call\t$k",
+                [(GameBoycall imm:$k)]>;
 // CALL cc, Imm16
 
 let isTerminator = 1, isReturn = 1, isBarrier = 1 in {
@@ -1812,7 +1820,10 @@ let isCall = 1 in {
   // SP is marked as a use to prevent stack-pointer assignments that appear
   // immediately before calls from potentially appearing dead.
   let Uses = [SP] in def RCALLk : FBRk<1, (outs), (ins rcalltarget_13:$k),
-                                       "rcall\t$k", [(GameBoycall imm:$k)]>;
+                                       "rcall\t$k", 
+                                      //  [(GameBoycall imm:$k)]
+                                       []
+                                       >;
 
   // SP is marked as a use to prevent stack-pointer assignments that appear
   // immediately before calls from potentially appearing dead.
@@ -3305,11 +3316,11 @@ def : Pat<(adde i8
 
 // Calls.
 let Predicates = [HasJMPCALL] in {
-  def : Pat<(GameBoycall(i16 tglobaladdr:$dst)), (CALLk tglobaladdr:$dst)>;
-  def : Pat<(GameBoycall(i16 texternalsym:$dst)), (CALLk texternalsym:$dst)>;
+  def : Pat<(GameBoycall(i16 tglobaladdr:$dst)), (CALL tglobaladdr:$dst)>;
+  def : Pat<(GameBoycall(i16 texternalsym:$dst)), (CALL texternalsym:$dst)>;
 }
-def : Pat<(GameBoycall(i16 tglobaladdr:$dst)), (RCALLk tglobaladdr:$dst)>;
-def : Pat<(GameBoycall(i16 texternalsym:$dst)), (RCALLk texternalsym:$dst)>;
+def : Pat<(GameBoycall(i16 tglobaladdr:$dst)), (CALL tglobaladdr:$dst)>;
+def : Pat<(GameBoycall(i16 texternalsym:$dst)), (CALL texternalsym:$dst)>;
 
 // `anyext` 
 def : Pat<(i16(anyext i8

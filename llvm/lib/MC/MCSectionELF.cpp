@@ -102,6 +102,7 @@ void MCSectionELF::printSwitchToSection(const MCAsmInfo &MAI, const Triple &T,
       // rombankStr = std::string("WRAM0");
     }
     else {
+      OS << "INCLUDE \"dmglib.inc\"\n\n";
       OS << "SECTION \"";
       printName(OS, getName());
       OS << "\", ";

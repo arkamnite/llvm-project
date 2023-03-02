@@ -680,6 +680,12 @@ def LDPtrQRdPair : Pseudo<(outs),
 // }
 
 // LDHL SP, s8
+def LDHLSPImm8 : GBF0<0b11111000,
+                      (outs GPRPairPointerHL : $dst),
+                      (ins SPLoadRd : $sp, i8imm : $imm),
+                      "ld\t$dst, sp + $imm",
+                      []>;
+                      // [(set i16 : $dst, (add i16 : $sp, (sext i8 : $imm)))]>;
 
 // LD (Imm16), SP
 
@@ -1002,6 +1008,14 @@ def ADDHLPair : GBFPair<0b00, 0b1001,
                         // [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
 }
 // ADD SP, s8
+let Constraints = "$src = $rd" in {
+def ADDSPImm8 : GBF0< 0b11101000,
+                      (outs SPLoadRd : $rd),
+                      (ins SPLoadRd : $src, i8imm : $imm),
+                      "add\t$rd, $imm",
+                      []>; // Selected by eliminateFrameIndex
+                      // [(set i16 : $rd, (add i16 : $src, i8 : $imm))]>;
+}
 
 let Constraints = "$src = $rd" in {
 // INC RPd

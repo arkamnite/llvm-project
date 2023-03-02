@@ -183,6 +183,7 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   const GameBoyTargetMachine &TM = (const GameBoyTargetMachine &)MF.getTarget();
   const TargetInstrInfo &TII = *TM.getSubtargetImpl()->getInstrInfo();
   const MachineFrameInfo &MFI = MF.getFrameInfo();
+  const TargetRegisterInfo &RII = *TM.getSubtargetImpl()->getRegisterInfo();
   const TargetFrameLowering *TFI = TM.getSubtargetImpl()->getFrameLowering();
   const GameBoySubtarget &STI = MF.getSubtarget<GameBoySubtarget>();
 
@@ -199,12 +200,76 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
     llvm_unreachable("Unimplemented eliminateFrameIndex for offset > 62");
   }
 
-  MI.getOperand(FIOperandNum).ChangeToRegister(GameBoy::SP, false);
-  assert(isUInt<8>(Offset) && "Offset is out of range");
-  MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset);
+  // Insert an LD HL, SP + r8 instruction to modify the stack accordingly before
+  // either a load or a store takes place.
+  // Use std::prev to define the instruction before this one.
+  BuildMI(MBB, std::prev(II), dl, TII.get(GameBoy::LDHLSPImm8), GameBoy::RHRL)
+    .addReg(GameBoy::SP)
+    .addImm(Offset);
 
-  dbgs() << "ELIMINATE FRAME INDEX; OPCODE: " << MI.getOpcode() << "\n";
-  dbgs() << "ELIMINATE FRAME INDEX; OFFSET: " << Offset << "\n";
+  // Handle stores
+  // LD (HL), SrcReg for a store
+  if (MI.getOpcode() == GameBoy::LDPtrQRdPair || MI.getOpcode() == GameBoy::LDPtrQRd) 
+  {
+    dbgs() << "EFI: STORE\n";
+    // Operand 1: Pointer destination
+    dbgs() << "\tPointer dest: " << MI.getOperand(0);
+    // Operand 2: Offset
+    dbgs() << "\tOffset: " << Offset;
+    // Operand 3: Source register
+    dbgs() << "\tRegSrc: " << MI.getOperand(2) << "\n";
+
+    if (RII.getRegClass(GameBoy::GPRRegClassID)->contains(MI.getOperand(2).getReg()))
+      dbgs() << "EFI STORE INTO 8-bit REGISTER\n";
+    else if (RII.getRegClass(GameBoy::GPRPairRegClassID)->contains(MI.getOperand(2).getReg()))
+      dbgs() << "EFI STORE INTO 16-bit REGISTER\n";
+
+    // ADD SP, r8
+    // Now do LD (SP), Src
+    // in order to store in memory, first we must change
+
+
+    llvm_unreachable("EFI STORE incomplete.");
+  }
+  // Handle loads
+  // LD DstReg, (HL) for a load
+  else if (MI.getOpcode() == GameBoy::LDRdPairPtrQ || MI.getOpcode() == GameBoy::LDRdPtrQ)
+  {
+    dbgs() << "EFI: LOAD\n";
+    // Operand 1: Destination register
+    dbgs() << "\tReg dest: " << MI.getOperand(0);
+    // Operand 2: Address
+    dbgs() << "\tPointer Src: " << MI.getOperand(1);
+    // Operand 3: Offset
+    dbgs() << "\tOffset: " << Offset << "\n";
+
+    if (RII.getRegClass(GameBoy::GPRRegClassID)->contains(MI.getOperand(0).getReg()))
+      dbgs() << "EFI LOAD INTO 8-bit REGISTER\n";
+    else if (RII.getRegClass(GameBoy::GPRPairRegClassID)->contains(MI.getOperand(0).getReg()))
+      dbgs() << "EFI LOAD INTO 16-bit REGISTER\n";
+
+    // MI.setDesc(TII.get(GameBoy::LD))
+    llvm_unreachable("EFI LOAD incomplete.");
+    // Only ADD SP, Imm8 can be used for signed changes to the stack pointer.
+    // Remember the stack grows downwards.
+  }
+  
+  // Now perform the load or store as needed.
+  
+  // MI.setDesc(TII.get(GameBoy::LDHLSPImm8));
+  // MI.getOperand(0).ChangeToRegister(GameBoy::RHRL, true);
+  // MI.getOperand(FIOperandNum + 1).ChangeToRegister(GameBoy::SP, false);
+  // MI.getOperand(FIOperandNum + 2).ChangeToImmediate(Offset);
+  
+
+  // MI.setDesc(TII.get(GameBoy::LDHLSPImm8));
+  // auto op_FIOperandNum = MI.getOperand(FIOperandNum);
+
+  // MI.getOperand(FIOperandNum).ChangeToRegister(GameBoy::SP, false);
+  // assert(isUInt<8>(Offset) && "Offset is out of range");
+  // MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset);
+
+  // We now need to load the value in the SP to a register.
   // llvm_unreachable("Unimplemented eliminateFrameIndex");
 
   /*

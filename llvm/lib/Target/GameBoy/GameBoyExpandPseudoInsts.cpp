@@ -361,6 +361,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtr>(Block &MBB, BlockIt MBBI) {
   MachineInstrBuilder MINew;
   auto isglobal = MI.getOperand(1).isGlobal();
   auto isImm = MI.getOperand(1).isImm();
+  auto isReg = MI.getOperand(1).isReg();
 
   if (isglobal) {
     auto SrcImm = MI.getOperand(1).getGlobal();
@@ -369,6 +370,16 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtr>(Block &MBB, BlockIt MBBI) {
   } else if (isImm) {
     auto SrcImm = MI.getOperand(1).getImm();
     MINew = buildMI(MBB, MBBI, GameBoy::LDAImm16Addr, GameBoy::RA).addImm(SrcImm);
+  } else if (isReg) {
+    auto SrcReg = MI.getOperand(1).getReg();
+
+    // Check if the pointer is held in HL
+    if (SrcReg != GameBoy::RHRL) {
+      // LD HL, PtrRegPair
+      buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(SrcReg);
+    }
+    // LD A, HL
+    MINew = buildMI(MBB, MBBI, GameBoy::LDRdHLPtr, GameBoy::RA).addReg(GameBoy::RHRL);
   } else {
     llvm_unreachable("LDRdPtr: Unknown operand type!");
   }
@@ -390,21 +401,25 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRd>(Block &MBB, BlockIt MBBI) {
 
   bool isGlobal = MI.getOperand(0).isGlobal();
   auto DstOp = MI.getOperand(0);
+  bool isReg = MI.getOperand(0).isReg();
 
   // Temporary workaround- use HL to hold the address.
-  if (DstOp.isGlobal())
+  if (DstOp.isGlobal()) {
     MINew = buildMI(MBB, MBBI, GameBoy::LDRdImm16, GameBoy::RHRL).addGlobalAddress(DstOp.getGlobal());
-  else if (DstOp.isImm())
+  }
+  else if (DstOp.isImm()) {
     MINew = buildMI(MBB, MBBI, GameBoy::LDRdImm16, GameBoy::RHRL).addImm(DstOp.getImm());
-  else
+  }
+  else if (isReg) {
+    dbgs() << "WARNING: LDPtrRd must check that Ptr is 16-bit\n";
+    auto DstReg = MI.getOperand(0).getReg();
+    // If the pointer is a register already, then see if the pointer is HL.
+    if (DstReg != GameBoy::RHRL)
+      buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(DstReg);
+
+  } else {
     llvm_unreachable("LDPtrRd: Invalid operand for destination!\n");
-
-
-  // See if the value is in A already
-  // if (SrcReg != GameBoy::RA) {
-  //   MINew = buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(SrcReg);
-    // Load the value in A to the address stored in HL
-  // }
+  }
 
   // We can use the LD (HL), Rr instruction to store the value instead.
   buildMI(MBB, MBBI, GameBoy::LDHLAddrRr).addReg(GameBoy::RHRL).addReg(SrcReg);
@@ -419,18 +434,90 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtr>(Block &MBB, BlockIt MBBI)
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
 
-  // Increment pointer to access high part of word.
-  // Switch to post increment eventually?
-  llvm_unreachable("Unimplemented LDRdPairPtr!");
+  Register PtrSrc;
+  Register DstReg;
+  Register DstRegHi;
+  Register DstRegLow;
+
+  // Get the source pointer.
+  if (MI.getOperand(0).isReg())
+    PtrSrc = MI.getOperand(0).getReg();
+  else
+    llvm_unreachable("Invalid source operand for pointer!");
+ 
+  // Get the destination register pair.
+  if (MI.getOperand(1).isReg())
+    DstReg = MI.getOperand(1).getReg();
+  else
+    llvm_unreachable("Invalid destination operand!");
+
+  // Split the source register.
+  TRI->splitReg(DstReg, DstRegHi, DstRegLow);
+  dbgs() << "High register: " << DstRegHi.id() << " Low register: " << DstRegLow.id(); 
+
+  // Load the lower byte of the pointer
+  buildMI(MBB, MBBI, GameBoy::LDRdPtr)
+    .addReg(DstRegLow, RegState::Define)
+    .addReg(PtrSrc);
+
+  // Increment the pointer to access high byte
+  buildMI(MBB, MBBI, GameBoy::INCRd)
+    .addReg(PtrSrc);
+
+  // Load the upper byte
+  buildMI(MBB, MBBI, GameBoy::LDRdPtr)
+    .addReg(DstRegHi, RegState::Define)
+    .addReg(PtrSrc);
+
+  // Remove old instruction
+  MI.removeFromParent();
+  // llvm_unreachable("Unimplemented LDRdPairPtr!");
 }
 
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRdPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
+  Register PtrDst;
+  Register SrcReg;
+  Register SrcRegHi;
+  Register SrcRegLow;
 
-  // Store the value in a register pair into a pointer.
-  llvm_unreachable("Unimplemented LDPtrRdPair!");
+  // Get the destination pointer.
+  if (MI.getOperand(0).isReg())
+    PtrDst = MI.getOperand(0).getReg();
+  else
+    llvm_unreachable("Invalid destination operand for pointer!");
+
+  // Get the source register pair
+  if (MI.getOperand(1).isReg())
+    SrcReg = MI.getOperand(1).getReg();
+  else
+    llvm_unreachable("Invalid source operand!");
+
+  // Split the source register.
+  TRI->splitReg(SrcReg, SrcRegHi, SrcRegLow);
+  dbgs() << "High register: " << SrcRegHi.id() << " Low register: " << SrcRegLow.id(); 
+
+  // First we must store the lower byte
+  // LD Ptr, RdPairLow
+  buildMI(MBB, MBBI, GameBoy::LDPtrRd)
+    .addReg(PtrDst, RegState::Define)
+    .addReg(SrcRegLow, RegState::Define);
+
+  // Then we must store the upper byte in the next address.
+  // INC Ptr
+  buildMI(MBB, MBBI, GameBoy::INCRd)
+    .addReg(PtrDst);
+  // LD Ptr, RdPairHigh
+  buildMI(MBB, MBBI, GameBoy::LDPtrRd)
+    .addReg(PtrDst)
+    .addReg(SrcRegHi, RegState::Define);
+
+  // Remove from the bundle.
+  MI.removeFromParent();
+  return true;
+  // llvm_unreachable("Unimplemented LDPtrRdPair!");
 }
 
 template<>

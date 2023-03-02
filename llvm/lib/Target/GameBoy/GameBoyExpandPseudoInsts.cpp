@@ -432,6 +432,11 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtrQ>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
+
+  // Ptr = Ptr + q
+  // LD Rd, Ptr
+  // Ptr = Ptr - q
+
   llvm_unreachable("Unimplemented LDRdPtrQ!");
 }
 
@@ -439,6 +444,13 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtrQ>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
+
+  // Ptr = Ptr + q
+  // LD RdLow, Ptr
+  // INC Ptr
+  // LD RdHigh, Ptr
+  // DEC Ptr
+  // Ptr = Ptr - q
   llvm_unreachable("Unimplemented LDRdPaurPtrQ!");
 }
 
@@ -446,6 +458,12 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDPtrQRd>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
+
+  // Expand into
+  // Ptr = Ptr + q
+  // LD Ptr + q, Rr
+  // Ptr = Ptr - q
+
   llvm_unreachable("Unimplemented LDPtrQRd!");
 }
 
@@ -453,6 +471,15 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDPtrQRdPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
+
+  // Expand into
+  // Ptr = Ptr + q
+  // LD Ptr, RrLow
+  // INC Ptr
+  // LD Ptr, RrHigh
+  // DEC Ptr
+  // Ptr = Ptr - q
+
   llvm_unreachable("Unimplemented LDPtrQRdPair!");
 }
 

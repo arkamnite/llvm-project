@@ -407,13 +407,6 @@ let usesCustomInserter = 1 in {
 //===----------------------------------------------------------------------===//
 
 let mayLoad = 1, Defs = [RA], Uses = [RA] in {
-// Pseudo instruction needed to lower LD Rd8, &Ptr
-// LD Rd, (RR)
-def LDRd8Ptr : Pseudo< (outs GPR : $rd),
-                  (ins GPRPair : $ptrreg),
-                  "ld\t$rd, [ $ptrreg ]",
-                  [(set GPR : $rd, (load i16 : $ptrreg))]>;
-
 // LD Rd, (Imm8)
 def LDRdPtrImm8 : Pseudo<(outs GPR : $rd),
                           (ins i8imm : $imm),
@@ -440,6 +433,15 @@ let canFoldAsLoad = 1, isReMaterializable = 1, Defs = [RC] in {
               (ins i16imm : $k),
               "ld\t$reg, [ $k ]",
               [(set i16 : $reg, (load imm : $k)), (implicit RC)]>;
+}
+
+// Pseudo instruction needed to lower LD Rd8, &Ptr
+// LD Rd, (RR)
+let mayLoad = 1, Defs = [RA], Uses = [RA] in {
+def LDRd8Ptr : Pseudo< (outs GPR : $rd),
+                  (ins GPRPair : $ptrreg),
+                  "ld\t$rd, [ $ptrreg ]",
+                  [(set GPR : $rd, (load i16 : $ptrreg))]>;
 }
 
 let Defs = [RHRL] in def LDPtrRd : Pseudo< (outs),

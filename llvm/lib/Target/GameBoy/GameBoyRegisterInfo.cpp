@@ -194,8 +194,18 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   Offset += MFI.getStackSize() - TFI->getOffsetOfLocalArea() + 1;
   // Fold incoming offset.
   Offset += MI.getOperand(FIOperandNum + 1).getImm();
+  
+  if (Offset > 62) {
+    llvm_unreachable("Unimplemented eliminateFrameIndex for offset > 62");
+  }
+
+  MI.getOperand(FIOperandNum).ChangeToRegister(GameBoy::SP, false);
+  assert(isUInt<8>(Offset) && "Offset is out of range");
+  MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset);
+
   dbgs() << "ELIMINATE FRAME INDEX; OPCODE: " << MI.getOpcode() << "\n";
-  llvm_unreachable("Unimplemented eliminateFrameIndex");
+  dbgs() << "ELIMINATE FRAME INDEX; OFFSET: " << Offset << "\n";
+  // llvm_unreachable("Unimplemented eliminateFrameIndex");
 
   /*
   assert(SPAdj == 0 && "Unexpected SPAdj value");

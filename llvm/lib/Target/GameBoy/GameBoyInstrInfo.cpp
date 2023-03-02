@@ -119,15 +119,15 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
 unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
                                            int &FrameIndex) const {
   switch (MI.getOpcode()) {
-  // case GameBoy::LDDRdPtrQ:
-  // case GameBoy::LDDWRdYQ: { //: FIXME: remove this once PR13375 gets fixed
-  //   if (MI.getOperand(1).isFI() && MI.getOperand(2).isImm() &&
-  //       MI.getOperand(2).getImm() == 0) {
-  //     FrameIndex = MI.getOperand(1).getIndex();
-  //     return MI.getOperand(0).getReg();
-  //   }
-  //   break;
-  // }
+  case GameBoy::LDRdPtrQ:
+  case GameBoy::LDRdPairPtrQ: {
+    if (MI.getOperand(1).isFI() && MI.getOperand(2).isImm() &&
+        MI.getOperand(2).getImm() == 0) {
+      FrameIndex = MI.getOperand(1).getIndex();
+      return MI.getOperand(0).getReg();
+    }
+    break;
+  }
   default:
     break;
   }
@@ -138,15 +138,15 @@ unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
 unsigned GameBoyInstrInfo::isStoreToStackSlot(const MachineInstr &MI,
                                           int &FrameIndex) const {
   switch (MI.getOpcode()) {
-  // case GameBoy::STDPtrQRr:
-  // case GameBoy::STDWPtrQRr: {
-  //   if (MI.getOperand(0).isFI() && MI.getOperand(1).isImm() &&
-  //       MI.getOperand(1).getImm() == 0) {
-  //     FrameIndex = MI.getOperand(0).getIndex();
-  //     return MI.getOperand(2).getReg();
-  //   }
-  //   break;
-  // }
+  case GameBoy::LDPtrQRd:
+  case GameBoy::LDPtrQRdPair: {
+    if (MI.getOperand(0).isFI() && MI.getOperand(1).isImm() &&
+        MI.getOperand(1).getImm() == 0) {
+      FrameIndex = MI.getOperand(0).getIndex();
+      return MI.getOperand(2).getReg();
+    }
+    break;
+  }
   default:
     break;
   }

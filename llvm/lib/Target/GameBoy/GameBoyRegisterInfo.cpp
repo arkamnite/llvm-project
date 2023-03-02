@@ -167,18 +167,50 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                                           int SPAdj, unsigned FIOperandNum,
                                           RegScavenger *RS) const {
 
-  llvm_unreachable("Unimplemented eliminateFrameIndex");
-  /*
-  assert(SPAdj == 0 && "Unexpected SPAdj value");
+
+  // This function will convert the frame index number to an offset for the SP
+  // register. In terms of the Game Boy, this can either use the INC SP instructions
+  // or the ADD SP, r8 instruction which is a signed offset. A frame index is a number
+  // associated with an abstract stack frame, and this function will use SP to
+  // access this indexed part of the stack.
+
+
   MachineInstr &MI = *II;
   DebugLoc dl = MI.getDebugLoc();
   MachineBasicBlock &MBB = *MI.getParent();
   const MachineFunction &MF = *MBB.getParent();
+
   const GameBoyTargetMachine &TM = (const GameBoyTargetMachine &)MF.getTarget();
   const TargetInstrInfo &TII = *TM.getSubtargetImpl()->getInstrInfo();
   const MachineFrameInfo &MFI = MF.getFrameInfo();
   const TargetFrameLowering *TFI = TM.getSubtargetImpl()->getFrameLowering();
   const GameBoySubtarget &STI = MF.getSubtarget<GameBoySubtarget>();
+
+  int FrameIndex = MI.getOperand(FIOperandNum).getIndex();
+  int Offset = MFI.getObjectOffset(FrameIndex);
+
+  // By default, the SP will always point to an empty slot. Therefore, we need
+  // to add 1 to the offset.
+  Offset += MFI.getStackSize() - TFI->getOffsetOfLocalArea() + 1;
+  // Fold incoming offset.
+  Offset += MI.getOperand(FIOperandNum + 1).getImm();
+  dbgs() << "ELIMINATE FRAME INDEX; OPCODE: " << MI.getOpcode() << "\n";
+  llvm_unreachable("Unimplemented eliminateFrameIndex");
+
+  /*
+  assert(SPAdj == 0 && "Unexpected SPAdj value");
+
+  MachineInstr &MI = *II;
+  DebugLoc dl = MI.getDebugLoc();
+  MachineBasicBlock &MBB = *MI.getParent();
+  const MachineFunction &MF = *MBB.getParent();
+
+  const GameBoyTargetMachine &TM = (const GameBoyTargetMachine &)MF.getTarget();
+  const TargetInstrInfo &TII = *TM.getSubtargetImpl()->getInstrInfo();
+  const MachineFrameInfo &MFI = MF.getFrameInfo();
+  const TargetFrameLowering *TFI = TM.getSubtargetImpl()->getFrameLowering();
+  const GameBoySubtarget &STI = MF.getSubtarget<GameBoySubtarget>();
+
   int FrameIndex = MI.getOperand(FIOperandNum).getIndex();
   int Offset = MFI.getObjectOffset(FrameIndex);
 
@@ -291,11 +323,10 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 
 Register GameBoyRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   const TargetFrameLowering *TFI = MF.getSubtarget().getFrameLowering();
-  if (TFI->hasFP(MF)) {
-    // The Y pointer register
-    return GameBoy::R28;
-  }
-
+  // if (TFI->hasFP(MF)) {
+  //   // The Y pointer register
+  //   return GameBoy::R28;
+  // }
   return GameBoy::SP;
 }
 

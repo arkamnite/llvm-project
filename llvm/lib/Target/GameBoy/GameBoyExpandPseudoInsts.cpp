@@ -358,11 +358,20 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtr>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
-  auto SrcImm = MI.getOperand(1).getGlobal();
-
-  // Load the pointer into the A register first
   MachineInstrBuilder MINew;
-  MINew = buildMI(MBB, MBBI, GameBoy::LDAImm16Addr, GameBoy::RA).addGlobalAddress(SrcImm);
+  auto isglobal = MI.getOperand(1).isGlobal();
+  auto isImm = MI.getOperand(1).isImm();
+
+  if (isglobal) {
+    auto SrcImm = MI.getOperand(1).getGlobal();
+    // Load the pointer into the A register first
+    MINew = buildMI(MBB, MBBI, GameBoy::LDAImm16Addr, GameBoy::RA).addGlobalAddress(SrcImm);
+  } else if (isImm) {
+    auto SrcImm = MI.getOperand(1).getImm();
+    MINew = buildMI(MBB, MBBI, GameBoy::LDAImm16Addr, GameBoy::RA).addImm(SrcImm);
+  } else {
+    llvm_unreachable("LDRdPtr: Unknown operand type!");
+  }
 
   // See if we need to LD Rd, A
   if (DstReg != GameBoy::RA)
@@ -376,12 +385,20 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtr>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRd>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  auto DstImm = MI.getOperand(0).getGlobal();
+  MachineInstrBuilder MINew;
   Register SrcReg = MI.getOperand(1).getReg();
 
+  bool isGlobal = MI.getOperand(0).isGlobal();
+  auto DstOp = MI.getOperand(0);
+
   // Temporary workaround- use HL to hold the address.
-  MachineInstrBuilder MINew;
-  MINew = buildMI(MBB, MBBI, GameBoy::LDRdImm16, GameBoy::RHRL).addGlobalAddress(DstImm);  
+  if (DstOp.isGlobal())
+    MINew = buildMI(MBB, MBBI, GameBoy::LDRdImm16, GameBoy::RHRL).addGlobalAddress(DstOp.getGlobal());
+  else if (DstOp.isImm())
+    MINew = buildMI(MBB, MBBI, GameBoy::LDRdImm16, GameBoy::RHRL).addImm(DstOp.getImm());
+  else
+    llvm_unreachable("LDPtrRd: Invalid operand for destination!\n");
+
 
   // See if the value is in A already
   // if (SrcReg != GameBoy::RA) {
@@ -409,6 +426,34 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRdPair>(Block &MBB, BlockIt MBBI)
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
   llvm_unreachable("Unimplemented LDPtrRdPair!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDRdPtrQ>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDRdPtrQ!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtrQ>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDRdPaurPtrQ!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDPtrQRd>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDPtrQRd!");
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LDPtrQRdPair>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  llvm_unreachable("Unimplemented LDPtrQRdPair!");
 }
 
 //===----------------------------------------------------------------------===//
@@ -517,6 +562,16 @@ bool GameBoyExpandPseudo::expand<GameBoy::AndRdRr>(Block &MBB, BlockIt MBBI) {
 }
 
 template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AndRdRrPair>(Block &MBB, BlockIt MBBI) {
+  // See if Rd is A; if so, can avoid LD A, Rd
+  // MachineInstr &MI = *MBBI;
+  // Register DstReg = MI.getOperand(0).getReg();
+  // Register SrcReg = MI.getOperand(1).getReg();
+  llvm_unreachable("Incomplete AndRdRrPair");
+  return true;
+}
+
+template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AndRdImm8>(Block &MBB, BlockIt MBBI) {
   llvm_unreachable("Incomplete AndRdImm8");
   return true;
@@ -525,6 +580,12 @@ bool GameBoyExpandPseudo::expand<GameBoy::AndRdImm8>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::OrRdRr>(Block &MBB, BlockIt MBBI) {
   llvm_unreachable("Incomplete OrRdRr");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::OrRdRrPair>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete OrRdRrPair");
   return true;
 }
 
@@ -830,6 +891,10 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::LDPtrRd);
     EXPAND(GameBoy::LDRdPairPtr);
     EXPAND(GameBoy::LDPtrRdPair);
+    EXPAND(GameBoy::LDRdPtrQ);
+    EXPAND(GameBoy::LDRdPairPtrQ);
+    EXPAND(GameBoy::LDPtrQRd);
+    EXPAND(GameBoy::LDPtrQRdPair);
     EXPAND(GameBoy::AddRdRr);
     EXPAND(GameBoy::AddRdImm8);
     EXPAND(GameBoy::AddRdPairRrPair);

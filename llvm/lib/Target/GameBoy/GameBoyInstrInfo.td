@@ -644,9 +644,40 @@ let mayLoad = 1 in {
                   "push\t$reg",
                   []>;
 
-// PUSH HL
 // Used for pseudo-instructions where HL is used as a temporary.
 }
+
+// let Defs = [RHRL] in {
+
+let canFoldAsLoad = 1, isReMaterializable = 1, Constraints = "@earlyclobber $reg" in {
+  // Indirect load with displacement, 8-bit
+  def LDRdPtrQ : Pseudo<(outs GPR : $reg),
+                        (ins memri : $memri),
+                        "#PSEUDO indirect 8-bit load w/ disp",
+                        [(set i8 : $reg, (load addr : $memri))]>;
+
+  // Indirect load with displacement, 16-bit
+  def LDRdPairPtrQ : Pseudo<
+                        (outs GPRPair : $reg),
+                        (ins memri : $memri),
+                        "#PSEUDO indirect 16-bit load w/ disp",
+                        [(set i16 : $reg, (load addr : $memri))]>;
+}
+
+// Indirect store with displacement, 8-bit
+def LDPtrQRd : Pseudo<(outs),
+                      (ins memri : $memri, GPR : $reg),
+                      "#PSEUDO indirect 8-bit store w/ disp",
+                      [(store i8 : $reg, addr : $memri)]>;
+
+// Indirect store with displacement, 16-bit
+// Store the first word, increment offset and address, Store second word
+def LDPtrQRdPair : Pseudo<(outs),
+                          (ins memri : $memri, GPRPair : $src),
+                          "#PSEUDO indirect 16-bit store w/ disp",
+                          [(store i16 : $src, addr : $memri)]>;
+
+// }
 
 // LDHL SP, s8
 
@@ -766,7 +797,7 @@ def SbcAImm8 : GBF0<0b11011110,
 // SBC A, (HL)
 
 //===----------------------------------------------------------------------===//
-// 8-bit logic instructions
+// Logic instructions
 //===----------------------------------------------------------------------===//
 
 // Pseudo Instructions (excluding (HL))
@@ -787,6 +818,23 @@ def XorRdRr : Pseudo< (outs GPR : $rd),
                       (ins GPR : $src, GPR : $rr),
                       "xor\t$rd, $rr",
                       [(set i8 : $rd, (xor i8 : $src, i8 : $rr))]>;
+
+// Register Pair 
+def AndRdRrPair : Pseudo< (outs GPRPair : $rd),
+                      (ins GPRPair : $src, GPRPair : $rr),
+                      "and\t$rd, $rr",
+                      [(set i16 : $rd, (and i16 : $src, i16 : $rr))]>;
+// OR Rd, Rr
+def OrRdRrPair : Pseudo< (outs GPRPair : $rd),
+                      (ins GPRPair : $src, GPRPair : $rr),
+                      "or\t$rd, $rr",
+                      [(set i16 : $rd, (or i16 : $src, i16 : $rr))]>;
+
+// XOR Rd, Rr
+def XorRdRrPair : Pseudo< (outs GPRPair : $rd),
+                      (ins GPRPair : $src, GPRPair : $rr),
+                      "xor\t$rd, $rr",
+                      [(set i16 : $rd, (xor i16 : $src, i16 : $rr))]>;
 }
 // AND Rd, Imm8
 def AndRdImm8 : Pseudo< (outs GPR : $rd),
@@ -1559,11 +1607,12 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
                  : $src, GPR8
                  : $rr),
                 "and\t$rd, $rr",
-                [(set i8
-                  : $rd, (and i8
-                          : $src, i8
-                          : $rr)),
-                 (implicit SREG)]>;
+                []>;
+                // [(set i8
+                //   : $rd, (and i8
+                //           : $src, i8
+                //           : $rr)),
+                //  (implicit SREG)]>;
 
     // ANDW Rd+1:Rd, Rr+1:Rr
     //
@@ -1591,11 +1640,12 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
                  : $src, GPR8
                  : $rr),
                 "or\t$rd, $rr",
-                [(set i8
-                  : $rd, (or i8
-                          : $src, i8
-                          : $rr)),
-                 (implicit SREG)]>;
+                []>;
+                // [(set i8
+                //   : $rd, (or i8
+                //           : $src, i8
+                //           : $rr)),
+                //  (implicit SREG)]>;
 
     // ORW Rd+1:Rd, Rr+1:Rr
     //
@@ -1656,11 +1706,12 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
               : $src, imm_ldi8
               : $k),
              "andi\t$rd, $k",
-             [(set i8
-               : $rd, (and i8
-                       : $src, imm
-                       : $k)),
-              (implicit SREG)]>;
+             []>;
+            //  [(set i8
+            //    : $rd, (and i8
+            //            : $src, imm
+            //            : $k)),
+            //   (implicit SREG)]>;
 
   // ANDI Rd+1:Rd, K+1:K
   //
@@ -1674,11 +1725,12 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
                 : $src, i16imm
                 : $k),
                "andiw\t$rd, $k",
-               [(set i16
-                 : $rd, (and i16
-                         : $src, imm
-                         : $k)),
-                (implicit SREG)]>;
+               []>;
+              //  [(set i16
+              //    : $rd, (and i16
+              //            : $src, imm
+              //            : $k)),
+              //   (implicit SREG)]>;
 
   def ORIRdK
       : FRdK<0b0110,
@@ -1688,11 +1740,12 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
               : $src, imm_ldi8
               : $k),
              "ori\t$rd, $k",
-             [(set i8
-               : $rd, (or i8
-                       : $src, imm
-                       : $k)),
-              (implicit SREG)]>;
+             []>;
+            //  [(set i8
+            //    : $rd, (or i8
+            //            : $src, imm
+            //            : $k)),
+            //   (implicit SREG)]>;
 
   // ORIW Rd+1:Rd, K+1,K
   //
@@ -1706,11 +1759,12 @@ let Constraints = "$src = $rd", Defs = [SREG] in {
                 : $src, i16imm
                 : $rr),
                "oriw\t$rd, $rr",
-               [(set i16
-                 : $rd, (or i16
-                         : $src, imm
-                         : $rr)),
-                (implicit SREG)]>;
+               []>;
+              //  [(set i16
+              //    : $rd, (or i16
+              //            : $src, imm
+              //            : $rr)),
+              //   (implicit SREG)]>;
 }
 
 //===----------------------------------------------------------------------===//
@@ -2264,9 +2318,12 @@ let canFoldAsLoad = 1, isReMaterializable = 1 in {
                  : $reg),
                 (ins memri
                  : $memri),
-                "ldd\t$reg, $memri", [(set i8
-                                       : $reg, (load addr
-                                                : $memri))]>,
+                "ldd\t$reg, $memri", 
+                [
+                  // (set i8
+                  //                      : $reg, (load addr
+                  //                               : $memri))
+                                                ]>,
       Requires<[HasSRAM]>;
 
   // LDDW Rd+1:Rd, P+q
@@ -2279,9 +2336,11 @@ let canFoldAsLoad = 1, isReMaterializable = 1 in {
                 : $dst),
                (ins memri
                 : $memri),
-               "lddw\t$dst, $memri", [(set i16
-                                       : $dst, (load addr
-                                                : $memri))]>,
+               "lddw\t$dst, $memri", [
+                // (set i16
+                //                        : $dst, (load addr
+                //                                 : $memri))
+                                                ]>,
       Requires<[HasSRAM]>;
 
   // An identical pseudo instruction to LDDWRdPtrQ, expect restricted to the Y
@@ -2507,9 +2566,11 @@ def STDPtrQRr : FSTDLDD<1, (outs),
                         (ins memri
                          : $memri, GPR8
                          : $reg),
-                        "std\t$memri, $reg", [(store i8
-                                               : $reg, addr
-                                               : $memri)]>,
+                        "std\t$memri, $reg", [
+                          // (store i8
+                          //                      : $reg, addr
+                          //                      : $memri)
+                                               ]>,
                 Requires<[HasSRAM]>;
 
 // STDW P+q, Rr+1:Rr
@@ -2523,9 +2584,11 @@ def STDWPtrQRr : Pseudo<(outs),
                         (ins memri
                          : $memri, DREGS
                          : $src),
-                        "stdw\t$memri, $src", [(store i16
-                                                : $src, addr
-                                                : $memri)]>,
+                        "stdw\t$memri, $src", [
+                          // (store i16
+                          //                       : $src, addr
+                          //                       : $memri)
+                                                ]>,
                  Requires<[HasSRAM]>;
 
 // Load program memory operations.

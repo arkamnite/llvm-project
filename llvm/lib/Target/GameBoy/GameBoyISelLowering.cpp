@@ -54,8 +54,8 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setSupportsUnalignedAtomics(true);
 
   // We cannot directly load from two i16 registers, so must expand this as appropriate.
-  setOperationAction(ISD::LOAD, MVT::i16, Custom);
-  setOperationAction(ISD::STORE, MVT::i16, Custom);
+  // setOperationAction(ISD::LOAD, MVT::i16, Custom);
+  // setOperationAction(ISD::STORE, MVT::i16, Custom);
   // setOperationAction(ISD::CopyToReg, MVT::i16, Custom);
   // setOperationAction(ISD::CopyFromReg, MVT::i8, Custom);
   // setOperationAction(ISD::CopyFromReg, MVT::i16, Custom);
@@ -892,6 +892,7 @@ SDValue GameBoyTargetLowering::LowerLoad(SDValue Op, SelectionDAG &DAG) const {
 SDValue GameBoyTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
   default:
+    dbgs() << Op.getOpcode() << "\n";
     llvm_unreachable("Don't know how to custom lower this!");
   // case ISD::LOAD:
   // case ISD::CopyFromReg:

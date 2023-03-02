@@ -292,11 +292,15 @@ void GameBoyFrameLowering::emitEpilogue(MachineFunction &MF,
 // Notice that strictly this is not a frame pointer because it contains SP after
 // frame allocation instead of having the original SP in function entry.
 bool GameBoyFrameLowering::hasFP(const MachineFunction &MF) const {
-  const GameBoyMachineFunctionInfo *FuncInfo = MF.getInfo<GameBoyMachineFunctionInfo>();
 
+  // Game Boy does not have a frame pointer.
+  return false;
+  /*
+  const GameBoyMachineFunctionInfo *FuncInfo = MF.getInfo<GameBoyMachineFunctionInfo>();
   return (FuncInfo->getHasSpills() || FuncInfo->getHasAllocas() ||
           FuncInfo->getHasStackArgs() ||
           MF.getFrameInfo().hasVarSizedObjects());
+  */
 }
 
 bool GameBoyFrameLowering::spillCalleeSavedRegisters(
@@ -525,11 +529,11 @@ struct GameBoyFrameAnalyzer : public MachineFunctionPass {
     for (const MachineBasicBlock &BB : MF) {
       for (const MachineInstr &MI : BB) {
         int Opcode = MI.getOpcode();
-        llvm_unreachable("Unimplemented function scanning for fixed frame indices!");
-        // if ((Opcode != GameBoy::LDDRdPtrQ) && (Opcode != GameBoy::LDDWRdPtrQ) &&
-        //     (Opcode != GameBoy::STDPtrQRr) && (Opcode != GameBoy::STDWPtrQRr)) {
-        //   continue;
-        // }
+        // llvm_unreachable("Unimplemented function scanning for fixed frame indices!");
+        if ((Opcode != GameBoy::LDRdPtrQ) && (Opcode != GameBoy::LDRdPairPtrQ) &&
+            (Opcode != GameBoy::LDPtrQRd) && (Opcode != GameBoy::LDPtrQRdPair)) {
+          continue;
+        }
 
         for (const MachineOperand &MO : MI.operands()) {
           if (!MO.isFI()) {

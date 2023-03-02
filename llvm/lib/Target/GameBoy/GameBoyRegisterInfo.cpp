@@ -211,6 +211,9 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   // LD (HL), SrcReg for a store
   if (MI.getOpcode() == GameBoy::LDPtrQRdPair || MI.getOpcode() == GameBoy::LDPtrQRd) 
   {
+
+    auto RegSrc = MI.getOperand(2).getReg();
+
     dbgs() << "EFI: STORE\n";
     // Operand 1: Pointer destination
     dbgs() << "\tPointer dest: " << MI.getOperand(0);
@@ -219,22 +222,27 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
     // Operand 3: Source register
     dbgs() << "\tRegSrc: " << MI.getOperand(2) << "\n";
 
-    if (RII.getRegClass(GameBoy::GPRRegClassID)->contains(MI.getOperand(2).getReg()))
+    if (RII.getRegClass(GameBoy::GPRRegClassID)->contains(RegSrc)) {
+      // LD (HL), Rr
       dbgs() << "EFI STORE INTO 8-bit REGISTER\n";
-    else if (RII.getRegClass(GameBoy::GPRPairRegClassID)->contains(MI.getOperand(2).getReg()))
+      MI.setDesc(TII.get(GameBoy::LDHLAddrRr));
+    }
+    else if (RII.getRegClass(GameBoy::GPRPairRegClassID)->contains(RegSrc)) {
+      // LD (HL), RrPair
       dbgs() << "EFI STORE INTO 16-bit REGISTER\n";
+      MI.setDesc(TII.get(GameBoy::LDPtrRdPair));
+    } else {
+      llvm_unreachable("Invalid register class for LD (HL), SrcReg!");
+    }
 
-    // ADD SP, r8
-    // Now do LD (SP), Src
-    // in order to store in memory, first we must change
-
-
-    llvm_unreachable("EFI STORE incomplete.");
+    MI.getOperand(0).ChangeToRegister(GameBoy::RHRL, false);
+    MI.getOperand(1).ChangeToRegister(RegSrc, false);
   }
   // Handle loads
   // LD DstReg, (HL) for a load
   else if (MI.getOpcode() == GameBoy::LDRdPairPtrQ || MI.getOpcode() == GameBoy::LDRdPtrQ)
   {
+    auto DstReg = MI.getOperand(0).getReg();
     dbgs() << "EFI: LOAD\n";
     // Operand 1: Destination register
     dbgs() << "\tReg dest: " << MI.getOperand(0);
@@ -243,15 +251,21 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
     // Operand 3: Offset
     dbgs() << "\tOffset: " << Offset << "\n";
 
-    if (RII.getRegClass(GameBoy::GPRRegClassID)->contains(MI.getOperand(0).getReg()))
+    if (RII.getRegClass(GameBoy::GPRRegClassID)->contains(DstReg)) {
+      // LD Reg, (HL)
+      MI.setDesc(TII.get(GameBoy::LDRdPtr));
       dbgs() << "EFI LOAD INTO 8-bit REGISTER\n";
-    else if (RII.getRegClass(GameBoy::GPRPairRegClassID)->contains(MI.getOperand(0).getReg()))
+    }
+    else if (RII.getRegClass(GameBoy::GPRPairRegClassID)->contains(DstReg)) {
+      // LD RegPair, (HL)
+      MI.setDesc(TII.get(GameBoy::LDRdPairPtr));
       dbgs() << "EFI LOAD INTO 16-bit REGISTER\n";
+    } else {
+      llvm_unreachable("Invalid register class for LD DstReg, (HL)");
+    }
 
-    // MI.setDesc(TII.get(GameBoy::LD))
-    llvm_unreachable("EFI LOAD incomplete.");
-    // Only ADD SP, Imm8 can be used for signed changes to the stack pointer.
-    // Remember the stack grows downwards.
+    MI.getOperand(0).ChangeToRegister(DstReg, false);
+    MI.getOperand(1).ChangeToRegister(GameBoy::RHRL, false);
   }
   
   // Now perform the load or store as needed.

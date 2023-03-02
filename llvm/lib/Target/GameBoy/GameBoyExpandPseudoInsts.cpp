@@ -418,6 +418,9 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtr>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
+
+  // Increment pointer to access high part of word.
+  // Switch to post increment eventually?
   llvm_unreachable("Unimplemented LDRdPairPtr!");
 }
 
@@ -425,6 +428,8 @@ template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRdPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   printAllOperands(MI);
+
+  // Store the value in a register pair into a pointer.
   llvm_unreachable("Unimplemented LDPtrRdPair!");
 }
 

@@ -1264,7 +1264,7 @@ def Select16 : SelectPseudo<(outs GPRPair
 // pointer before prolog-epilog rewriting occurs.
 // Pessimistically assume ADJCALLSTACKDOWN / ADJCALLSTACKUP will become
 // sub / add which can clobber SREG.
-let Defs = [SP, SREG], Uses = [SP] in {
+let Defs = [SP, RF], Uses = [SP] in {
   def ADJCALLSTACKDOWN : Pseudo<(outs),
                                 (ins i16imm
                                  : $amt, i16imm
@@ -1278,7 +1278,7 @@ let Defs = [SP, SREG], Uses = [SP] in {
   // register allocator might use it in rare cases (for rematerialization, it
   // seems). hasSideEffects needs to be set to true so this instruction isn't
   // considered dead.
-  let Defs = [R31R30], hasSideEffects = 1 in def ADJCALLSTACKUP
+  let Defs = [RHRL], hasSideEffects = 1 in def ADJCALLSTACKUP
       : Pseudo<(outs),
                (ins i16imm
                 : $amt1, i16imm

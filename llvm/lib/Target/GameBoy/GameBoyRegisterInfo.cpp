@@ -63,8 +63,9 @@ GameBoyRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
 const uint32_t *
 GameBoyRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
                                       CallingConv::ID CC) const {
-  const GameBoySubtarget &STI = MF.getSubtarget<GameBoySubtarget>();
-  return STI.hasTinyEncoding() ? CSR_NormalTiny_RegMask : CSR_Normal_RegMask;
+  // const GameBoySubtarget &STI = MF.getSubtarget<GameBoySubtarget>();
+  // return STI.hasTinyEncoding() ? CSR_NormalTiny_RegMask : CSR_Normal_RegMask;
+  return CSR_RegMask;
 }
 
 BitVector GameBoyRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
@@ -73,29 +74,31 @@ BitVector GameBoyRegisterInfo::getReservedRegs(const MachineFunction &MF) const 
   // Reserve the intermediate result registers r1 and r2
   // The result of instructions like 'mul' is always stored here.
   // R0/R1/R1R0 are always reserved on both GameBoy and GameBoytiny.
-  Reserved.set(GameBoy::R0);
-  Reserved.set(GameBoy::R1);
-  Reserved.set(GameBoy::R1R0);
+  // Reserved.set(GameBoy::R0);
+  // Reserved.set(GameBoy::R1);
+  // Reserved.set(GameBoy::R1R0);
 
   // Reserve result register A which is used for all arithmetic.
+  // Is this really always considered live? We should be able to
+  // allocate to the A register since it is used in so many instructions.
   Reserved.set(GameBoy::RA);
   Reserved.set(GameBoy::RF);
   Reserved.set(GameBoy::RARF);
 
   // Reserve the stack pointer.
-  Reserved.set(GameBoy::SPL);
-  Reserved.set(GameBoy::SPH);
+  // Reserved.set(GameBoy::SPL);
+  // Reserved.set(GameBoy::SPH);
   Reserved.set(GameBoy::SP);
 
   // Reserve R2~R17 only on GameBoytiny.
-  if (MF.getSubtarget<GameBoySubtarget>().hasTinyEncoding()) {
-    // Reserve 8-bit registers R2~R15, Rtmp(R16) and Zero(R17).
-    for (unsigned Reg = GameBoy::R2; Reg <= GameBoy::R17; Reg++)
-      Reserved.set(Reg);
-    // Reserve 16-bit registers R3R2~R18R17.
-    for (unsigned Reg = GameBoy::R3R2; Reg <= GameBoy::R18R17; Reg++)
-      Reserved.set(Reg);
-  }
+  // if (MF.getSubtarget<GameBoySubtarget>().hasTinyEncoding()) {
+  //   // Reserve 8-bit registers R2~R15, Rtmp(R16) and Zero(R17).
+  //   for (unsigned Reg = GameBoy::R2; Reg <= GameBoy::R17; Reg++)
+  //     Reserved.set(Reg);
+  //   // Reserve 16-bit registers R3R2~R18R17.
+  //   for (unsigned Reg = GameBoy::R3R2; Reg <= GameBoy::R18R17; Reg++)
+  //     Reserved.set(Reg);
+  // }
 
   // We tenatively reserve the frame pointer register r29:r28 because the
   // function may require one, but we cannot tell until register allocation
@@ -106,9 +109,9 @@ BitVector GameBoyRegisterInfo::getReservedRegs(const MachineFunction &MF) const 
   // TODO: Write a pass to enumerate functions which reserved the Y register
   //       but didn't end up needing a frame pointer. In these, we can
   //       convert one or two of the spills inside to use the Y register.
-  Reserved.set(GameBoy::R28);
-  Reserved.set(GameBoy::R29);
-  Reserved.set(GameBoy::R29R28);
+  // Reserved.set(GameBoy::R28);
+  // Reserved.set(GameBoy::R29);
+  // Reserved.set(GameBoy::R29R28);
 
   return Reserved;
 }

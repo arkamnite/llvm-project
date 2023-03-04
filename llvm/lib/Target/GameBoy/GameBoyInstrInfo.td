@@ -3544,14 +3544,14 @@ def : Pat<(i16(GameBoyWrapper tblockaddress
           (LDRdImm16 tblockaddress
            : $dst)>;
 
-def : Pat<(i8(trunc(GameBoylsrwn DLDREGS
-                    : $src, (i16 8)))),
-          (EXTRACT_SUBREG DREGS
-           : $src, sub_hi)>;
+// def : Pat<(i8(trunc(GameBoylsrwn GPRPair
+//                     : $src, (i16 8)))),
+//           (EXTRACT_SUBREG GPRPair
+//            : $src, sub_hi)>;
 
 // :FIXME: DAGCombiner produces an shl node after legalization from these seq:
 // BR_JT -> (mul x, 2) -> (shl x, 1)
-def : Pat<(shl i16 : $src1, (i8 1)), (LSLWRd i16 : $src1)>;
+// def : Pat<(shl i16 : $src1, (i8 1)), (LSLWRd i16 : $src1)>;
 
 // Lowering of 'tst' node to 'TST' instruction.
 // TST is an alias of AND Rd, Rd.

@@ -55,34 +55,71 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
 
     BuildMI(MBB, MI, DL, get(Opc), DestReg).
       addReg(SrcReg, getKillRegState(KillSrc));
+
+  // Otherwise handle a copy from an 16-bit to a 16-bit register
   } else if (GameBoy::GPRPairRegClass.contains(DestReg, SrcReg)) {
     Opc = GameBoy::LDRdPairRrPair;
 
     BuildMI(MBB, MI, DL, get(Opc), DestReg).
       addReg(SrcReg, getKillRegState(KillSrc));
-    // Split up the register pairs.
-    // Register DestLo, DestHi, SrcLo, SrcHi;
-    // TRI.splitReg(DestReg, DestLo, DestHi);
-    // TRI.splitReg(SrcReg, SrcLo, SrcHi);
-
-    // // Copy registers individually
-    // BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo).
-    //   addReg(SrcLo, getKillRegState(KillSrc));
-    // BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestHi).
-    //   addReg(SrcHi, getKillRegState(KillSrc));
-
   } else {
     // We have a case where the registers are in different classes.
     // Therefore we must handle copies from 8-bit registers to 16-bit registers.
     if (GameBoy::GPRRegClass.contains(SrcReg, SrcReg)) {
       // Split the register pair in half.
       Register DestLo, DestHi;
-      if (GameBoy::GPRRegClass.contains(DestReg, DestReg))
-        dbgs() << "Attempting to split an 8-bit destination register\n";
-      if (GameBoy::GPRPairRegClass.contains(DestReg, DestReg))
-        dbgs() << "Attempting to split a 16-bit destination register\n";
-      if (GameBoy::GPR8RegClass.contains(DestReg, DestReg))
-        dbgs() << "Attempting to split AVR 8-bit register\n";
+
+      // if (GameBoy::GPRRegClass.contains(DestReg, DestReg))
+      //   dbgs() << "Attempting to split an 8-bit destination register\n";
+      // if (GameBoy::GPRPairRegClass.contains(DestReg, DestReg))
+      //   dbgs() << "Attempting to split a 16-bit destination register\n";
+
+      // If an AVR destination register has been selected, then allocate a Game Boy register instead.
+      if (GameBoy::GPR8RegClass.contains(DestReg, DestReg) || GameBoy::DREGSRegClass.contains(DestReg, DestReg)) {
+        // We cannot perform narrowing copies, so do not handle
+        // this circumstance.
+        assert(!GameBoy::DREGSRegClass.contains(DestReg, DestReg) && "Cannot perform narrowing copy from 16-bit AVR reg!");
+        // Give me more information about this current instruction.        
+        auto mbbname = MBB.getFullName();
+        dbgs() << "Attempting to change AVR register to Game Boy register...\n";
+        dbgs() << "\t MBB Name: " << mbbname;
+        dbgs() << "\n\t Instruction: " << *MI;
+
+        // Is it possible to perhaps find a new register to access?
+        auto availableRegisters = TRI.getAllocatableSet(*MBB.getParent(), &GameBoy::GPRPairRegClass);
+        dbgs() << "\tNumber of available registers: " << availableRegisters.count() << "\n";
+        auto replacementRegID = availableRegisters.find_first();
+        MCRegister replacementReg;
+        assert((replacementRegID != -1) && "No available Game Boy registers!");
+
+        // Find out which register class we are moving to.
+        // To avoid problems, we should ideally select
+        // a 16-bit destination register as this is always
+        // possible to move into.
+        for (int i = 0; i < availableRegisters.count(); i++) {
+          // See if the back register is available
+          dbgs() << "\tExamining register " << MCRegister(availableRegisters.find_last()) << "\n";
+          if (GameBoy::GPRPairRegClass.contains(MCRegister(availableRegisters.find_last()))) {
+            replacementReg = MCRegister(availableRegisters.find_last());
+            break; 
+          } else {
+            availableRegisters.flip(availableRegisters.find_last());
+          }
+        }
+
+        // Ensure that we found a replacement register.
+        assert(replacementReg && "Could not find a 16-bit destination register for Game Boy!");
+        dbgs() << "\tAllocating to register " << replacementReg << "\n";
+
+        // Actually swap the register.
+        // Mark it as a define since it is not in use currently.
+        (*MI).getOperand(0).ChangeToRegister(replacementReg, true);
+
+        // Before we change the value of DestReg, we need to make sure that we handle all other
+        // instructions that are expecting it as a value.
+        DestReg = replacementReg;
+        dbgs() << "\n\tNew instruction: " << *MI;        
+      }
 
       dbgs() << "Splitting register " << DestReg.id() << "\n";
       TRI.splitReg(DestReg, DestLo, DestHi);
@@ -92,6 +129,7 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
       BuildMI(MBB, MI, DL, get(GameBoy::LDRdRr), DestLo).addReg(SrcReg, getKillRegState(KillSrc));
     } else {
       // We cannot do narrowing copies
+      dbgs() << "DstReg: " << DestReg << " SrcReg: " << SrcReg << "\n";
       llvm_unreachable("Impossible to copy from a 16-bit register to an 8-bit register");
     }
   }
@@ -110,10 +148,6 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
   } else if (SrcReg == GameBoy::SP) {
       llvm_unreachable("Impossible to copy from SP to reg");
   }
-
-  // Consider the case:
-  // LD A, Imm8
-
 }
 
 unsigned GameBoyInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,

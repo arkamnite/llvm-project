@@ -113,11 +113,11 @@ void GameBoyInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
 
         // Actually swap the register.
         // Mark it as a define since it is not in use currently.
-        (*MI).getOperand(0).ChangeToRegister(replacementReg, true);
+        // (*MI).getOperand(0).ChangeToRegister(replacementReg, true);
 
         // Before we change the value of DestReg, we need to make sure that we handle all other
         // instructions that are expecting it as a value.
-        DestReg = replacementReg;
+        // DestReg = replacementReg;
         dbgs() << "\n\tNew instruction: " << *MI;        
       }
 

@@ -125,7 +125,7 @@ GameBoyRegisterInfo::getLargestLegalSuperClass(const TargetRegisterClass *RC,
   }
 
   if (TRI->isTypeLegalForClass(*RC, MVT::i8)) {
-    return &GameBoy::GPR8RegClass;
+    return &GameBoy::GPRRegClass;
   }
 
   llvm_unreachable("Invalid register size");
@@ -419,6 +419,9 @@ void GameBoyRegisterInfo::splitReg(Register Reg, Register &LoReg,
 
   LoReg = getSubReg(Reg, GameBoy::sub_lo);
   HiReg = getSubReg(Reg, GameBoy::sub_hi);
+
+  if (LoReg == GameBoy::R24 || HiReg == GameBoy::R24)
+    dbgs() << "ERROR ERROR ERROR ERROR R24\n";
 }
 
 bool GameBoyRegisterInfo::shouldCoalesce(

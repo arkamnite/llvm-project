@@ -399,7 +399,6 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRd>(Block &MBB, BlockIt MBBI) {
   MachineInstrBuilder MINew;
   Register SrcReg = MI.getOperand(1).getReg();
 
-  bool isGlobal = MI.getOperand(0).isGlobal();
   auto DstOp = MI.getOperand(0);
   bool isReg = MI.getOperand(0).isReg();
 
@@ -472,6 +471,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtr>(Block &MBB, BlockIt MBBI)
   // Remove old instruction
   MI.removeFromParent();
   // llvm_unreachable("Unimplemented LDRdPairPtr!");
+  return true;
 }
 
 template<>
@@ -810,7 +810,6 @@ bool GameBoyExpandPseudo::expand<GameBoy::ZEXT>(Block &MBB, BlockIt MBBI) {
   // This will need to be split into HIGH and LOW.
   Register DstReg = MI.getOperand(0).getReg();
   bool SrcIsKill = MI.getOperand(1).isKill();
-  bool DstIsDead = MI.getOperand(0).isDead();
   Register DstHi, DstLow;
   // The Hi and Low are swapped here.
   TRI->splitReg(DstReg, DstHi, DstLow);
@@ -832,7 +831,6 @@ bool GameBoyExpandPseudo::expand<GameBoy::ZEXT>(Block &MBB, BlockIt MBBI) {
 
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
-  bool addDefines = false;
   MachineInstr &MI = *MBBI;
   Register SrcReg = MI.getOperand(1).getReg();
   // This will need to be split into HIGH and LOW.
@@ -859,11 +857,9 @@ bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
 
   // This is a very rudimentary comparison, as for some reason the class is incorrectly
   // being read as GPR8lo for A, due to the register number possibly.
-  auto regClass = TRI->getRegClass(SrcReg);
   auto name = TRI->getRegAsmName(SrcReg).str();
   bool lda = name.compare("RA");
   if (lda) {
-    auto n = TRI->getRegClassName(TRI->getRegClass(SrcReg));
     buildMI(MBB, MBBI, GameBoy::LDRdRr)
       .addReg(GameBoy::RA, RegState::Define)
       .addReg(SrcReg, getKillRegState(SrcIsKill));

@@ -731,5 +731,5 @@ class ShiftPseudo<dag outs, dag ins, string asmstr, list<dag> pattern>
     : Pseudo<outs, ins, asmstr, pattern> {
   let usesCustomInserter = 1;
 
-  let Defs = [SREG];
+  let Defs = [RF];
 }

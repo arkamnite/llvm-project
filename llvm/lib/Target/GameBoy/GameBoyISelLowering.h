@@ -73,7 +73,24 @@ enum NodeType {
   /// is condition code and operand 3 is flag operand.
   SELECT_CC,
   /// This is a loop which is used to implement MEMSET.
-  MEMSETLOOP
+  MEMSETLOOP,
+  
+  /// ROTATE-SHIFT
+  /// This is a loop of rotate-left instructions
+  ROTATELEFTLOOP,
+  /// This is a loop of rotate-right instructions
+  ROTATERIGHTLOOP,
+  /// This is a single rotate-left instruction
+  ROTATELEFT,
+  ROTATELEFT_CARRY,
+  /// This is a single rotate-right instruction
+  ROTATERIGHT,
+  ROTATERIGHT_CARRY,
+  /// Single rotation of the A register
+  ROTATELEFT_A,
+  ROTATELEFT_A_CARRY,
+  ROTATERIGHT_A,
+  ROTATERIGHT_A_CARRY
 };
 
 } // end of namespace GameBoyISD

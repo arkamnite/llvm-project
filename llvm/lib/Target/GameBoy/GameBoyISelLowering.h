@@ -90,7 +90,11 @@ enum NodeType {
   ROTATELEFT_A,
   ROTATELEFT_A_CARRY,
   ROTATERIGHT_A,
-  ROTATERIGHT_A_CARRY
+  ROTATERIGHT_A_CARRY,
+  /// These are all for constant rotation amounts
+  /// They are expanded via pseudo instruction expansion.
+  ROTATELEFT_N,
+  ROTATERIGHT_N,
 };
 
 } // end of namespace GameBoyISD

@@ -1041,7 +1041,10 @@ def DECPair : GBFPair<0b00, 0b1011,
 //===----------------------------------------------------------------------===//
 //  Rotate nodes
 //===----------------------------------------------------------------------===//
-// Standard rotations
+// Standard rotations with constant shift amounts
+// We define each of these even though it is unlikely
+// we will encounter each of these SDNodes at the given
+// time.
 def GameBoyRL : SDNode<"GameBoyISD::ROTATELEFT", SDTIntUnaryOp>;
 def GameBoyRR : SDNode<"GameBoyISD::ROTATERIGHT", SDTIntUnaryOp>;
 def GameBoyRLA : SDNode<"GameBoyISD::ROTATELEFT_A", SDTIntUnaryOp>;
@@ -1051,7 +1054,65 @@ def GameBoyRRC : SDNode<"GameBoyISD::ROTATERIGHT_CARRY", SDTIntUnaryOp>;
 def GameBoyRLCA : SDNode<"GameBoyISD::ROTATELEFT_A_CARRY", SDTIntUnaryOp>;
 def GameBoyRRCA : SDNode<"GameBoyISD::ROTATERIGHT_A_CARRY", SDTIntUnaryOp>;
 
+// These are used for constant shift amounts
+def GameBoyRLN : SDNode<"GameBoyISD::ROTATELEFT_N", SDTIntBinOp>;
+def GameBoyRRN : SDNode<"GameBoyISD::ROTATERIGHT_N", SDTIntBinOp>;
+
+// Loops- these are expanded from pseudo shift instructions.
+// These are used for non-constant shift amounts
+def GameBoyRLLoop : SDNode<"GameBoyISD::ROTATELEFTLOOP", SDTIntShiftOp>;
+def GameBoyRRLoop : SDNode<"GameBoyISD::ROTATERIGHTLOOP", SDTIntShiftOp>;
+
 let Constraints = "$src = $rd", Defs = [RA] in {
+// Left-rotate by n bits
+def RLNRd : Pseudo<
+                  (outs GPR : $rd),
+                  (ins GPR : $src, i8imm : $n),
+                  "#PSEUDO rl\t$rd, $n",
+                  [(set i8 : $rd, (GameBoyRLN i8 : $src, imm : $n)), (implicit RF)]
+                  >;
+
+// Right-rotate by n bits
+def RRNRd : Pseudo<
+                  (outs GPR : $rd),
+                  (ins GPR : $src, i8imm : $n),
+                  "#PSEUDO rn\t$rd, $n",
+                  [(set i8 : $rd, (GameBoyRRN i8 : $src, imm : $n)), (implicit RF)]
+                  >;
+
+// Left-rotate by n bits, 16-bit
+def RLNRdPair : Pseudo<
+                  (outs GPRPair : $rd),
+                  (ins GPRPair : $src, i16imm : $n),
+                  "#PSEUDO rl\t$rd, $n",
+                  [(set i16 : $rd, (GameBoyRLN i16 : $src, imm : $n)), (implicit RF)]
+                  >;
+
+// Right-rotate by n bits, 16-bit
+def RRNRdPair : Pseudo<
+                  (outs GPRPair : $rd),
+                  (ins GPRPair : $src, i16imm : $n),
+                  "#PSEUDO rn\t$rd, $n",
+                  [(set i16 : $rd, (GameBoyRRN i16 : $src, imm : $n)), (implicit RF)]
+                  >;
+
+// Non-constant rotations (loops) use a custom inserter.
+// Left-rotate by a non-constant amount
+def RLRd : ShiftPseudo<
+                      (outs GPR : $rd),
+                      (ins GPR : $src, GPR : $n),
+                      "#PSEUDO RL8",
+                      [(set i8 : $rd, (GameBoyRLLoop i8 : $src, i8 : $n))]
+                      >;
+
+// Left-rotate by a non-constant amount
+def RRRd : ShiftPseudo<
+                      (outs GPR : $rd),
+                      (ins GPR : $src, GPR : $n),
+                      "#PSEUDO RR8",
+                      [(set i8 : $rd, (GameBoyRRLoop i8 : $src, i8 : $n))]
+                      >;
+
 // RLCA
 def RLCA : GBF0 < 0b00000111,
                   (outs GPRLoad : $rd),

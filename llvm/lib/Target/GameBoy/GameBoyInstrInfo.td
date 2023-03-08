@@ -1038,9 +1038,34 @@ def DECPair : GBFPair<0b00, 0b1011,
 // Rotate shift instructions
 // Check which of these use RA
 //===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+//  Rotate nodes
+//===----------------------------------------------------------------------===//
+// Standard rotations
+def GameBoyRL : SDNode<"GameBoyISD::ROTATELEFT", SDTIntUnaryOp>;
+def GameBoyRR : SDNode<"GameBoyISD::ROTATERIGHT", SDTIntUnaryOp>;
+def GameBoyRLA : SDNode<"GameBoyISD::ROTATELEFT_A", SDTIntUnaryOp>;
+def GameBoyRRA : SDNode<"GameBoyISD::ROTATERIGHT_A", SDTIntUnaryOp>;
+def GameBoyRLC : SDNode<"GameBoyISD::ROTATELEFT_CARRY", SDTIntUnaryOp>;
+def GameBoyRRC : SDNode<"GameBoyISD::ROTATERIGHT_CARRY", SDTIntUnaryOp>;
+def GameBoyRLCA : SDNode<"GameBoyISD::ROTATELEFT_A_CARRY", SDTIntUnaryOp>;
+def GameBoyRRCA : SDNode<"GameBoyISD::ROTATERIGHT_A_CARRY", SDTIntUnaryOp>;
 
+let Constraints = "$src = $rd", Defs = [RA] in {
 // RLCA
+def RLCA : GBF0 < 0b00000111,
+                  (outs GPRLoad : $rd),
+                  (ins GPRLoad : $src),
+                  "rlca",
+                  [(set i8 : $rd, (GameBoyRLCA i8 : $src))]>;
+
 // RRCA
+def RRCA : GBF0 < 0b00010111,
+                  (outs GPRLoad : $rd),
+                  (ins GPRLoad : $src),
+                  "rrca",
+                  [(set i8 : $rd, (GameBoyRRCA i8 : $src))]>;
+}
 
 // RLA
 // RRA

@@ -306,27 +306,27 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
     default:
       llvm_unreachable("Invalid shift opcode!");
     case ISD::SHL:
-      return DAG.getNode(GameBoyISD::LSLLOOP, dl, VT, N->getOperand(0),
+      return DAG.getNode(GameBoyISD::LOGICAL_SHIFTLEFT_LOOP, dl, VT, N->getOperand(0),
                          N->getOperand(1));
     case ISD::SRL:
-      return DAG.getNode(GameBoyISD::LSRLOOP, dl, VT, N->getOperand(0),
+      return DAG.getNode(GameBoyISD::LOGICAL_SHIFTRIGHT_LOOP, dl, VT, N->getOperand(0),
                          N->getOperand(1));
     case ISD::ROTL: {
       SDValue Amt = N->getOperand(1);
       EVT AmtVT = Amt.getValueType();
       Amt = DAG.getNode(ISD::AND, dl, AmtVT, Amt,
                         DAG.getConstant(VT.getSizeInBits() - 1, dl, AmtVT));
-      return DAG.getNode(GameBoyISD::ROLLOOP, dl, VT, N->getOperand(0), Amt);
+      return DAG.getNode(GameBoyISD::ROTATELEFTLOOP, dl, VT, N->getOperand(0), Amt);
     }
     case ISD::ROTR: {
       SDValue Amt = N->getOperand(1);
       EVT AmtVT = Amt.getValueType();
       Amt = DAG.getNode(ISD::AND, dl, AmtVT, Amt,
                         DAG.getConstant(VT.getSizeInBits() - 1, dl, AmtVT));
-      return DAG.getNode(GameBoyISD::RORLOOP, dl, VT, N->getOperand(0), Amt);
+      return DAG.getNode(GameBoyISD::ROTATERIGHTLOOP, dl, VT, N->getOperand(0), Amt);
     }
     case ISD::SRA:
-      return DAG.getNode(GameBoyISD::ASRLOOP, dl, VT, N->getOperand(0),
+      return DAG.getNode(GameBoyISD::ARITH_SHIFTRIGHT_LOOP, dl, VT, N->getOperand(0),
                          N->getOperand(1));
     }
   }
@@ -336,59 +336,62 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
 
   switch (Op.getOpcode()) {
   case ISD::SRA:
-    Opc8 = GameBoyISD::ASR;
+    Opc8 = GameBoyISD::ARITH_SHIFTRIGHT;
     break;
   case ISD::ROTL:
-    Opc8 = GameBoyISD::ROL;
+    Opc8 = GameBoyISD::ROTATELEFT;
     ShiftAmount = ShiftAmount % VT.getSizeInBits();
     break;
   case ISD::ROTR:
-    Opc8 = GameBoyISD::ROR;
+    Opc8 = GameBoyISD::ROTATERIGHT;
     ShiftAmount = ShiftAmount % VT.getSizeInBits();
     break;
   case ISD::SRL:
-    Opc8 = GameBoyISD::LSR;
+    Opc8 = GameBoyISD::LOGICAL_SHIFTRIGHT;
     break;
   case ISD::SHL:
-    Opc8 = GameBoyISD::LSL;
+    Opc8 = GameBoyISD::LOGICAL_SHIFTLEFT;
     break;
   default:
     llvm_unreachable("Invalid shift opcode");
   }
 
+  dbgs() << "LOWER SHIFT: " << Opc8 << "\n";
+
   // Optimize int8/int16 shifts.
+  /*
   if (VT.getSizeInBits() == 8) {
     if (Op.getOpcode() == ISD::SHL && 4 <= ShiftAmount && ShiftAmount < 7) {
       // Optimize LSL when 4 <= ShiftAmount <= 6.
-      Victim = DAG.getNode(GameBoyISD::SWAP, dl, VT, Victim);
+      Victim = DAG.getNode(GameBoyISD::GBSWAP, dl, VT, Victim);
       Victim =
           DAG.getNode(ISD::AND, dl, VT, Victim, DAG.getConstant(0xf0, dl, VT));
       ShiftAmount -= 4;
     } else if (Op.getOpcode() == ISD::SRL && 4 <= ShiftAmount &&
                ShiftAmount < 7) {
       // Optimize LSR when 4 <= ShiftAmount <= 6.
-      Victim = DAG.getNode(GameBoyISD::SWAP, dl, VT, Victim);
+      Victim = DAG.getNode(GameBoyISD::GBSWAP, dl, VT, Victim);
       Victim =
           DAG.getNode(ISD::AND, dl, VT, Victim, DAG.getConstant(0x0f, dl, VT));
       ShiftAmount -= 4;
     } else if (Op.getOpcode() == ISD::SHL && ShiftAmount == 7) {
       // Optimize LSL when ShiftAmount == 7.
-      Victim = DAG.getNode(GameBoyISD::LSLBN, dl, VT, Victim,
+      Victim = DAG.getNode(GameBoyISD::LOGICAL_SHIFTLEFT_N, dl, VT, Victim,
                            DAG.getConstant(7, dl, VT));
       ShiftAmount = 0;
     } else if (Op.getOpcode() == ISD::SRL && ShiftAmount == 7) {
       // Optimize LSR when ShiftAmount == 7.
-      Victim = DAG.getNode(GameBoyISD::LSRBN, dl, VT, Victim,
+      Victim = DAG.getNode(GameBoyISD::LOGICAL_SHIFTRIGHT_N, dl, VT, Victim,
                            DAG.getConstant(7, dl, VT));
       ShiftAmount = 0;
     } else if (Op.getOpcode() == ISD::SRA && ShiftAmount == 6) {
       // Optimize ASR when ShiftAmount == 6.
-      Victim = DAG.getNode(GameBoyISD::ASRBN, dl, VT, Victim,
+      Victim = DAG.getNode(GameBoyISD::ARITH_SHIFTRIGHT_N, dl, VT, Victim,
                            DAG.getConstant(6, dl, VT));
       ShiftAmount = 0;
     } else if (Op.getOpcode() == ISD::SRA && ShiftAmount == 7) {
       // Optimize ASR when ShiftAmount == 7.
-      Victim = DAG.getNode(GameBoyISD::ASRBN, dl, VT, Victim,
+      Victim = DAG.getNode(GameBoyISD::ARITH_SHIFTRIGHT_N, dl, VT, Victim,
                            DAG.getConstant(7, dl, VT));
       ShiftAmount = 0;
     }
@@ -417,12 +420,12 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
     if (4 <= ShiftAmount && ShiftAmount < 8)
       switch (Op.getOpcode()) {
       case ISD::SHL:
-        Victim = DAG.getNode(GameBoyISD::LSLWN, dl, VT, Victim,
+        Victim = DAG.getNode(GameBoyISD::LOGICAL_SHIFTLEFT_N, dl, VT, Victim,
                              DAG.getConstant(4, dl, VT));
         ShiftAmount -= 4;
         break;
       case ISD::SRL:
-        Victim = DAG.getNode(GameBoyISD::LSRWN, dl, VT, Victim,
+        Victim = DAG.getNode(GameBoyISD::LOGICAL_SHIFTRIGHT_N, dl, VT, Victim,
                              DAG.getConstant(4, dl, VT));
         ShiftAmount -= 4;
         break;
@@ -432,21 +435,21 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
     else if (8 <= ShiftAmount && ShiftAmount < 12)
       switch (Op.getOpcode()) {
       case ISD::SHL:
-        Victim = DAG.getNode(GameBoyISD::LSLWN, dl, VT, Victim,
+        Victim = DAG.getNode(GameBoyISD::LOGICAL_SHIFTLEFT_N, dl, VT, Victim,
                              DAG.getConstant(8, dl, VT));
         ShiftAmount -= 8;
         // Only operate on the higher byte for remaining shift bits.
         Opc8 = GameBoyISD::LSLHI;
         break;
       case ISD::SRL:
-        Victim = DAG.getNode(GameBoyISD::LSRWN, dl, VT, Victim,
+        Victim = DAG.getNode(GameBoyISD::LOGICAL_SHIFTRIGHT_N, dl, VT, Victim,
                              DAG.getConstant(8, dl, VT));
         ShiftAmount -= 8;
         // Only operate on the lower byte for remaining shift bits.
         Opc8 = GameBoyISD::LSRLO;
         break;
       case ISD::SRA:
-        Victim = DAG.getNode(GameBoyISD::ASRWN, dl, VT, Victim,
+        Victim = DAG.getNode(GameBoyISD::ARITH_SHIFTRIGHT_N, dl, VT, Victim,
                              DAG.getConstant(8, dl, VT));
         ShiftAmount -= 8;
         // Only operate on the lower byte for remaining shift bits.
@@ -482,10 +485,12 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
         break;
       }
   }
-
+  */
   while (ShiftAmount--) {
     Victim = DAG.getNode(Opc8, dl, VT, Victim);
   }
+  
+  // Why is this returning a funky node?
 
   return Victim;
 }
@@ -1791,11 +1796,11 @@ GameBoyTargetLowering::insertCopyR1(MachineInstr &MI, MachineBasicBlock *BB) con
 // interrupts. This works because all GameBoy microcontrollers are single core.
 MachineBasicBlock *GameBoyTargetLowering::insertAtomicArithmeticOp(
     MachineInstr &MI, MachineBasicBlock *BB, unsigned Opcode, int Width) const {
-  MachineRegisterInfo &MRI = BB->getParent()->getRegInfo();
-  const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
-  MachineBasicBlock::iterator I(MI);
-  const Register SCRATCH_REGISTER = GameBoy::R0;
-  DebugLoc dl = MI.getDebugLoc();
+  // MachineRegisterInfo &MRI = BB->getParent()->getRegInfo();
+  // const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
+  // MachineBasicBlock::iterator I(MI);
+  // const Register SCRATCH_REGISTER = GameBoy::R0;
+  // DebugLoc dl = MI.getDebugLoc();
 
   llvm_unreachable("Unimplemented insertArithmeticOp");
 

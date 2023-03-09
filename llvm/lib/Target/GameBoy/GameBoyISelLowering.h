@@ -75,19 +75,24 @@ enum NodeType {
   /// This is a loop which is used to implement MEMSET.
   MEMSETLOOP,
   
-  /// ROTATE-SHIFT
-  /// This is a loop of rotate-left instructions
-  ROTATELEFTLOOP,
-  /// This is a loop of rotate-right instructions
-  ROTATERIGHTLOOP,
-  /// This is a single rotate-left instruction
-  ROTATELEFT,
+  /// SHIFT
+  LOGICAL_SHIFTLEFT,
+  LOGICAL_SHIFTRIGHT,
+  LOGICAL_SHIFTLEFT_N,
+  LOGICAL_SHIFTRIGHT_N,
+  LOGICAL_SHIFTLEFT_LOOP,
+  LOGICAL_SHIFTRIGHT_LOOP,
+  ARITH_SHIFTRIGHT,
+  ARITH_SHIFTRIGHT_N,
+  ARITH_SHIFTRIGHT_LOOP,
+  /// ROTATE
+  ROTATELEFTLOOP,   /// This is a loop of rotate-left instructions
+  ROTATERIGHTLOOP,  /// This is a loop of rotate-right instructions
+  ROTATELEFT,       /// This is a single rotate-left instruction
   ROTATELEFT_CARRY,
-  /// This is a single rotate-right instruction
-  ROTATERIGHT,
+  ROTATERIGHT,      /// This is a single rotate-right instruction
   ROTATERIGHT_CARRY,
-  /// Single rotation of the A register
-  ROTATELEFT_A,
+  ROTATELEFT_A,     /// Single rotation of the A register
   ROTATELEFT_A_CARRY,
   ROTATERIGHT_A,
   ROTATERIGHT_A_CARRY,
@@ -95,6 +100,7 @@ enum NodeType {
   /// They are expanded via pseudo instruction expansion.
   ROTATELEFT_N,
   ROTATERIGHT_N,
+  GBSWAP,
 };
 
 } // end of namespace GameBoyISD

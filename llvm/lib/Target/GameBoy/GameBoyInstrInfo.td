@@ -1054,14 +1054,25 @@ def GameBoyRRC : SDNode<"GameBoyISD::ROTATERIGHT_CARRY", SDTIntUnaryOp>;
 def GameBoyRLCA : SDNode<"GameBoyISD::ROTATELEFT_A_CARRY", SDTIntUnaryOp>;
 def GameBoyRRCA : SDNode<"GameBoyISD::ROTATERIGHT_A_CARRY", SDTIntUnaryOp>;
 
-// These are used for constant shift amounts
+// Shifts
+def GameBoyASR : SDNode<"GameBoyISD::ARITH_SHIFTRIGHT", SDTIntUnaryOp>;
+def GameBoyLSL : SDNode<"GameBoyISD::LOGICAL_SHIFTLEFT", SDTIntUnaryOp>;
+def GameBoyLSR : SDNode<"GameBoyISD::LOGICAL_SHIFTRIGHT", SDTIntUnaryOp>;
+
+// These are used for constant shift/rotate amounts
 def GameBoyRLN : SDNode<"GameBoyISD::ROTATELEFT_N", SDTIntBinOp>;
 def GameBoyRRN : SDNode<"GameBoyISD::ROTATERIGHT_N", SDTIntBinOp>;
+def GameBoyLSRN : SDNode<"GameBoyISD::LOGICAL_SHIFTRIGHT_N", SDTIntBinOp>;
+def GameBoyLSLN : SDNode<"GameBoyISD::LOGICAL_SHIFTLEFT_N", SDTIntBinOp>;
+def GameBoyASRN : SDNode<"GameBoyISD::ARITH_SHIFTRIGHT_N", SDTIntBinOp>;
 
 // Loops- these are expanded from pseudo shift instructions.
 // These are used for non-constant shift amounts
 def GameBoyRLLoop : SDNode<"GameBoyISD::ROTATELEFTLOOP", SDTIntShiftOp>;
 def GameBoyRRLoop : SDNode<"GameBoyISD::ROTATERIGHTLOOP", SDTIntShiftOp>;
+def GameBoyLSLLoop : SDNode<"GameBoyISD::LOGICAL_SHIFTLEFT_LOOP", SDTIntShiftOp>;
+def GameBoyLSRLoop : SDNode<"GameBoyISD::LOGICAL_SHIFTRIGHT_LOOP", SDTIntShiftOp>;
+def GameBoyASRLoop : SDNode<"GameBoyISD::ARITH_SHIFTRIGHT_LOOP", SDTIntShiftOp>;
 
 let Constraints = "$src = $rd", Defs = [RA] in {
 // Left-rotate by n bits

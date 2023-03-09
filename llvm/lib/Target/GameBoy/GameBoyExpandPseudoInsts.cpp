@@ -888,6 +888,33 @@ bool GameBoyExpandPseudo::expand<GameBoy::SEXT>(Block &MBB, BlockIt MBBI) {
 }
 
 //===----------------------------------------------------------------------===//
+// Shift-rotate instructions
+//===----------------------------------------------------------------------===//
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::RLNRd>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete constant amount left rotate!");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::RRNRd>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete constant amount right rotate!");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::RLNRdPair>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete constant amount left rotate (16)!");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::RRNRdPair>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete constant amount right rotate (16)!");
+  return true;
+}
+
+//===----------------------------------------------------------------------===//
 // Jump instructions
 //===----------------------------------------------------------------------===//
 template <>
@@ -1032,6 +1059,10 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::JRLTk);
     EXPAND(GameBoy::JRSHk);
     EXPAND(GameBoy::JRLOk);
+    EXPAND(GameBoy::RLNRd);
+    EXPAND(GameBoy::RRNRd);
+    EXPAND(GameBoy::RLNRdPair);
+    EXPAND(GameBoy::RRNRdPair);
   }
 #undef EXPAND
   return false;

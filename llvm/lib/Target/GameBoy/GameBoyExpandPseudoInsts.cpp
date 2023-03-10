@@ -627,28 +627,29 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdImm8>(Block &MBB, BlockIt MBBI) {
 // Will expand ADD RdPair, RrPair into
 // LD HL, Rd
 // ADD HL, Rr
-// LD Rd, HL <! Important optimisation: leave result in here?
+// LD Rd, HL
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
   // printAllOperands(MI);
   unsigned lastOp = MI.getNumOperands() - 1;
   Register DstReg = MI.getOperand(0).getReg();
-  Register SrcReg = MI.getOperand(lastOp).getReg();
-  auto SrcIsKill = MI.getOperand(lastOp).isKill();
+  Register SrcReg = MI.getOperand(1).getReg();
+  auto SrcIsKill = MI.getOperand(1).isKill();
   auto DstIsDead = MI.getOperand(0).isDead();
+  printAllOperands(MI);
   // LD HL, Rpd
   buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL)
     .addReg(DstReg, getDeadRegState(DstIsDead));
   // LD Src, Imm16 happens implicitly.
   // ADD HL, Src
   buildMI(MBB, MBBI, GameBoy::ADDHLPair, GameBoy::RHRL)
-    .addReg(SrcReg, getKillRegState(SrcIsKill));
+    .addReg(SrcReg, getKillRegState(SrcIsKill) | RegState::Define);
   // LD Rpd, HL
-  // Shouldn't we keep the result here?
   buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair)
     .addReg(DstReg, RegState::Define | getDeadRegState(DstIsDead))
     .addReg(GameBoy::RHRL, RegState::Define);
+  
   MI.eraseFromParent();
   return true;
 }
@@ -914,6 +915,30 @@ bool GameBoyExpandPseudo::expand<GameBoy::RRNRdPair>(Block &MBB, BlockIt MBBI) {
   return true;
 }
 
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LSR8Pseudo>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete LSR8!");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LSL8Pseudo>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete LSL8!");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LSR16Pseudo>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete LSR16!");
+  return true;
+}
+
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::LSL16Pseudo>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete LSL16!");
+  return true;
+}
+
 //===----------------------------------------------------------------------===//
 // Jump instructions
 //===----------------------------------------------------------------------===//
@@ -1059,10 +1084,15 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::JRLTk);
     EXPAND(GameBoy::JRSHk);
     EXPAND(GameBoy::JRLOk);
+    // Shift-rotate
     EXPAND(GameBoy::RLNRd);
     EXPAND(GameBoy::RRNRd);
     EXPAND(GameBoy::RLNRdPair);
     EXPAND(GameBoy::RRNRdPair);
+    // EXPAND(GameBoy::LSR8Pseudo);
+    // EXPAND(GameBoy::LSL8Pseudo);
+    // EXPAND(GameBoy::LSR16Pseudo);
+    // EXPAND(GameBoy::LSL16Pseudo);
   }
 #undef EXPAND
   return false;

@@ -204,11 +204,19 @@ class GBFPair<bits<2> op1, bits<4> op2, dag outs, dag ins, string asmstr, list<d
 //===----------------------------------------------------------------------===//
 // Rotate register: <| xx - xxx - xxx |> <| xx - xxx - rrr |>
 //===----------------------------------------------------------------------===//
-
+class GBFSRRd<bits<13> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst16<outs, ins, asmstr, pattern> {
+  bits<3> rd;
+  let Inst{15 - 3} = op;
+  let Inst{2 - 0} = rd;
+}
 //===----------------------------------------------------------------------===//
 // Rotate register pair: <| xx - xxx - xxx |> <| xx - xxx - xxx |>
 //===----------------------------------------------------------------------===//
-
+class GBFSRPair<bits<16> op, dag outs, dag ins, string asmstr, list<dag> pattern>
+: GameBoyInst16<outs, ins, asmstr, pattern> {
+  let Inst{15-0} = op;
+}
 //===----------------------------------------------------------------------===//
 // Bit instruction formats also follow a different format:
 //===----------------------------------------------------------------------===//

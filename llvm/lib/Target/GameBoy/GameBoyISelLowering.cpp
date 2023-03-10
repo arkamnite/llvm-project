@@ -282,6 +282,28 @@ const char *GameBoyTargetLowering::getTargetNodeName(unsigned Opcode) const {
     NODE(TST);
     NODE(SELECT_CC);
     NODE(MEMSETLOOP);
+    NODE(LOGICAL_SHIFTLEFT);
+    NODE(LOGICAL_SHIFTRIGHT);
+    NODE(LOGICAL_SHIFTLEFT_N);
+    NODE(LOGICAL_SHIFTRIGHT_N);
+    NODE(LOGICAL_SHIFTLEFT_LOOP);
+    NODE(LOGICAL_SHIFTRIGHT_LOOP);
+    NODE(ARITH_SHIFTRIGHT);
+    NODE(ARITH_SHIFTRIGHT_N);
+    NODE(ARITH_SHIFTRIGHT_LOOP);
+    NODE(ROTATELEFTLOOP);
+    NODE(ROTATERIGHTLOOP);
+    NODE(ROTATELEFT);
+    NODE(ROTATELEFT_CARRY);
+    NODE(ROTATERIGHT);
+    NODE(ROTATERIGHT_CARRY);
+    NODE(ROTATELEFT_A);
+    NODE(ROTATELEFT_A_CARRY);
+    NODE(ROTATERIGHT_A);
+    NODE(ROTATERIGHT_A_CARRY);
+    NODE(ROTATELEFT_N);
+    NODE(ROTATERIGHT_N);
+    NODE(GBSWAP);
 #undef NODE
   }
 }
@@ -356,10 +378,8 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
     llvm_unreachable("Invalid shift opcode");
   }
 
-  dbgs() << "LOWER SHIFT: " << Opc8 << "\n";
-
   // Optimize int8/int16 shifts.
-  /*
+  // /*
   if (VT.getSizeInBits() == 8) {
     if (Op.getOpcode() == ISD::SHL && 4 <= ShiftAmount && ShiftAmount < 7) {
       // Optimize LSL when 4 <= ShiftAmount <= 6.
@@ -485,7 +505,7 @@ SDValue GameBoyTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const 
         break;
       }
   }
-  */
+  // */
   while (ShiftAmount--) {
     Victim = DAG.getNode(Opc8, dl, VT, Victim);
   }
@@ -1667,11 +1687,17 @@ MachineBasicBlock *GameBoyTargetLowering::insertShift(MachineInstr &MI,
   const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
   DebugLoc dl = MI.getDebugLoc();
 
-  llvm_unreachable("Unimplemented insertShift!");
+  // llvm_unreachable("Unimplemented insertShift!");
 
   switch (MI.getOpcode()) {
   default:
     llvm_unreachable("Invalid shift opcode!");
+  // case GameBoy::RLRd:
+  // case GameBoy::RRRd:
+  // case GameBoy::LSR8Pseudo:
+  // case GameBoy::LSR16Pseudo:
+  // case GameBoy::LSL8Pseudo:
+  // case GameBoy::LSL16Pseudo:
   }
 
   const BasicBlock *LLVM_BB = BB->getBasicBlock();
@@ -1856,6 +1882,13 @@ GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
   switch(Opc) {
     case GameBoy::MemsetLoop:
       return insertMemsetLoop(MI, MBB);
+    case GameBoy::RLRd:
+    case GameBoy::RRRd:
+    case GameBoy::LSR8Pseudo:
+    case GameBoy::LSR16Pseudo:
+    case GameBoy::LSL8Pseudo:
+    case GameBoy::LSL16Pseudo:
+      return insertShift(MI, MBB);
   }
 
   // Pseudo shift instructions with a non constant shift amount are expanded

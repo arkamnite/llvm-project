@@ -1132,21 +1132,63 @@ def LSL16Pseudo : ShiftPseudo<
   [(set i16 : $rd, (GameBoyLSL i16 : $src))]
   >;
 
+def LSRPointerPseudo : ShiftPseudo<
+  (outs GPRPairPointerHL : $rd),
+  (ins GPRPairPointerHL : $src),
+  "PSEUDO lsr\t(hl)",
+  [(store i16 : $rd, (GameBoyLSR i16 : $src))]
+  >;
+
+def LSLPointerPseudo : ShiftPseudo<
+  (outs GPRPairPointerHL : $rd),
+  (ins GPRPairPointerHL : $src),
+  "PSEUDO lsl\t(hl)",
+  [(store i16 : $rd, (GameBoyLSL i16 : $src))]
+  >;
+
 // Non-constant rotations (loops) use a custom inserter.
 // Left-rotate by a non-constant amount
-def RLRd : ShiftPseudo<
+def RLRdPseudo : ShiftPseudo<
                       (outs GPR : $rd),
                       (ins GPR : $src, GPR : $n),
                       "#PSEUDO RL8",
                       [(set i8 : $rd, (GameBoyRLLoop i8 : $src, i8 : $n))]
                       >;
 
-// Left-rotate by a non-constant amount
-def RRRd : ShiftPseudo<
+def RLRdPairPseudo : ShiftPseudo<
+                      (outs GPRPair : $rd),
+                      (ins GPRPair : $src, GPR : $n),
+                      "#PSEUDO RL16",
+                      [(set i16 : $rd, (GameBoyRLLoop i16 : $src, i8 : $n))]
+                      >;
+
+def RLPointerPseudo : ShiftPseudo<
+                      (outs GPRPairPointerHL : $rd),
+                      (ins GPRPairPointerHL : $src, GPR : $n),
+                      "#PSEUDO RLPointer",
+                      [(store i16 : $rd, (GameBoyRLLoop i16 : $src, i8 : $n))]
+                      >;
+
+// Right-rotate by a non-constant amount
+def RRRdPseudo : ShiftPseudo<
                       (outs GPR : $rd),
                       (ins GPR : $src, GPR : $n),
                       "#PSEUDO RR8",
                       [(set i8 : $rd, (GameBoyRRLoop i8 : $src, i8 : $n))]
+                      >;
+
+def RRRdPairPseudo : ShiftPseudo<
+                      (outs GPRPair : $rd),
+                      (ins GPRPair : $src, GPR : $n),
+                      "#PSEUDO RR16",
+                      [(set i16 : $rd, (GameBoyRRLoop i16 : $src, i8 : $n))]
+                      >;
+
+def RRPointerPseudo : ShiftPseudo<
+                      (outs GPRPairPointerHL : $rd),
+                      (ins GPRPairPointerHL : $src, GPR : $n),
+                      "#PSEUDO RRPointer",
+                      [(store i16 : $rd, (GameBoyRRLoop i16 : $src, i8 : $n))]
                       >;
 
 // RLCA
@@ -1206,19 +1248,97 @@ def RRCPointer : GBFSRPair<
                 "rrc\t(hl)",
                 [(store i16 : $rd, (GameBoyRRC i16 : $src)), (implicit RF)]
                 >;
-}
+
 // RL r
+def RLRd : GBFSRRd< 0b1100101100010,
+                    (outs GPR : $rd),
+                    (ins GPR : $src),
+                    "rl\t$rd",
+                    [(set i8 : $rd, (GameBoyRL i8 : $src)), (implicit RF)]>;
+
 // RL (HL)
+def RLPointer : GBFSRPair<0b1100101100010110,
+                          (outs GPRPairPointerHL : $rd),
+                          (ins GPRPairPointerHL : $src),
+                          "rl\t(hl)",
+                          [(store i16 : $rd, (GameBoyRL i16 : $src)), (implicit RF)]>;
+
 // RR r
+def RRRd : GBFSRRd< 0b1100101100011,
+                    (outs GPR : $rd),
+                    (ins GPR : $src),
+                    "rr\t$rd",
+                    [(set i8 : $rd, (GameBoyRR i8 : $src)), (implicit RF)]>;
 // RR (HL)
+def RRPointer : GBFSRPair<0b1101101100011110,
+                          (outs GPRPairPointerHL : $rd),
+                          (ins GPRPairPointerHL : $src),
+                          "rr\t(hl)",
+                          [(store i16 : $rd, (GameBoyRR i16 : $src)), (implicit RF)]>;
 
 // SLA r
+def SLARd : GBFSRRd<0b1100101100100,
+                    (outs GPR : $rd),
+                    (ins GPR : $src),
+                    "sla\t$rd",
+                    [(set i8 : $rd, (GameBoyLSL i8 : $src)), (implicit RF)]>;
+
+// SLA RrPair
+def SLARdPair : Pseudo<
+                    (outs GPRPair : $rd),
+                    (ins GPRPair : $src),
+                    "sla\t$rd",
+                    [(set i16 : $rd, (GameBoyLSL i16 : $src)), (implicit RF)]>;
+
 // SLA (HL)
+def SLAPairPointer : GBFSRPair<0b1101101100100110,
+                    (outs GPRPairPointerHL : $rd),
+                    (ins GPRPairPointerHL : $src),
+                    "sla\t(hl)",
+                    [(store i16 : $rd, (GameBoyLSL i16 : $src)), (implicit RF)]>;
 
 // SRA r
+def SRARd : GBFSRRd<0b1100101100101,
+                    (outs GPR : $rd),
+                    (ins GPR : $src),
+                    "sla\t$rd",
+                    [(set i8 : $rd, (GameBoyASR i8 : $src)), (implicit RF)]>;
+
+// SRA RrPair
+def SRARdPair : Pseudo<
+                    (outs GPRPair : $rd),
+                    (ins GPRPair : $src),
+                    "sra\t$rd",
+                    [(set i16 : $rd, (GameBoyASR i16 : $src)), (implicit RF)]>;
+
 // SRA (HL)
+def SRAPairPointer : GBFSRPair<0b1100101100101110,
+                    (outs GPRPairPointerHL : $rd),
+                    (ins GPRPairPointerHL : $src),
+                    "sra\t(hl)",
+                    [(store i16 : $rd, (GameBoyASR i16 : $src)), (implicit RF)]>;
+
 // SRL r
+def SRLRd : GBFSRRd<0b1100101100111,
+                    (outs GPR : $rd),
+                    (ins GPR : $src),
+                    "srl\t$rd",
+                    [(set i8 : $rd, (GameBoyLSR i8 : $src)), (implicit RF)]>;
+
+// SRL RrPair
+def SRLRdPair : Pseudo<
+                    (outs GPRPair : $rd),
+                    (ins GPRPair : $src),
+                    "srl\t$rd",
+                    [(set i16 : $rd, (GameBoyLSR i16 : $src)), (implicit RF)]>;
+
 // SRL (HL)
+def SRLPairPointer : GBFSRPair<0b1100101100111110,
+                    (outs GPRPairPointerHL : $rd),
+                    (ins GPRPairPointerHL : $src),
+                    "srl\t(hl)",
+                    [(store i16 : $rd, (GameBoyLSR i16 : $src)), (implicit RF)]>;
+}
 
 // SWAP r
 // SWAP (HL)

@@ -1689,15 +1689,104 @@ MachineBasicBlock *GameBoyTargetLowering::insertShift(MachineInstr &MI,
 
   // llvm_unreachable("Unimplemented insertShift!");
 
+  dbgs() << MI.getOpcode() << "\n";
   switch (MI.getOpcode()) {
+  case GameBoy::LSL8Pseudo:
+    Opc = GameBoy::AddRdRr;
+    RC = &GameBoy::GPRRegClass;
+    HasRepeatedOperand = true;
+    break;
+  case GameBoy::LSR8Pseudo:
+    Opc = GameBoy::SRLRd;
+    RC = &GameBoy::GPRRegClass;
+    break;
+  case GameBoy::LSL16Pseudo:
+    Opc = GameBoy::SRLRdPair;
+    RC = &GameBoy::GPRPairRegClass;
+    break;
+  case GameBoy::LSR16Pseudo:
+    Opc = GameBoy::SLARdPair;
+    RC = &GameBoy::GPRPairRegClass;
+    break;
+  case GameBoy::LSLPointerPseudo:
+    Opc = GameBoy::SLAPairPointer;
+    RC = &GameBoy::GPRPairPointerHLRegClass;
+    break;
+  case GameBoy::LSRPointerPseudo:
+    Opc = GameBoy::SRLPairPointer;
+    RC = &GameBoy::GPRPairPointerHLRegClass;
+    break;
+  case GameBoy::RLRdPseudo:
+    Opc = GameBoy::RLNRd;
+    RC = &GameBoy::GPRRegClass;
+    break;
+  case GameBoy::RRRdPseudo:
+    Opc = GameBoy::RLNRd;
+    RC = &GameBoy::GPRRegClass;
+    break;
+  case GameBoy::RLRdPairPseudo:
+    Opc = GameBoy::RLNRdPair;
+    RC = &GameBoy::GPRPairRegClass;
+    break;
+  case GameBoy::RRRdPairPseudo:
+    Opc = GameBoy::RRNRdPair;
+    RC = &GameBoy::GPRPairRegClass;
+    break;
+  case GameBoy::RLPointerPseudo:
+    Opc = GameBoy::RLPointer;
+    RC = &GameBoy::GPRPairPointerHLRegClass;
+    break;
+  case GameBoy::RRPointerPseudo:
+    Opc = GameBoy::RRPointer;
+    RC = &GameBoy::GPRPairPointerHLRegClass;
+    break;
   default:
     llvm_unreachable("Invalid shift opcode!");
-  // case GameBoy::RLRd:
-  // case GameBoy::RRRd:
-  // case GameBoy::LSR8Pseudo:
-  // case GameBoy::LSR16Pseudo:
-  // case GameBoy::LSL8Pseudo:
-  // case GameBoy::LSL16Pseudo:
+
+  dbgs() << "OOH OOH AH AH MONKEY MONKEY\n";
+
+  // case GameBoy::Lsl8:
+  //   Opc = GameBoy::ADDRdRr; // LSL is an alias of ADD Rd, Rd
+  //   RC = &GameBoy::GPR8RegClass;
+  //   HasRepeatedOperand = true;
+  //   break;
+  // case GameBoy::Lsl16:
+  //   Opc = GameBoy::LSLWRd;
+  //   RC = &GameBoy::DREGSRegClass;
+  //   break;
+  // case GameBoy::Asr8:
+  //   Opc = GameBoy::ASRRd;
+  //   RC = &GameBoy::GPR8RegClass;
+  //   break;
+  // case GameBoy::Asr16:
+  //   Opc = GameBoy::ASRWRd;
+  //   RC = &GameBoy::DREGSRegClass;
+  //   break;
+  // case GameBoy::Lsr8:
+  //   Opc = GameBoy::LSRRd;
+  //   RC = &GameBoy::GPR8RegClass;
+  //   break;
+  // case GameBoy::Lsr16:
+  //   Opc = GameBoy::LSRWRd;
+  //   RC = &GameBoy::DREGSRegClass;
+  //   break;
+  // case GameBoy::Rol8:
+  //   Opc = GameBoy::ROLBRd;
+  //   RC = &GameBoy::GPR8RegClass;
+  //   break;
+  // case GameBoy::Rol16:
+  //   Opc = GameBoy::ROLWRd;
+  //   RC = &GameBoy::DREGSRegClass;
+  //   break;
+  // case GameBoy::Ror8:
+  //   Opc = GameBoy::RORBRd;
+  //   RC = &GameBoy::GPR8RegClass;
+  //   break;
+  // case GameBoy::Ror16:
+  //   Opc = GameBoy::RORWRd;
+  //   RC = &GameBoy::DREGSRegClass;
+  //   break;
+  
   }
 
   const BasicBlock *LLVM_BB = BB->getBasicBlock();
@@ -1882,12 +1971,18 @@ GameBoyTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
   switch(Opc) {
     case GameBoy::MemsetLoop:
       return insertMemsetLoop(MI, MBB);
-    case GameBoy::RLRd:
-    case GameBoy::RRRd:
     case GameBoy::LSR8Pseudo:
-    case GameBoy::LSR16Pseudo:
     case GameBoy::LSL8Pseudo:
+    case GameBoy::LSR16Pseudo:
     case GameBoy::LSL16Pseudo:
+    case GameBoy::LSRPointerPseudo:
+    case GameBoy::LSLPointerPseudo:
+    case GameBoy::RLRdPseudo:
+    case GameBoy::RRRdPseudo:
+    case GameBoy::RLRdPairPseudo:
+    case GameBoy::RRRdPairPseudo:
+    case GameBoy::RLPointerPseudo:
+    case GameBoy::RRPointerPseudo:
       return insertShift(MI, MBB);
   }
 

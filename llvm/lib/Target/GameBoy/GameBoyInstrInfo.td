@@ -1071,7 +1071,7 @@ def GameBoyLSLLoop : SDNode<"GameBoyISD::LOGICAL_SHIFTLEFT_LOOP", SDTIntShiftOp>
 def GameBoyLSRLoop : SDNode<"GameBoyISD::LOGICAL_SHIFTRIGHT_LOOP", SDTIntShiftOp>;
 def GameBoyASRLoop : SDNode<"GameBoyISD::ARITH_SHIFTRIGHT_LOOP", SDTIntShiftOp>;
 
-let Constraints = "$src = $rd", Defs = [RA] in {
+let Constraints = "$src = $rd", Defs = [RF] in {
 // Left-rotate by n bits
 def RLNRd : Pseudo<
                   (outs GPR : $rd),
@@ -3084,7 +3084,6 @@ def LATZRd : FZRd<0b111,
 // Bit shift/rotate operations.
 let Constraints = "$src = $rd", Defs = [SREG] in {
   // 8-bit LSL is an alias of ADD Rd, Rd
-
   def LSLWRd : Pseudo<(outs DREGS
                        : $rd),
                       (ins DREGS
@@ -3828,7 +3827,7 @@ def : Pat<(i16(GameBoyWrapper tblockaddress
 
 // :FIXME: DAGCombiner produces an shl node after legalization from these seq:
 // BR_JT -> (mul x, 2) -> (shl x, 1)
-// def : Pat<(shl i16 : $src1, (i8 1)), (LSLWRd i16 : $src1)>;
+def : Pat<(shl i16 : $src1, (i8 1)), (SLARdPair i16 : $src1)>;
 
 // Lowering of 'tst' node to 'TST' instruction.
 // TST is an alias of AND Rd, Rd.

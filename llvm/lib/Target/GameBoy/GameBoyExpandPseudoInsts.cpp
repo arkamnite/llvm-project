@@ -916,26 +916,20 @@ bool GameBoyExpandPseudo::expand<GameBoy::RRNRdPair>(Block &MBB, BlockIt MBBI) {
 }
 
 template<>
-bool GameBoyExpandPseudo::expand<GameBoy::LSR8Pseudo>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete LSR8!");
+bool GameBoyExpandPseudo::expand<GameBoy::SLARdPair>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete SLARdPair!");
   return true;
 }
 
 template<>
-bool GameBoyExpandPseudo::expand<GameBoy::LSL8Pseudo>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete LSL8!");
+bool GameBoyExpandPseudo::expand<GameBoy::SRARdPair>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete SRARdPair!");
   return true;
 }
 
 template<>
-bool GameBoyExpandPseudo::expand<GameBoy::LSR16Pseudo>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete LSR16!");
-  return true;
-}
-
-template<>
-bool GameBoyExpandPseudo::expand<GameBoy::LSL16Pseudo>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete LSL16!");
+bool GameBoyExpandPseudo::expand<GameBoy::SRLRdPair>(Block &MBB, BlockIt MBBI) {
+  llvm_unreachable("Incomplete SRLRdPair!");
   return true;
 }
 
@@ -1089,6 +1083,9 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::RRNRd);
     EXPAND(GameBoy::RLNRdPair);
     EXPAND(GameBoy::RRNRdPair);
+    EXPAND(GameBoy::SRLRdPair);
+    EXPAND(GameBoy::SRARdPair);
+    EXPAND(GameBoy::SLARdPair);
     // EXPAND(GameBoy::LSR8Pseudo);
     // EXPAND(GameBoy::LSL8Pseudo);
     // EXPAND(GameBoy::LSR16Pseudo);

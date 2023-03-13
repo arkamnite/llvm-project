@@ -868,24 +868,26 @@ def CpRdRr : Pseudo<(outs),
                     "cp\t$rd, $rr",
                     [(GameBoycmp i8 : $rd, i8 : $rr), (implicit RF, RA)]>;
 
-// CPW Rd, Rr
-def CpWRdRr : Pseudo< (outs),
-                      (ins GPRPair : $rd, GPRPair : $rr),
-                      "cp\t$rd, $rr",
-                      [(GameBoycmp i16 : $rd, i16 : $rr), (implicit RF)]>;
-
 // CP Rd, Imm8
 def CpRdImm8 : Pseudo<(outs),
                     (ins GPR : $rd, i8imm : $n),
                     "cp\t$rd, $n",
                     [(GameBoycmp i8 : $rd, i8 : $n), (implicit RF)]>;
-
-// CP Rd, Imm16
-def CpRdImm16 : Pseudo<
-                    (outs),
-                    (ins GPRPair : $rd, i16imm : $n),
-                    "cp\t$rd, $n",
-                    [(GameBoycmp i16 : $rd, i16 : $n), (implicit RF)]>;
+  
+  // let Defs = [RHRL], Uses = [RHRL] in {
+  // CPW Rd, Rr
+  def CpWRdRr : Pseudo< (outs),
+                        (ins GPRPair : $rd, GPRPair : $rr),
+                        "cp\t$rd, $rr",
+                        [(GameBoycmp i16 : $rd, i16 : $rr), (implicit RF, RHRL)]>;
+  
+  // CP Rd, Imm16
+  def CpRdImm16 : Pseudo<
+                      (outs),
+                      (ins GPRPair : $rd, i16imm : $n),
+                      "cp\t$rd, $n",
+                      [(GameBoycmp i16 : $rd, i16 : $n), (implicit RF, RHRL)]>;
+  // }
 }
 
 // Original instructions are as follows
@@ -967,6 +969,20 @@ def DECRd : GBFRd<0b00, 0b101,
 // DEC (HL)
 
 //===----------------------------------------------------------------------===//
+// 16-bit arithmetic instructions
+//===----------------------------------------------------------------------===//
+
+// ADD HL, RPd
+let Constraints = "$src = $rd" in {
+def ADDHLPair : GBFPair<0b00, 0b1001,
+                        (outs GPRPairPointerHL : $rd),
+                        (ins GPRPairPointerHL : $src, GPRPair : $rr),
+                        "add\t$rd, $rr",
+                        // []>; // Manually selected by pseudo instructions.
+                        [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
+}
+
+//===----------------------------------------------------------------------===//
 // 16-bit arithmetic pseudo instructions
 //===----------------------------------------------------------------------===//
 
@@ -992,20 +1008,6 @@ def SbcRdPairRrPair : Pseudo< (outs GPRPair : $rd),
                               [(set i16 : $rd, (subc i16 : $src, i16 : $rr)), (implicit RHRL)]>;
 }
 
-
-//===----------------------------------------------------------------------===//
-// 16-bit arithmetic instructions
-//===----------------------------------------------------------------------===//
-
-// ADD HL, RPd
-let Constraints = "$src = $rd" in {
-def ADDHLPair : GBFPair<0b00, 0b1001,
-                        (outs GPRPairPointerHL : $rd),
-                        (ins GPRPairPointerHL : $src, GPRPair : $rr),
-                        "add\t$rd, $rr",
-                        []>; // Manually selected by pseudo instructions.
-                        // [(set i16 : $rd, (add i16 : $src, i16 : $rr))]>;
-}
 // ADD SP, s8
 let Constraints = "$src = $rd" in {
 def ADDSPImm8 : GBF0< 0b11101000,

@@ -431,7 +431,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRd>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtr>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  printAllOperands(MI);
+  // printAllOperands(MI);
 
   Register PtrSrc;
   Register DstReg;
@@ -452,7 +452,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtr>(Block &MBB, BlockIt MBBI)
 
   // Split the source register.
   TRI->splitReg(DstReg, DstRegHi, DstRegLow);
-  dbgs() << "High register: " << DstRegHi.id() << " Low register: " << DstRegLow.id(); 
+  // dbgs() << "High register: " << DstRegHi.id() << " Low register: " << DstRegLow.id(); 
 
   // Load the lower byte of the pointer
   buildMI(MBB, MBBI, GameBoy::LDRdPtr)
@@ -477,7 +477,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDRdPairPtr>(Block &MBB, BlockIt MBBI)
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRdPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  printAllOperands(MI);
+  // printAllOperands(MI);
   Register PtrDst;
   Register SrcReg;
   Register SrcRegHi;
@@ -497,7 +497,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::LDPtrRdPair>(Block &MBB, BlockIt MBBI)
 
   // Split the source register.
   TRI->splitReg(SrcReg, SrcRegHi, SrcRegLow);
-  dbgs() << "High register: " << SrcRegHi.id() << " Low register: " << SrcRegLow.id(); 
+  // dbgs() << "High register: " << SrcRegHi.id() << " Low register: " << SrcRegLow.id(); 
 
   // First we must store the lower byte
   // LD Ptr, RdPairLow
@@ -780,10 +780,22 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpWRdRr>(Block &MBB, BlockIt MBBI) {
   buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(RdHiReg, RegState::Define);
   /// SBC A, RhsHi
   buildMI(MBB, MBBI, GameBoy::SbcARr, GameBoy::RA).addReg(RrHiReg, RegState::Define);
+
   // ADD LHS, RHS ; Restore the value
-  buildMI(MBB, MBBI, GameBoy::AddRdPairRrPair)
-    .addReg(RdReg, RegState::Define | getDeadRegState(DstIsDead))
-    .addReg(RrReg, getKillRegState(SrcIsKill));
+
+  // Optimisation currently causes issues.
+    // LD HL, LHS
+    if (RdReg != GameBoy::RHRL)
+      buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(RdReg, RegState::Define | getDeadRegState(DstIsDead));
+    // ADD HL, RHS
+    buildMI(MBB, MBBI, GameBoy::ADDHLPair, RrReg);
+    // LD LHS, HL
+    if (RdReg != GameBoy::RHRL)
+      buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, RdReg).addReg(GameBoy::RHRL);
+    
+  // buildMI(MBB, MBBI, GameBoy::AddRdPairRrPair)
+  //   .addReg(RdReg, RegState::Define | getDeadRegState(DstIsDead))
+  //   .addReg(RrReg, getKillRegState(SrcIsKill));
   // Remove the old instruction
   MI.removeFromParent();
   return true;

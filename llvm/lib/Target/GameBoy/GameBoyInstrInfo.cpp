@@ -197,8 +197,8 @@ void GameBoyInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
   MachineFunction &MF = *MBB.getParent();
   GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
 
-  llvm_unreachable("Unimplemented storeRegToStackSlot");
-  /*
+  // llvm_unreachable("Unimplemented storeRegToStackSlot");
+  // /*
   AFI->setHasSpills(true);
 
   DebugLoc DL;
@@ -215,9 +215,9 @@ void GameBoyInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
 
   unsigned Opcode = 0;
   if (TRI->isTypeLegalForClass(*RC, MVT::i8)) {
-    Opcode = GameBoy::STDPtrQRr;
+    Opcode = GameBoy::LDPtrQRd;
   } else if (TRI->isTypeLegalForClass(*RC, MVT::i16)) {
-    Opcode = GameBoy::STDWPtrQRr;
+    Opcode = GameBoy::LDPtrQRdPair;
   } else {
     llvm_unreachable("Cannot store this register into a stack slot!");
   }
@@ -227,7 +227,7 @@ void GameBoyInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
       .addImm(0)
       .addReg(SrcReg, getKillRegState(isKill))
       .addMemOperand(MMO);
-  */
+  // */
 }
 
 void GameBoyInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
@@ -236,8 +236,8 @@ void GameBoyInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
                                         const TargetRegisterClass *RC,
                                         const TargetRegisterInfo *TRI) const {
   
-  llvm_unreachable("Unimplemented loadRegFromStackSlot");
-  /*
+  // llvm_unreachable("Unimplemented loadRegFromStackSlot");
+  // /*
   DebugLoc DL;
   if (MI != MBB.end()) {
     DL = MI->getDebugLoc();
@@ -253,11 +253,11 @@ void GameBoyInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
 
   unsigned Opcode = 0;
   if (TRI->isTypeLegalForClass(*RC, MVT::i8)) {
-    Opcode = GameBoy::LDDRdPtrQ;
+    Opcode = GameBoy::LDRdPtrQ;
   } else if (TRI->isTypeLegalForClass(*RC, MVT::i16)) {
-    // Opcode = GameBoy::LDDWRdPtrQ;
+    Opcode = GameBoy::LDRdPairPtrQ;
     //: FIXME: remove this once PR13375 gets fixed
-    Opcode = GameBoy::LDDWRdYQ;
+    // Opcode = GameBoy::LDDWRdYQ;
   } else {
     llvm_unreachable("Cannot load this register from a stack slot!");
   }
@@ -266,7 +266,7 @@ void GameBoyInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
       .addFrameIndex(FrameIndex)
       .addImm(0)
       .addMemOperand(MMO);
-  */
+  // */
 }
 
 const MCInstrDesc &GameBoyInstrInfo::getBrCond(GameBoyCC::CondCodes CC) const {

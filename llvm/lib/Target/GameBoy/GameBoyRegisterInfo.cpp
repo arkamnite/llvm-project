@@ -81,7 +81,7 @@ BitVector GameBoyRegisterInfo::getReservedRegs(const MachineFunction &MF) const 
   // Reserve result register A which is used for all arithmetic.
   // Is this really always considered live? We should be able to
   // allocate to the A register since it is used in so many instructions.
-  Reserved.set(GameBoy::RA);
+  // Reserved.set(GameBoy::RA);
   Reserved.set(GameBoy::RF);
   Reserved.set(GameBoy::RARF);
 
@@ -176,7 +176,6 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   // or the ADD SP, r8 instruction which is a signed offset. A frame index is a number
   // associated with an abstract stack frame, and this function will use SP to
   // access this indexed part of the stack.
-
 
   MachineInstr &MI = *II;
   DebugLoc dl = MI.getDebugLoc();

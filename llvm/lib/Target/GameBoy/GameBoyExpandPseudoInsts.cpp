@@ -1072,13 +1072,13 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
 
   switch (Opcode) {
     // Game Boy
-    EXPAND(GameBoy::LDRd8Ptr);
+    // EXPAND(GameBoy::LDRd8Ptr);
     EXPAND(GameBoy::LDRdPairRrPair);
-    EXPAND(GameBoy::LDRdPtrImm8);
-    EXPAND(GameBoy::LDRdPtr);
-    EXPAND(GameBoy::LDPtrRd);
-    EXPAND(GameBoy::LDRdPairPtr);
-    EXPAND(GameBoy::LDPtrRdPair);
+    // EXPAND(GameBoy::LDRdPtrImm8);
+    // EXPAND(GameBoy::LDRdPtr);
+    // EXPAND(GameBoy::LDPtrRd);
+    // EXPAND(GameBoy::LDRdPairPtr);
+    // EXPAND(GameBoy::LDPtrRdPair);
     EXPAND(GameBoy::LDRdPtrQ);
     EXPAND(GameBoy::LDRdPairPtrQ);
     EXPAND(GameBoy::LDPtrQRd);

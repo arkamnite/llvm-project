@@ -411,7 +411,8 @@ let mayLoad = 1, Defs = [RA], Uses = [RA] in {
 def LDRdPtrImm8 : Pseudo<(outs GPR : $rd),
                           (ins i8imm : $imm),
                           "ld\t$rd, [ $imm ]",
-                          [(set GPR : $rd, (load i8 : $imm))]>;
+                          // [(set GPR : $rd, (load i8 : $imm))]>;
+                          []>;
 
 // LD Rd, (Imm16)
 // def LDRdPtrImm16 : Pseudo<(outs GPR : $rd),
@@ -426,13 +427,15 @@ let canFoldAsLoad = 1, isReMaterializable = 1, Defs = [RC] in {
     : Pseudo< (outs GPR : $reg),
               (ins imm16 : $k),
               "ld\t$reg, [ $k ]",
-              [(set i8 : $reg, (load imm : $k)), (implicit RC)]>;
+              // [(set i8 : $reg, (load imm : $k)), (implicit RC)]>;
+              []>;
   
   let Constraints = "@earlyclobber $reg" in def LDRdPairPtr
     : Pseudo< (outs GPRPair: $reg),
               (ins i16imm : $k),
               "ld\t$reg, [ $k ]",
-              [(set i16 : $reg, (load imm : $k)), (implicit RC)]>;
+              // [(set i16 : $reg, (load imm : $k)), (implicit RC)]>;
+              []>;
 }
 
 // Pseudo instruction needed to lower LD Rd8, &Ptr
@@ -441,18 +444,21 @@ let mayLoad = 1, Defs = [RA], Uses = [RA] in {
 def LDRd8Ptr : Pseudo< (outs GPR : $rd),
                   (ins GPRPair : $ptrreg),
                   "ld\t$rd, [ $ptrreg ]",
-                  [(set GPR : $rd, (load i16 : $ptrreg))]>;
+                  []>;
+                  // [(set GPR : $rd, (load i16 : $ptrreg))]>;
 }
 
 let Defs = [RHRL] in def LDPtrRd : Pseudo< (outs),
                             (ins imm16 : $k, GPR : $reg),
                             "ld\t[ $k ], $reg",
-                            [(store i8 : $reg, imm : $k), (implicit RHRL)]>;
+                            []>;
+                            // [(store i8 : $reg, imm : $k), (implicit RHRL)]>;
 
 def LDPtrRdPair : Pseudo< (outs),
                                 (ins i16imm : $dst, GPRPair : $reg),
                                 "ld\t[ $dst ], $reg",
-                                [(store i16 : $reg, imm : $dst)]>;
+                                []>;
+                                // [(store i16 : $reg, imm : $dst)]>;
 
 //===----------------------------------------------------------------------===//
 // 8-bit transfer and input/output instructions
@@ -481,8 +487,6 @@ def LDRdImm8 : GBFRd< 0b00, 0b110,
 }
 
 let mayLoad = 1 in {
-
-
 // To move entire register pairs, the following pseudo instruction
 // must be constructed. LD RdH, RrH; LD RdL, RrL
 

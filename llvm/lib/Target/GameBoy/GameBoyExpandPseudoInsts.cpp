@@ -644,7 +644,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::AddRdPairRrPair>(Block &MBB, BlockIt M
   // LD Src, Imm16 happens implicitly.
   // ADD HL, Src
   buildMI(MBB, MBBI, GameBoy::ADDHLPair, GameBoy::RHRL)
-    .addReg(SrcReg, getKillRegState(SrcIsKill) | RegState::Define);
+    .addReg(SrcReg, getKillRegState(SrcIsKill));
   // LD Rpd, HL
   buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair)
     .addReg(DstReg, RegState::Define | getDeadRegState(DstIsDead))
@@ -929,7 +929,22 @@ bool GameBoyExpandPseudo::expand<GameBoy::RRNRdPair>(Block &MBB, BlockIt MBBI) {
 
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::SLARdPair>(Block &MBB, BlockIt MBBI) {
-  llvm_unreachable("Incomplete SLARdPair!");
+  MachineInstr &MI = *MBBI;
+  // printAllOperands(MI);
+  
+  Register RdPair = MI.getOperand(0).getReg();
+  Register RdLow, RdHigh;
+  // Split register (use reverse order)
+  TRI->splitReg(RdPair, RdHigh, RdLow);
+  
+  // SLA RdLow
+  buildMI(MBB, MBBI, GameBoy::SLARd, RdLow);
+  // RL RdHigh
+  buildMI(MBB, MBBI, GameBoy::RLRd, RdHigh);
+
+  // Remove old MI
+  MI.removeFromParent();
+  // llvm_unreachable("Incomplete SLARdPair!");
   return true;
 }
 

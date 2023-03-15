@@ -205,8 +205,7 @@ void GameBoyRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 
   // Insert an LD HL, SP + r8 instruction to modify the stack accordingly before
   // either a load or a store takes place.
-  // Use std::prev to define the instruction before this one.
-  BuildMI(MBB, std::prev(II), dl, TII.get(GameBoy::LDHLSPImm8), GameBoy::RHRL)
+  BuildMI(MBB, *II, dl, TII.get(GameBoy::LDHLSPImm8), GameBoy::RHRL)
     .addReg(GameBoy::SP)
     .addImm(Offset);
 

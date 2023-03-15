@@ -422,7 +422,7 @@ def LDRdPtrImm8 : Pseudo<(outs GPR : $rd),
 }
 
 // let canFoldAsLoad = 1, isReMaterializable = 1, Defs = [RC], Uses = [RC] in {
-let canFoldAsLoad = 1, isReMaterializable = 1, Defs = [RC] in {
+let canFoldAsLoad = 0, isReMaterializable = 1, Defs = [RC] in {
   let Constraints = "@earlyclobber $reg" in def LDRdPtr
     : Pseudo< (outs GPR : $reg),
               (ins imm16 : $k),
@@ -490,6 +490,7 @@ let mayLoad = 1 in {
 // To move entire register pairs, the following pseudo instruction
 // must be constructed. LD RdH, RrH; LD RdL, RrL
 
+let Constraints = "@earlyclobber $rd", canFoldAsLoad = 0 in {
 // LD Rd, (HL)
 def LDRdHLPtr : GBFRd< 0b01, 0b110,
                         (outs GPR : $rd),
@@ -505,6 +506,7 @@ def LDAPtr : GBFLdAPtr< (outs GPRLoad : $rd),
                         "ld\ta, [ $ptrreg ]",
                         [(set GPRLoad :
                           $rd, (load i16 : $ptrreg))]>;
+}
 
 // LD A, (C)
 // Applies specifically to the range FF00 - FFFF
@@ -525,6 +527,7 @@ def LDAImm16Addr : GBF0< 0b11111010,
                                 $rd, (load i16 : $addr))]>;
 }
 
+// let mayStore = 1, Constraints = "@earlyclobber $ptrreg", canFoldAsLoad = 0 in {
 let mayStore = 1 in {
 // LD (HL), Rr
 def LDHLAddrRr : GBFRd2<0b01110,
@@ -532,6 +535,7 @@ def LDHLAddrRr : GBFRd2<0b01110,
                         (ins GPRPairPointerHL : $ptrreg, GPR : $rr),
                         "ld\t$ptrreg, $rr", // Brackets added in GameBoyInstPrinter.cpp
                         [(store GPR : $rr, GPRPairPointerHL : $ptrreg)]>;
+}
 
 // LD (HL), Imm8
 def LDHLAddrImm8 : GBF0<0b00110110,
@@ -544,11 +548,10 @@ def LDHLAddrImm8 : GBF0<0b00110110,
 // LD (C), A
 def LDCAddrA : GBF0<0b11100010,
                     (outs),
-                    (ins GPRPointerC : $rcaddr, GPRLoad : $ra),
+                    (ins GPRPointerC : $rcaddr, GPRLoad : $rr),
                     "ld\t[c], a",
-                    [(store GPRLoad : $ra, GPRPointerC : $rcaddr)]>;
+                    [(store GPRLoad : $rr, GPRPointerC : $rcaddr)]>;
 
-}
 
 let mayStore = 1 in {
 // LD (Imm8), A [ rules apply for (Imm8)]
@@ -870,13 +873,15 @@ let Defs = [RF, RA], Uses = [RA] in {
 def CpRdRr : Pseudo<(outs),
                     (ins GPR : $rd, GPR : $rr),
                     "cp\t$rd, $rr",
-                    [(GameBoycmp i8 : $rd, i8 : $rr), (implicit RF, RA)]>;
+                    []>;
+                    // [(GameBoycmp i8 : $rd, i8 : $rr), (implicit RF, RA)]>;
 
 // CP Rd, Imm8
 def CpRdImm8 : Pseudo<(outs),
                     (ins GPR : $rd, i8imm : $n),
                     "cp\t$rd, $n",
-                    [(GameBoycmp i8 : $rd, i8 : $n), (implicit RF)]>;
+                    []>;
+                    // [(GameBoycmp i8 : $rd, i8 : $n), (implicit RF)]>;
   
   // let Defs = [RHRL], Uses = [RHRL] in {
   // CPW Rd, Rr
@@ -935,11 +940,14 @@ def XorAImm8 : GBF0<0b11101110,
 }
 
 // CP A, r
+let Defs = [RF] in {
 def CPARr :  GBFRd2<0b10111,
                     (outs),
-                    (ins GPR : $rd, GPR : $rr),
+                    (ins GPRLoad : $rd, GPR : $rr),
                     "cp\t$rd, $rr",
-                    []>;
+                    [(GameBoycmp i8 : $rd, i8 : $rr), (implicit RF)]>;
+}
+
 // CP A, Imm8
 def CPAImm8 : GBF0<0b11111110,
                     (outs),

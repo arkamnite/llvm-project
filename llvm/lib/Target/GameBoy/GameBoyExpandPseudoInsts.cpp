@@ -1113,10 +1113,6 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::SRLRdPair);
     EXPAND(GameBoy::SRARdPair);
     EXPAND(GameBoy::SLARdPair);
-    // EXPAND(GameBoy::LSR8Pseudo);
-    // EXPAND(GameBoy::LSL8Pseudo);
-    // EXPAND(GameBoy::LSR16Pseudo);
-    // EXPAND(GameBoy::LSL16Pseudo);
   }
 #undef EXPAND
   return false;

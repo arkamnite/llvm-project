@@ -38,10 +38,9 @@ namespace llvm {
 GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
                                      const GameBoySubtarget &STI)
     : TargetLowering(TM), Subtarget(STI) {
+  
   // Set up the register classes.
-  // addRegisterClass(MVT::i8, &GameBoy::GPR8RegClass);
   addRegisterClass(MVT::i8, &GameBoy::GPRRegClass);
-  // addRegisterClass(MVT::i16, &GameBoy::DREGSRegClass);
   addRegisterClass(MVT::i16, &GameBoy::GPRPairRegClass);
 
   // Compute derived properties from the register classes.
@@ -51,14 +50,13 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   setBooleanVectorContents(ZeroOrOneBooleanContent);
   setSchedulingPreference(Sched::RegPressure);
   setStackPointerRegisterToSaveRestore(GameBoy::SP);
-  setSupportsUnalignedAtomics(true);
+  setSupportsUnalignedAtomics(false);
 
   // We cannot directly load from two i16 registers, so must expand this as appropriate.
-  // setOperationAction(ISD::LOAD, MVT::i16, Custom);
-  // setOperationAction(ISD::STORE, MVT::i16, Custom);
-  // setOperationAction(ISD::CopyToReg, MVT::i16, Custom);
-  // setOperationAction(ISD::CopyFromReg, MVT::i8, Custom);
-  // setOperationAction(ISD::CopyFromReg, MVT::i16, Custom);
+  setOperationAction(ISD::CopyFromReg, MVT::i8, Legal);
+  setOperationAction(ISD::CopyToReg, MVT::i8, Legal);
+  setOperationAction(ISD::CopyFromReg, MVT::i16, Expand);
+  setOperationAction(ISD::CopyToReg, MVT::i16, Expand);
 
   setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
   setOperationAction(ISD::BlockAddress, MVT::i16, Custom);
@@ -94,7 +92,6 @@ GameBoyTargetLowering::GameBoyTargetLowering(const GameBoyTargetMachine &TM,
   // revert into a sub since we don't have an add with immediate instruction.
   setOperationAction(ISD::ADD, MVT::i32, Custom);
   setOperationAction(ISD::ADD, MVT::i64, Custom);
-
 
 
   // our shift instructions are only able to shift 1 bit at a time, so handle
@@ -895,16 +892,30 @@ SDValue GameBoyTargetLowering::LowerVASTART(SDValue Op, SelectionDAG &DAG) const
 }
 
 SDValue GameBoyTargetLowering::LowerCopyFromReg(SDValue Op, SelectionDAG &DAG) const {
-  dbgs() << "Lowering copy from register " << Op.getNumOperands() << "\n";
-  auto type = Op.getValueType();
-  if (type == MVT::i8) {
-    dbgs() << "Found i8 operand" << "\n";
-  }
-  else if (type == MVT::i16) {
-    dbgs() << "Found i16 operand" << "\n";
-  }
-  // dbgs() << "OP2: " << Op.getOperand(1).getSimpleValueType().getStr << "\n";
-  return SDValue();
+  dbgs() << "Lowering copy from register with _ many operands: " << Op.getNumOperands() << "\n";
+  MachineFunction &MF = DAG.getMachineFunction();
+  GameBoyMachineFunctionInfo *AFI = MF.getInfo<GameBoyMachineFunctionInfo>();
+
+  SDValue Dst = Op.getOperand(1);
+  SDValue DstLow, DstHi;
+  SDLoc dl(Op);
+
+  // Split the Dst register
+  DstLow = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i8, Dst, DAG.getIntPtrConstant(0, dl));
+  DstHi = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, MVT::i8, Dst, DAG.getIntPtrConstant(1, dl));
+
+  const Register DLOWREG = cast<RegisterSDNode>(Dst)->getReg();
+  const Register DHIREG = cast<RegisterSDNode>(Dst)->getReg();
+
+  
+
+  dbgs() << DLOWREG << ": LowReg\n";
+  dbgs() << DHIREG << ": HighReg\n";
+
+  // Copy each register individually
+  DAG.getCopyFromReg(Op.getOperand(0), dl, DLOWREG, MVT::i8);
+
+  return DAG.getCopyFromReg(Op.getOperand(0), dl, DHIREG, MVT::i8);
 }
 
 SDValue GameBoyTargetLowering::LowerLoad(SDValue Op, SelectionDAG &DAG) const {
@@ -920,8 +931,8 @@ SDValue GameBoyTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) con
     dbgs() << Op.getOpcode() << "\n";
     llvm_unreachable("Don't know how to custom lower this!");
   // case ISD::LOAD:
-  // case ISD::CopyFromReg:
-    // return LowerCopyFromReg(Op, DAG);
+  case ISD::CopyFromReg:
+    return LowerCopyFromReg(Op, DAG);
   // case ISD::LOAD:
     // return LowerLoad(Op, DAG);
   case ISD::SHL:

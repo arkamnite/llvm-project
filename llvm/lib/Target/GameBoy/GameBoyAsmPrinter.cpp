@@ -80,9 +80,9 @@ void GameBoyAsmPrinter::printMemOperand(const MachineInstr *MI, unsigned OpNo, r
       break;
   }
 
-  O << "[";
+  O << "(";
   printOperand(MI, OpNo, O);
-  O << "]";
+  O << ")";
 }
 
 void GameBoyAsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNo,

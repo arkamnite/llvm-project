@@ -41,6 +41,13 @@ GameBoyMCAsmInfo::GameBoyMCAsmInfo(const Triple &TT, const MCTargetOptions &Opti
   Data16bitsDirective = "dw ";
   Data32bitsDirective = "dl ";
 
+  // RGBASM does not support ascii strings, but instead emits them
+  // using byte lists
+  AsciiDirective = NULL;
+  AscizDirective = NULL;
+  ByteListDirective = "db\t";
+
+
   // Do not include the .size directive at the end of the function.
   HasDotTypeDotSizeDirective = false;
 }

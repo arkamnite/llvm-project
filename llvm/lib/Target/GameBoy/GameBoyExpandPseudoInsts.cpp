@@ -788,7 +788,7 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpWRdRr>(Block &MBB, BlockIt MBBI) {
     if (RdReg != GameBoy::RHRL)
       buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(RdReg, RegState::Define | getDeadRegState(DstIsDead));
     // ADD HL, RHS
-    buildMI(MBB, MBBI, GameBoy::ADDHLPair, RrReg);
+    buildMI(MBB, MBBI, GameBoy::ADDHLPair, GameBoy::RHRL).addReg(RrReg, RegState::Define);
     // LD LHS, HL
     if (RdReg != GameBoy::RHRL)
       buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, RdReg).addReg(GameBoy::RHRL);
@@ -930,7 +930,6 @@ bool GameBoyExpandPseudo::expand<GameBoy::RRNRdPair>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::SLARdPair>(Block &MBB, BlockIt MBBI) {
   MachineInstr &MI = *MBBI;
-  // printAllOperands(MI);
   
   Register RdPair = MI.getOperand(0).getReg();
   Register RdLow, RdHigh;
@@ -944,7 +943,6 @@ bool GameBoyExpandPseudo::expand<GameBoy::SLARdPair>(Block &MBB, BlockIt MBBI) {
 
   // Remove old MI
   MI.removeFromParent();
-  // llvm_unreachable("Incomplete SLARdPair!");
   return true;
 }
 
@@ -957,6 +955,29 @@ bool GameBoyExpandPseudo::expand<GameBoy::SRARdPair>(Block &MBB, BlockIt MBBI) {
 template<>
 bool GameBoyExpandPseudo::expand<GameBoy::SRLRdPair>(Block &MBB, BlockIt MBBI) {
   llvm_unreachable("Incomplete SRLRdPair!");
+  return true;
+}
+
+//===----------------------------------------------------------------------===//
+// Pointer arithmetic
+//===----------------------------------------------------------------------===//
+template<>
+bool GameBoyExpandPseudo::expand<GameBoy::AddHLAddr>(Block &MBB, BlockIt MBBI) {
+  MachineInstr &MI = *MBBI;
+  printAllOperands(MI);
+  Register HL = MI.getOperand(0).getReg();
+  auto Addr = MI.getOperand(2).getGlobal(); 
+
+  // Push BC since we have to sacrifice it.
+  buildMI(MBB, MBBI, GameBoy::PUSHRd, GameBoy::RBRC);
+  // Load the pointer address into a register pair.
+  buildMI(MBB, MBBI, GameBoy::LDRdImm16, GameBoy::RBRC).addGlobalAddress(Addr);
+  // Add the two values.
+  buildMI(MBB, MBBI, GameBoy::ADDHLPair, GameBoy::RHRL).addReg(GameBoy::RBRC);
+  // Pop BC
+  buildMI(MBB, MBBI, GameBoy::POPRd).addReg(GameBoy::RBRC);
+
+  MI.removeFromParent();
   return true;
 }
 
@@ -1072,13 +1093,13 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
 
   switch (Opcode) {
     // Game Boy
-    // EXPAND(GameBoy::LDRd8Ptr);
+    EXPAND(GameBoy::LDRd8Ptr);
     EXPAND(GameBoy::LDRdPairRrPair);
-    // EXPAND(GameBoy::LDRdPtrImm8);
-    // EXPAND(GameBoy::LDRdPtr);
-    // EXPAND(GameBoy::LDPtrRd);
-    // EXPAND(GameBoy::LDRdPairPtr);
-    // EXPAND(GameBoy::LDPtrRdPair);
+    EXPAND(GameBoy::LDRdPtrImm8);
+    EXPAND(GameBoy::LDRdPtr);
+    EXPAND(GameBoy::LDPtrRd);
+    EXPAND(GameBoy::LDRdPairPtr);
+    EXPAND(GameBoy::LDPtrRdPair);
     EXPAND(GameBoy::LDRdPtrQ);
     EXPAND(GameBoy::LDRdPairPtrQ);
     EXPAND(GameBoy::LDPtrQRd);
@@ -1113,6 +1134,8 @@ bool GameBoyExpandPseudo::expandMI(Block &MBB, BlockIt MBBI) {
     EXPAND(GameBoy::SRLRdPair);
     EXPAND(GameBoy::SRARdPair);
     EXPAND(GameBoy::SLARdPair);
+    // Pointers
+    EXPAND(GameBoy::AddHLAddr);
   }
 #undef EXPAND
   return false;

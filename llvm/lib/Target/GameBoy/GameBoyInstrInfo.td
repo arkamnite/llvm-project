@@ -866,8 +866,6 @@ def XorRdImm8 : Pseudo< (outs GPR : $rd),
                         "xor\t$rd, $n",
                         [(set i8 : $rd, (xor i8 : $src, i8 : $n))]>;
 }
-
-let Defs = [RF, RA], Uses = [RA] in {
 // CP Rd, Rr
 def CpRdRr : Pseudo<(outs),
                     (ins GPR : $rd, GPR : $rr),
@@ -880,23 +878,21 @@ def CpRdImm8 : Pseudo<(outs),
                     (ins GPR : $rd, i8imm : $n),
                     "cp\t$rd, $n",
                     []>;
-                    // [(GameBoycmp i8 : $rd, i8 : $n), (implicit RF)]>;
-  
-  // let Defs = [RHRL], Uses = [RHRL] in {
-  // CPW Rd, Rr
-  def CpWRdRr : Pseudo< (outs),
-                        (ins GPRPair : $rd, GPRPair : $rr),
-                        "cp\t$rd, $rr",
-                        [(GameBoycmp i16 : $rd, i16 : $rr), (implicit RF, RHRL)]>;
+
+// let Defs = [RHRL], Uses = [RHRL] in {
+// CPW Rd, Rr
+def CpWRdRr : Pseudo< (outs),
+                      (ins GPRPair : $rd, GPRPair : $rr),
+                      "cp\t$rd, $rr",
+                      [(GameBoycmp i16 : $rd, i16 : $rr)]>;
   
   // CP Rd, Imm16
   def CpRdImm16 : Pseudo<
                       (outs),
                       (ins GPRPair : $rd, i16imm : $n),
                       "cp\t$rd, $n",
-                      [(GameBoycmp i16 : $rd, i16 : $n), (implicit RF, RHRL)]>;
+                      []>;
   // }
-}
 
 // Original instructions are as follows
 let Constraints = "$src = $rd" in {

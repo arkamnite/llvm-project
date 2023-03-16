@@ -780,10 +780,8 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpWRdRr>(Block &MBB, BlockIt MBBI) {
   buildMI(MBB, MBBI, GameBoy::LDRdRr, GameBoy::RA).addReg(RdHiReg, RegState::Define);
   /// SBC A, RhsHi
   buildMI(MBB, MBBI, GameBoy::SbcARr, GameBoy::RA).addReg(RrHiReg, RegState::Define);
-
+  
   // ADD LHS, RHS ; Restore the value
-
-  // Optimisation currently causes issues.
     // LD HL, LHS
     if (RdReg != GameBoy::RHRL)
       buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, GameBoy::RHRL).addReg(RdReg, RegState::Define | getDeadRegState(DstIsDead));
@@ -793,9 +791,6 @@ bool GameBoyExpandPseudo::expand<GameBoy::CpWRdRr>(Block &MBB, BlockIt MBBI) {
     if (RdReg != GameBoy::RHRL)
       buildMI(MBB, MBBI, GameBoy::LDRdPairRrPair, RdReg).addReg(GameBoy::RHRL);
     
-  // buildMI(MBB, MBBI, GameBoy::AddRdPairRrPair)
-  //   .addReg(RdReg, RegState::Define | getDeadRegState(DstIsDead))
-  //   .addReg(RrReg, getKillRegState(SrcIsKill));
   // Remove the old instruction
   MI.removeFromParent();
   return true;

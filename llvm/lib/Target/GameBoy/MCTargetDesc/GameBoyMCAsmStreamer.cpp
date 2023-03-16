@@ -1063,10 +1063,11 @@ static void PrintByteList(StringRef Data, raw_ostream &OS,
                           MCAsmInfo::AsmCharLiteralSyntax ACLS) {
   assert(!Data.empty() && "Cannot generate an empty list.");
   const auto printCharacterInOctal = [&OS](unsigned char C) {
-    OS << '0';
-    OS << toOctal(C >> 6);
-    OS << toOctal(C >> 3);
-    OS << toOctal(C >> 0);
+    OS << "$";
+    OS << toHex(C);
+    // OS << toOctal(C >> 6);
+    // OS << toOctal(C >> 3);
+    // OS << toOctal(C >> 0);
   };
   const auto printOneCharacterFor = [printCharacterInOctal](
                                         auto printOnePrintingCharacter) {
@@ -1082,7 +1083,7 @@ static void PrintByteList(StringRef Data, raw_ostream &OS,
     const auto BeginPtr = Data.begin(), EndPtr = Data.end();
     for (const unsigned char C : make_range(BeginPtr, EndPtr - 1)) {
       printOneCharacter(C);
-      OS << ',';
+      OS << ", ";
     }
     printOneCharacter(*(EndPtr - 1));
   };
@@ -1157,41 +1158,45 @@ void GameBoyMCAsmStreamer::emitBytes(StringRef Data) {
   if (Data.empty()) return;
 
   const auto emitAsString = [this](StringRef Data) {
-    // If the data ends with 0 and the target supports .asciz, use it, otherwise
-    // use .ascii or a byte-list directive
-    if (MAI->getAscizDirective() && Data.back() == 0) {
-      OS << MAI->getAscizDirective();
-      Data = Data.substr(0, Data.size() - 1);
-    } else if (LLVM_LIKELY(MAI->getAsciiDirective())) {
-      OS << MAI->getAsciiDirective();
-    } else if (MAI->hasPairedDoubleQuoteStringConstants() &&
-               isPrintableString(Data)) {
-      // For target with DoubleQuoteString constants, .string and .byte are used
-      // as replacement of .asciz and .ascii.
-      assert(MAI->getPlainStringDirective() &&
-             "hasPairedDoubleQuoteStringConstants target must support "
-             "PlainString Directive");
-      assert(MAI->getByteListDirective() &&
-             "hasPairedDoubleQuoteStringConstants target must support ByteList "
-             "Directive");
-      if (Data.back() == 0) {
-        OS << MAI->getPlainStringDirective();
-        Data = Data.substr(0, Data.size() - 1);
-      } else {
-        OS << MAI->getByteListDirective();
-      }
-    } else if (MAI->getByteListDirective()) {
-      OS << MAI->getByteListDirective();
-      PrintByteList(Data, OS, MAI->characterLiteralSyntax());
-      EmitEOL();
-      return true;
-    } else {
-      return false;
-    }
-
-    PrintQuotedString(Data, OS);
+    OS << MAI->getByteListDirective();
+    PrintByteList(Data, OS, MAI->characterLiteralSyntax());
     EmitEOL();
     return true;
+    // // If the data ends with 0 and the target supports .asciz, use it, otherwise
+    // // use .ascii or a byte-list directive
+    // if (MAI->getAscizDirective() && Data.back() == 0) {
+    //   OS << MAI->getAscizDirective();
+    //   Data = Data.substr(0, Data.size() - 1);
+    // } else if (LLVM_LIKELY(MAI->getAsciiDirective())) {
+    //   OS << MAI->getAsciiDirective();
+    // } else if (MAI->hasPairedDoubleQuoteStringConstants() &&
+    //            isPrintableString(Data)) {
+    //   // For target with DoubleQuoteString constants, .string and .byte are used
+    //   // as replacement of .asciz and .ascii.
+    //   assert(MAI->getPlainStringDirective() &&
+    //          "hasPairedDoubleQuoteStringConstants target must support "
+    //          "PlainString Directive");
+    //   assert(MAI->getByteListDirective() &&
+    //          "hasPairedDoubleQuoteStringConstants target must support ByteList "
+    //          "Directive");
+    //   if (Data.back() == 0) {
+    //     OS << MAI->getPlainStringDirective();
+    //     Data = Data.substr(0, Data.size() - 1);
+    //   } else {
+    //     OS << MAI->getByteListDirective();
+    //   }
+    // } else if (MAI->getByteListDirective()) {
+    //   OS << MAI->getByteListDirective();
+    //   PrintByteList(Data, OS, MAI->characterLiteralSyntax());
+    //   EmitEOL();
+    //   return true;
+    // } else {
+    //   return false;
+    // }
+
+    // PrintQuotedString(Data, OS);
+    // EmitEOL();
+    // return true;
   };
 
   if (Data.size() != 1 && emitAsString(Data))

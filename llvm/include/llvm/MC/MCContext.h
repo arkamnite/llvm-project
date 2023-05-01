@@ -87,10 +87,15 @@ public:
     IsSPIRV,
     IsWasm,
     IsXCOFF,
-    IsDXContainer
+    IsDXContainer,
+    IsGameBoy,
   };
 
 private:
+
+  /// @brief Have we included the relevant assembler files?
+  bool hasIncluded;
+
   Environment Env;
 
   /// The name of the Segment where Swift5 Reflection Section data will be
@@ -426,6 +431,9 @@ public:
   MCContext(const MCContext &) = delete;
   MCContext &operator=(const MCContext &) = delete;
   ~MCContext();
+
+  bool hasInsertedInclude() const;
+  bool toggleHasIncluded();
 
   Environment getObjectFileType() const { return Env; }
 

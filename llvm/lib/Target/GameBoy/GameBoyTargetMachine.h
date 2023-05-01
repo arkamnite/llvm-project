@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 //===-- GameBoyTargetMachine.h - Define TargetMachine for GameBoy -------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -49,3 +50,30 @@ private:
 } // end namespace llvm
 
 #endif // LLVM_GameBoy_TARGET_MACHINE_H
+=======
+// GameBoyTargetMachine.h - Define TargetMachine for Game Boy
+// This file declares the Game boy specific subclass of TargetMachine
+// 12/06/22 File created
+
+#ifndef LLVM_LIB_TARGET_GAMEBOY_GAMEBOYTARGETMACHINE_H
+#define LLVM_LIB_TARGET_GAMEBOY_GAMEBOYTARGETMACHINE_H
+
+#include "GameBoyInstrInfo.h"
+#include "llvm/Target/TargetMachine.h"
+// #include "GameBoySubtarget.h" Will be used for Original DMG Unit
+
+namespace llvm {
+
+class Module;
+
+class GameBoyTargetMachine : public LLVMTargetMachine {
+    const DataLayout DataLayout;
+    // GameBoySubtarget Subtarget;
+    GameBoyInstrInfo InstrInfo;
+        
+}
+
+}
+
+#endif
+>>>>>>> 647717d9b759 (Initial commit)

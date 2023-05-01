@@ -814,6 +814,46 @@ def SbcAImm8 : GBF0<0b11011110,
 // Logic instructions
 //===----------------------------------------------------------------------===//
 
+// Original instructions are as follows
+let Constraints = "$src = $rd" in {
+// AND A, r
+def AndARr : GBFRd2<0b10100,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, GPR : $rr),
+                    "and\t$rd, $rr",
+                    [(set i8 : $rd, (and i8 : $src, i8 : $rr)), (implicit RA)]>;
+// AND A, Imm8
+def AndAImm8 : GBF0<0b11100110,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, i8imm : $n),
+                    "and\t$rd, $n",
+                    []>;
+// OR A, r
+def OrARr :  GBFRd2<0b10110,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, GPR : $rr),
+                    "or\t$rd, $rr",
+                    [(set i8 : $rd, (or i8 : $src, i8 : $rr)), (implicit RA)]>;
+// OR A, Imm8
+def OrAImm8 : GBF0<0b11110110,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, i8imm : $n),
+                    "or\t$rd, $n",
+                    []>;
+// XOR A, r
+def XorARr :  GBFRd2<0b10101,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, GPR : $rr),
+                    "xor\t$rd, $rr",
+                    [(set i8 : $rd, (xor i8 : $src, i8 : $rr)), (implicit RA)]>;
+// XOR A, Imm8
+def XorAImm8 : GBF0<0b11101110,
+                    (outs GPRLoad : $rd),
+                    (ins GPRLoad : $src, i8imm : $n),
+                    "xor\t$rd, $n",
+                    []>;
+}
+
 // Pseudo Instructions (excluding (HL))
 // AND Rd, Rr
 let Constraints = "$src = $rd" in {
@@ -894,45 +934,6 @@ def CpWRdRr : Pseudo< (outs),
                       []>;
   // }
 
-// Original instructions are as follows
-let Constraints = "$src = $rd" in {
-// AND A, r
-def AndARr : GBFRd2<0b10100,
-                    (outs GPR : $rd),
-                    (ins GPR : $src, GPR : $rr),
-                    "and\t$rd, $rr",
-                    []>;
-// AND A, Imm8
-def AndAImm8 : GBF0<0b11100110,
-                    (outs GPR : $rd),
-                    (ins GPR : $src, i8imm : $n),
-                    "and\t$rd, $n",
-                    []>;
-// OR A, r
-def OrARr :  GBFRd2<0b10110,
-                    (outs GPR : $rd),
-                    (ins GPR : $src, GPR : $rr),
-                    "or\t$rd, $rr",
-                    []>;
-// OR A, Imm8
-def OrAImm8 : GBF0<0b11110110,
-                    (outs GPR : $rd),
-                    (ins GPR : $src, i8imm : $n),
-                    "or\t$rd, $n",
-                    []>;
-// XOR A, r
-def XorARr :  GBFRd2<0b10101,
-                    (outs GPR : $rd),
-                    (ins GPR : $src, GPR : $rr),
-                    "xor\t$rd, $rr",
-                    []>;
-// XOR A, Imm8
-def XorAImm8 : GBF0<0b11101110,
-                    (outs GPR : $rd),
-                    (ins GPR : $src, i8imm : $n),
-                    "xor\t$rd, $n",
-                    []>;
-}
 
 // CP A, r
 let Defs = [RF] in {
@@ -1471,11 +1472,14 @@ let isBranch = 1, isTerminator = 1, Uses = [RF] in {
 //===----------------------------------------------------------------------===//
 
 // CALL Imm16
+let isCall = 1 in {
+
 def CALL : GBF0<0b11001101,
                 (outs),
                 (ins call_target : $k),
                 "call\t$k",
                 [(GameBoycall imm:$k)]>;
+}
 // CALL cc, Imm16
 
 let isTerminator = 1, isReturn = 1, isBarrier = 1 in {

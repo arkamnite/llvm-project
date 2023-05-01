@@ -1,0 +1,33 @@
+# This is an action that will automatically create a build when there is a push to main.
+name: "pre-release"
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  pre-release:
+    name: "Pre Release"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      # ...
+      - name: Configure Ninja
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Ninja" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_TARGETS_TO_BUILD="" -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="GameBoy" -DCMAKE_BUILD_TYPE="Release" ../llvm
+
+      - name: "Build with ninja"
+        run: |
+          ninja
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            ./build/*

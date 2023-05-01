@@ -17,6 +17,9 @@ jobs:
       # ...
       - name: Create build directory
         run: |
+          echo "CURRENT DIR CONTENTS:"
+          pwd
+          ls -al
           mkdir build
           cd build
           pwd

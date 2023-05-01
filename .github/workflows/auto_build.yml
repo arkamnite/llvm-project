@@ -19,6 +19,7 @@ jobs:
         run: |
           mkdir build
           cd build
+          pwd
         working-directory: ./
         
       - name: Configure Ninja build files

@@ -34,6 +34,7 @@ include "GameBoyInstrInfo.td"
 
 def GameBoyInstrInfo : InstrInfo;
 
+<<<<<<< HEAD
 //===---------------------------------------------------------------------===//
 // Calling Conventions
 //===---------------------------------------------------------------------===//
@@ -47,7 +48,6 @@ include "GameBoyCallingConv.td"
 def GameBoyAsmWriter : AsmWriter {
   string AsmWriterClassName = "InstPrinter";
   bit isMCAsmWriter = 1;
-}
 
 //===---------------------------------------------------------------------===//
 // Assembly Parsers
@@ -77,3 +77,9 @@ def GameBoy : Target {
   let AssemblyParsers = [GameBoyAsmParser];
   let AssemblyParserVariants = [GameBoyAsmParserVariant];
 }
+=======
+def GameBoyAsmParser : AsmParser {
+    bit ShouldEmitMatchingRegisterName = 0;
+}
+
+>>>>>>> 647717d9b759 (Initial commit)

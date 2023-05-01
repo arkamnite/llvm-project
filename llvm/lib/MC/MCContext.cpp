@@ -86,6 +86,9 @@ MCContext::MCContext(const Triple &TheTriple, const MCAsmInfo *mai,
                                    ->getBufferIdentifier());
 
   switch (TheTriple.getObjectFormat()) {
+  // case Triple::gameboy:
+  //   Env = IsGameBoy;
+  //   break;
   case Triple::MachO:
     Env = IsMachO;
     break;
@@ -138,6 +141,7 @@ void MCContext::initInlineSourceManager() {
 //===----------------------------------------------------------------------===//
 
 void MCContext::reset() {
+  hasIncluded = false;
   SrcMgr = nullptr;
   InlineSrcMgr.reset();
   LocInfos.clear();
@@ -200,6 +204,15 @@ MCInst *MCContext::createMCInst() {
 //===----------------------------------------------------------------------===//
 // Symbol Manipulation
 //===----------------------------------------------------------------------===//
+
+bool MCContext::hasInsertedInclude() const {
+  return hasIncluded;
+}
+
+bool MCContext::toggleHasIncluded() {
+  hasIncluded = !hasIncluded;
+  return hasIncluded;
+}
 
 MCSymbol *MCContext::getOrCreateSymbol(const Twine &Name) {
   SmallString<128> NameSV;

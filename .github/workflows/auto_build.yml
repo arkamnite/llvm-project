@@ -13,15 +13,21 @@ jobs:
 
     steps:
       # ...
-      - name: Configure Ninja
+      - name: Create build directory
         run: |
           mkdir build
           cd build
+        working-directory: ./
+        
+      - name: Configure Ninja build files
+        run: |
           cmake -G "Ninja" -DLLVM_ENABLE_PROJECTS="clang" -DLLVM_TARGETS_TO_BUILD="" -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="GameBoy" -DCMAKE_BUILD_TYPE="Release" ../llvm
+        working-directory: ./build
 
       - name: "Build with ninja"
         run: |
           ninja
+        working-directory: ./build
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
